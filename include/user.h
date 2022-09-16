@@ -15,29 +15,13 @@
    Author: Mingchuan Wu and Yancheng Li
    Create: 2022-08-18
    Description:
-    This file contains the declaration of the Plugin_Log class.
+    This file contains the declaration of the User Init.
 */
 
-#ifndef PLUGIN_LOG_H
-#define PLUGIN_LOG_H
+#ifndef PLUGIN_USER_H
+#define PLUGIN_USER_H
 
-namespace Plugin_Server_LOG {
-#define LOG_FILE_SIZE   (10 * 1024 * 1024)
-typedef enum {
-    LOG_ID_CLIENT = 0,
-    LOG_ID_SERVER,
-    LOG_ID_USER,
-    LOG_ID_MAX
-} LogId;
-void LogPrint(int logId, int priority, const char *tag, const char *fmt, ...);
-void SetLogPriority(int pri);
-void CloseLog(void);
-
-#define LOG(...) LogPrint(1, 0, "", __VA_ARGS__)
-#define LOGI(...) LogPrint(2, 0, "INFO:", __VA_ARGS__)
-#define LOGE(...) LogPrint(2, 1, "ERROR:", __VA_ARGS__)
-#define LOGW(...) LogPrint(2, 2, "WARN:", __VA_ARGS__)
-#define LOGD(...) LogPrint(2, 3, "DEBUG:", __VA_ARGS__)
-} // namespace Plugin_Server_LOG
+/* 将注册点及用户函数注册给server, server初始化时调用 */
+void RegisterCallbacks(void);
 
 #endif

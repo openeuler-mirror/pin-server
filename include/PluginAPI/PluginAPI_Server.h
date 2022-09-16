@@ -22,7 +22,7 @@
 #define PLUGIN_FRAMEWORK_API_H
 
 #include "BasicPluginAPI.h"
-#include "PluginServer.h"
+#include "PluginServer/PluginServer.h"
 
 namespace Plugin_API {
 /* The PluginAPI class is the client implementation of plugin api. */

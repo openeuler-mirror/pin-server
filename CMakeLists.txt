@@ -29,7 +29,7 @@ add_custom_command(
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 # plg_grpc_proto
-add_library(plg_grpc_proto
+add_library(plg_grpc_proto STATIC
   ${plg_grpc_srcs}
   ${plg_grpc_hdrs}
   ${plg_proto_srcs}
@@ -39,12 +39,13 @@ target_link_libraries(plg_grpc_proto
   ${GRPC_PP_LIBRARY}
   ${PROTOBUF_LIBRARY})
 
-add_library(user SHARED "user.cpp")
+add_library(pin_user SHARED "user.cpp")
+add_custom_command(TARGET pin_user COMMAND sha256sum libpin_user.so > libpin_user.sha256)
 
 # pin_server
-add_executable(pin_server "PluginServer.cpp" "lib/PluginAPI/PluginAPI_Server.cpp" "Plugin_Log.cpp")
+add_executable(pin_server "lib/PluginServer/PluginServer.cpp" "lib/PluginAPI/PluginAPI_Server.cpp" "lib/PluginServer/PluginLog.cpp")
 target_link_libraries(pin_server
-  user
+  pin_user
   ${JSONCPP_LIBRARY}
   plg_grpc_proto
   ${GRPC_PP_REFLECTION_LIBRARY}
@@ -52,13 +53,11 @@ target_link_libraries(pin_server
   ${PROTOBUF_LIBRARY}
   ${ABSEIL_SYNC_LIBRARY})
 
-add_custom_command(TARGET pin_server COMMAND sha256sum pin_server > pin_server.sha256)
-
 # install
 install(TARGETS pin_server RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(TARGETS user LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS pin_user LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 include(GNUInstallDirs)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/pin_server.sha256" DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libpin_user.sha256" DESTINATION lib)
 
 # uninstall target
 if(NOT TARGET uninstall)

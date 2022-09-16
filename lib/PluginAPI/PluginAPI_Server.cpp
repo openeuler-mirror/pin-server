@@ -18,13 +18,14 @@
 */
 
 #include "PluginAPI/PluginAPI_Server.h"
-#include "PluginServer.h"
+#include "PluginServer/PluginLog.h"
 
 namespace Plugin_API {
+using namespace PinServer;
 int CheckOpcode(Opcode op)
 {
     if ((op == OP_UNDEF) || (op >= OP_END)) {
-        printf("op:%d not defined! check Opcode fail\n", op);
+        LOGE("op:%d not defined! check Opcode fail\n", op);
         return -1;
     }
     return 0;
@@ -47,8 +48,8 @@ int CheckID(uintptr_t id)
 void PluginAPI_Server::WaitClientResult(const string& funName, const string& params)
 {
     PluginServer *server = PluginServer::GetInstance();
-    server->SetFunName(funName);
-    server->Setparams(params);
+    server->SetApiFuncName(funName);
+    server->SetApiFuncParams(params);
     server->SetUserFunState(STATE_BEGIN);
     while (1) {
         if (server->GetUserFunState() == STATE_RETURN) { // wait client result
