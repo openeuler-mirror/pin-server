@@ -25,58 +25,14 @@
 #include <string>
 #include <sstream>
 #include "PluginAPI/PluginAPI_Server.h"
-#include "Plugin_Log.h"
-#include "PluginServer.h"
+#include "PluginServer/PluginLog.h"
 
 using std::string;
 using std::vector;
 using std::cout;
 using namespace Plugin_API;
-using namespace Plugin_Server_LOG;
+using namespace PinServer;
 using namespace std;
-
-static void PrintOperation(vector<Operation> &p)
-{
-    int i = 0;
-    for (auto& v : p) {
-        printf("operation%d:\n", i++);
-        cout << "id:" << v.GetID() << "\n";
-        cout << "Opcode:" << v.GetOpcode() << "\n";
-        cout << "attributes:" << "\n";
-        for (auto m = v.GetAttributes().rbegin(); m != v.GetAttributes().rend(); m++) {
-            cout << "    " << m->first << ":" << m->second << "\n";
-        }
-
-        cout << "resultType:" << "\n";
-        cout << "    id:" << v.GetResultTypes().GetID() << "\n";
-        cout << "    typeCode:" << v.GetResultTypes().GetTypeCode() << "\n";
-        for (auto m = v.GetResultTypes().GetAttributes().rbegin();
-            m != v.GetResultTypes().GetAttributes().rend(); m++) {
-            cout << "    " << m->first << ":" << m->second << "\n";
-        }
-
-        cout << "operands:" << "\n";
-        int j = 0;
-        for (auto m = v.GetOperands().rbegin(); m != v.GetOperands().rend(); m++) {
-            cout << "    " << m->first << ":" << "\n";
-            Decl decl = m->second;
-            cout << "        id:" << decl.GetID() << "\n";
-            cout << "        declCode:" << decl.GetDeclCode() << "\n";
-            cout << "        attributes:" << "\n";
-            for (auto n = decl.GetAttributes().rbegin(); n != decl.GetAttributes().rend(); n++) {
-                cout << "            " << n->first << ":" << n->second << "\n";
-            }
-            cout << "        declType:" << "\n";
-            Type type = decl.GetType();
-            cout << "            id:" << type.GetID() << "\n";
-            cout << "            typeCode:" << type.GetTypeCode() << "\n";
-            cout << "            attributes:" << "\n";
-            for (auto n = type.GetAttributes().rbegin(); n != type.GetAttributes().rend(); n++) {
-                cout << "                " << n->first << ":" << n->second << "\n";
-            }
-        }
-    }
-}
 
 static void UserOptimizeFunc(void)
 {
@@ -84,9 +40,6 @@ static void UserOptimizeFunc(void)
     vector<Operation> inlineFunction = pluginAPI.SelectOperation(OP_FUNCTION, "declaredInline");
     LOGI("declaredInline have %ld functions were declared inline.\n", inlineFunction.size());
     printf("declaredInline have %ld functions were declared inline.\n", inlineFunction.size());
-    vector<Operation> allFunction = pluginAPI.GetAllFunc("name");
-    LOGI("allfunction have %ld functions were declared\n", allFunction.size());
-    printf("allfunction have %ld functions were declared\n", allFunction.size());
 }
 
 static void Split(const string& s, vector<string>& token, const string& delimiters = " ")
@@ -126,6 +79,7 @@ static void VariablesSummery(void)
             }
         }
     }
+    printf("\n");
 }
 
 static void AllFunc(void)
@@ -135,11 +89,9 @@ static void AllFunc(void)
     printf("allfunction have %ld functions were declared\n", allFunction.size());
 }
 
-string UserInit(void)
+void RegisterCallbacks(void)
 {
-    string ret = "HANDLE_BEFORE_IPA";
-    PluginServer::GetInstance()->RegisterUserOptimize(UserOptimizeFunc);
-    PluginServer::GetInstance()->RegisterUserOptimize(VariablesSummery);
-    PluginServer::GetInstance()->RegisterUserOptimize(AllFunc);
-    return ret;
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, "UserOptimizeFunc", UserOptimizeFunc);
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, "VariablesSummery", VariablesSummery);
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, "AllFunc", AllFunc);
 }
