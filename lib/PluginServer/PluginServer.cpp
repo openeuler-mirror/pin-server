@@ -207,25 +207,26 @@ int PluginServer::ClientMsgProc(ServerReaderWriter<ServerMsg, ClientMsg>* stream
         std::thread userfunc(ExecCallbacks, value);
         userfunc.detach();
     }
+    if ((attribute == apiFuncName) && (value == "done")) {
+        SemPost();
+    }
 
     while (1) {
+        SemWait();
         UserFunStateEnum state = GetUserFunState();
         if (state == STATE_END) {
             ServerSend(stream, "userFunc", "execution completed");
             SetUserFunState(STATE_WAIT_BEGIN);
-            TimerStart(timeout);
             break;
-        }
-
-        if (state == STATE_BEGIN) {
+        } else if (state == STATE_BEGIN) {
             ServerSend(stream, apiFuncName, apiFuncParams);
             SetUserFunState(STATE_WAIT_RETURN);
-            TimerStart(timeout);
             break;
         } else if (state == STATE_WAIT_RETURN) {
             if ((attribute == apiFuncName) && (value == "done")) {
                 SetUserFunState(STATE_RETURN);
-                apiFuncName = ""; // 已通知，清空
+                SetApiFuncName(""); // 已通知，清空
+                ClientReturnSemPost();
             }
         }
     }
@@ -249,6 +250,7 @@ void PluginServer::ExecFunc(const string& value)
                 UserFunc func = funcSet.GetFunc();
                 func(); // 执行用户注册函数
                 SetUserFunState(STATE_END);
+                SemPost();
             }
         }
     }
@@ -287,7 +289,6 @@ Status PluginServer::ReceiveSendMsg(ServerContext* context, ServerReaderWriter<S
     ServerMsg serverMsg;
     
     while (stream->Read(&clientMsg)) {
-        TimerStart(0);    // 关闭定时器
         LOGD("rec from client:%s,%s\n", clientMsg.attribute().c_str(), clientMsg.value().c_str());
         string attribute = clientMsg.attribute();
         if (attribute == "start") {
@@ -296,7 +297,6 @@ Status PluginServer::ReceiveSendMsg(ServerContext* context, ServerReaderWriter<S
             
             ServerSend(stream, "start", "ok");
             SendRegisteredUserFunc(stream);
-            TimerStart(timeout);
         } else if (attribute == "stop") {
             ServerSend(stream, "stop", "ok");
             SetShutdownFlag(true);    // 关闭标志
@@ -310,27 +310,33 @@ Status PluginServer::ReceiveSendMsg(ServerContext* context, ServerReaderWriter<S
 static void ServerExitThread(void)
 {
     int delay = 100000;
+    pid_t initPid = 1;
     while (1) {
-        if (g_service.GetShutdownFlag()) {
+        if (g_service.GetShutdownFlag() || (getppid() == initPid)) {
             g_server->Shutdown();
             break;
         }
+
         usleep(delay);
     }
 }
 
 static void TimeoutFunc(union sigval sig)
 {
-    LOGW("server timeout!\n");
+    int delay = 1; // server延时1秒等待client发指令关闭，若client异常,没收到关闭指令，延时1秒自动关闭
+    LOGW("server ppid:%d timeout!\n", getppid());
+    PluginServer::GetInstance()->SetUserFunState(STATE_TIMEOUT);
+    sleep(delay);
     PluginServer::GetInstance()->SetShutdownFlag(true);
 }
 
 void PluginServer::TimerStart(int interval)    // interval:单位ms
 {
     int msTons = 1000000; // ms转ns倍数
+    int msTos = 1000; // s转ms倍数
     struct itimerspec time_value;
-    time_value.it_value.tv_sec = 0;
-    time_value.it_value.tv_nsec = interval * msTons;
+    time_value.it_value.tv_sec = (interval / msTos);
+    time_value.it_value.tv_nsec = (interval % msTos) * msTons;
     time_value.it_interval.tv_sec = 0;
     time_value.it_interval.tv_nsec = 0;
     
@@ -352,25 +358,33 @@ void PluginServer::TimerInit(void)
     }
 }
 
-static void RunServer(int timeout, string& port) // port由client启动server时传入
+void RunServer(int timeout, string& port) // port由client启动server时传入
 {
     string serverAddress = "0.0.0.0:" + port;
     
     ServerBuilder builder;
+    int serverPort = 0;
     // Listen on the given address without any authentication mechanism.
-    builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials(), &serverPort);
+    
     // Register "service" as the instance through which we'll communicate with
     // clients. In this case, it corresponds to an *synchronous* service.
     builder.RegisterService(&g_service);
     // Finally assemble the server.
     g_server = std::unique_ptr<Server>(builder.BuildAndStart());
+    LOGI("Server ppid%d listening on %s\n", getppid(), serverAddress.c_str());
+    if (serverPort != atoi(port.c_str())) {
+        LOGW("server start fail\n");
+        return;
+    }
+
     g_service.SetShutdownFlag(false);
     g_service.SetTimeout(timeout);
     g_service.TimerInit();
     g_service.SetUserFunState(STATE_WAIT_BEGIN);
+    g_service.SemInit();
 
     RegisterCallbacks();
-    LOGI("Server listening on %s\n", serverAddress.c_str());
     
     std::thread serverExtiThread(ServerExitThread);
     serverExtiThread.join();
@@ -378,16 +392,7 @@ static void RunServer(int timeout, string& port) // port由client启动server时
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
     g_server->Wait();
+    g_service.SemDestroy();
+    LOGI("server ppid:%d quit!\n", getppid());
 }
 } // namespace PinServer
-
-int main(int argc, char** argv)
-{
-    int timeout = atoi(argv[0]);
-    std::string port = argv[1];
-    PinServer::LogPriority priority = (PinServer::LogPriority)atoi(argv[2]);
-    PinServer::SetLogPriority(priority);
-    PinServer::RunServer(timeout, port);
-    PinServer::CloseLog();
-    return 0;
-}

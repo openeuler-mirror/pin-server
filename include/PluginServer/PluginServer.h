@@ -26,6 +26,7 @@
 #include <vector>
 #include <time.h>
 #include <signal.h>
+#include <semaphore.h>
 
 #include <json/json.h>
 #include <grpcpp/grpcpp.h>
@@ -60,6 +61,7 @@ typedef enum {
     STATE_WAIT_RETURN,
     STATE_RETURN,
     STATE_END,
+    STATE_TIMEOUT,
 } UserFunStateEnum;
 
 typedef std::function<void(void)> UserFunc;
@@ -173,7 +175,33 @@ public:
     }
     /* 将json格式数据解析成map<string, string>格式 */
     void JsonGetAttributes(Json::Value node, map<string, string>& attributes);
-    
+    void SemInit(void)
+    {
+        sem_init(&sem[0], 0, 0);
+        sem_init(&sem[1], 0, 0);
+    }
+    void SemPost(void) // 开始执行用户函数或者用户函数结束触发该信号量
+    {
+        sem_post(&sem[0]);
+    }
+    void SemWait(void)
+    {
+        sem_wait(&sem[0]);
+    }
+    void ClientReturnSemPost(void) // client返回数据后触发该信号量
+    {
+        sem_post(&sem[1]);
+    }
+    void ClientReturnSemWait(void)
+    {
+        sem_wait(&sem[1]);
+    }
+    void SemDestroy(void)
+    {
+        sem_destroy(&sem[0]);
+        sem_destroy(&sem[1]);
+    }
+
 private:
     bool shutdown; // 是否关闭server
     /* 用户函数执行状态，client返回结果后为STATE_RETURN,开始执行下一个函数 */
@@ -188,7 +216,10 @@ private:
     int timeout;
     timer_t timerId;
     map<string, string> args; // 保存gcc编译时用户传入参数
+    sem_t sem[2];
 }; // class PluginServer
+
+void RunServer(int timeout, string& port);
 } // namespace PinServer
 
 #endif

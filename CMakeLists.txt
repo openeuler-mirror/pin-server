@@ -43,7 +43,8 @@ add_library(pin_user SHARED "user.cpp")
 add_custom_command(TARGET pin_user COMMAND sha256sum libpin_user.so > libpin_user.sha256)
 
 # pin_server
-add_executable(pin_server "lib/PluginServer/PluginServer.cpp" "lib/PluginAPI/PluginAPI_Server.cpp" "lib/PluginServer/PluginLog.cpp")
+add_executable(pin_server "lib/PluginServer/PluginServer.cpp" "lib/PluginAPI/PluginAPI_Server.cpp" "lib/PluginServer/PluginLog.cpp"
+  "lib/PluginServer/main.cpp")
 target_link_libraries(pin_server
   pin_user
   ${JSONCPP_LIBRARY}
