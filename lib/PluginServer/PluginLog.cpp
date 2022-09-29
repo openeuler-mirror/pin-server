@@ -30,10 +30,11 @@
 namespace PinServer {
 using namespace std;
 using std::string;
-constexpr int LOG_BUF_SIZE = 10240;
+constexpr int LOG_BUF_SIZE = 102400;
 constexpr int BASE_DATE = 1900;
 static LogPriority g_priority = PRIORITY_WARN; // log打印的级别控制
 static std::mutex g_mutex; // 线程锁
+static char g_buf[LOG_BUF_SIZE];
 
 shared_ptr<fstream> g_fs;
 static void LogWriteInit(const string& data);
@@ -99,18 +100,17 @@ static void LogWrite(const char *tag, const char *msg)
 void LogPrint(LogPriority priority, const char *tag, const char *fmt, ...)
 {
     va_list ap;
-    char buf[LOG_BUF_SIZE];
 
     va_start(ap, fmt);
-    vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
+    vsnprintf(g_buf, LOG_BUF_SIZE, fmt, ap);
     va_end(ap);
 
     if (priority <= g_priority) {
-        printf("%s%s", tag, buf);
+        printf("%s%s", tag, g_buf);
     }
 
     g_mutex.lock();
-    LogWrite(tag, buf);
+    LogWrite(tag, g_buf);
     g_mutex.unlock();
 }
 

@@ -51,7 +51,9 @@ void PluginAPI_Server::WaitClientResult(const string& funName, const string& par
     server->SetApiFuncName(funName);
     server->SetApiFuncParams(params);
     server->SetUserFunState(STATE_BEGIN);
+    server->SemPost();
     while (1) {
+        server->ClientReturnSemWait();
         if (server->GetUserFunState() == STATE_RETURN) { // wait client result
             server->SetUserFunState(STATE_WAIT_BEGIN);
             break;
