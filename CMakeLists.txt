@@ -58,7 +58,7 @@ target_link_libraries(pin_server
 install(TARGETS pin_server RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(TARGETS pin_user LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 include(GNUInstallDirs)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libpin_user.sha256" DESTINATION lib)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libpin_user.sha256" DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 # uninstall target
 if(NOT TARGET uninstall)
