@@ -41,13 +41,29 @@ PluginServer *PluginServer::GetInstance(void)
     return &g_service;
 }
 
-int PluginServer::RegisterUserFunc(InjectPoint inject, const string& name, UserFunc func)
+int PluginServer::RegisterUserFunc(InjectPoint inject, UserFunc func)
 {
     if ((inject >= HANDLE_MAX) || (func == nullptr)) {
         return -1;
     }
-
+    string name = "funcname" + std::to_string((uint64_t)&func);
     userFunc[inject].push_back(RecordedUserFunc(name, func));
+    return 0;
+}
+
+int PluginServer::RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& setupData, UserFunc func)
+{
+    if (inject != HANDLE_MANAGER_SETUP) {
+        return -1;
+    }
+
+    Json::Value root;
+    root["refPassName"] = setupData.refPassName;
+    root["passNum"] = setupData.passNum;
+    root["passPosition"] = setupData.passPosition;
+    string params = root.toStyledString();
+
+    userFunc[inject].push_back(RecordedUserFunc(params, func));
     return 0;
 }
 
@@ -372,7 +388,7 @@ void RunServer(int timeout, string& port) // port由client启动server时传入
     builder.RegisterService(&g_service);
     // Finally assemble the server.
     g_server = std::unique_ptr<Server>(builder.BuildAndStart());
-    LOGI("Server ppid%d listening on %s\n", getppid(), serverAddress.c_str());
+    LOGI("Server ppid:%d listening on %s\n", getppid(), serverAddress.c_str());
     if (serverPort != atoi(port.c_str())) {
         LOGW("server start fail\n");
         return;

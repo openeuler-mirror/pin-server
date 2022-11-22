@@ -89,9 +89,18 @@ static void AllFunc(void)
     printf("allfunction have %ld functions were declared\n", allFunction.size());
 }
 
+static void PassManagerSetupFunc(void)
+{
+    printf("PassManagerSetupFunc in\n");
+}
 void RegisterCallbacks(void)
 {
-    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, "UserOptimizeFunc", UserOptimizeFunc);
-    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, "VariablesSummery", VariablesSummery);
-    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, "AllFunc", AllFunc);
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, UserOptimizeFunc);
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, VariablesSummery);
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, AllFunc);
+    ManagerSetupData setupData;
+    setupData.refPassName = PASS_CFG;
+    setupData.passNum = 1;
+    setupData.passPosition = PASS_INSERT_AFTER;
+    PluginServer::GetInstance()->RegisterPassManagerSetup(HANDLE_MANAGER_SETUP, setupData, PassManagerSetupFunc);
 }

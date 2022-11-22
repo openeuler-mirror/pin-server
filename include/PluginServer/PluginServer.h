@@ -77,7 +77,27 @@ enum InjectPoint : uint8_t {
     HANDLE_BEFORE_ALL_PASS,
     HANDLE_AFTER_ALL_PASS,
     HANDLE_COMPILE_END,
+    HANDLE_MANAGER_SETUP,
     HANDLE_MAX,
+};
+
+// 参考点名称
+enum RefPassName {
+    PASS_CFG,
+    PASS_SSA,
+    PASS_LOOP,
+};
+
+enum PassPosition {
+    PASS_INSERT_AFTER,
+    PASS_INSERT_BEFORE,
+    PASS_REPLACE,
+};
+
+struct ManagerSetupData {
+    RefPassName refPassName;
+    int passNum; // 指定passName的第几次执行作为参考点
+    PassPosition passPosition; // 指定pass是添加在参考点之前还是之后
 };
 
 class RecordedUserFunc {
@@ -116,7 +136,8 @@ public:
     Decl GetDeclResult(void);
     Type GetTypeResult(void);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
-    int RegisterUserFunc(InjectPoint inject, const string& name, UserFunc func);
+    int RegisterUserFunc(InjectPoint inject, UserFunc func);
+    int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
     /* 执行用户注册的回调函数,根据value查找对应的函数,value格式 InjectPoint:funName */
     void ExecFunc(const string& value);
     /* 将注册点和函数名发到客户端, stream为grpc当前数据流指针 */
