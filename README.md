@@ -13,9 +13,12 @@ Pin-gcc-client基于GCC插件实现，可以在GCC场景执行优化pass。
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+```shell
+$ mkdir build
+$ cd build
+$ cmake ../ -DMLIR_DIR=$PWD/../llvm/build/lib/cmake/mlir -DLLVM_DIR=$PWD/../llvm/build/lib/cmake/llvm
+$ make
+```
 
 #### 使用说明
 

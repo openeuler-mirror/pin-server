@@ -24,12 +24,18 @@
 #include <vector>
 #include <thread>
 
+#include "Dialect/PluginDialect.h"
+#include "PluginAPI/PluginServerAPI.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "user.h"
 #include "PluginServer/PluginLog.h"
 #include "PluginServer/PluginServer.h"
 
 namespace PinServer {
-using namespace Plugin_IR;
+using namespace mlir::Plugin;
 
 using std::cout;
 using std::endl;
@@ -67,25 +73,11 @@ int PluginServer::RegisterPassManagerSetup(InjectPoint inject, const ManagerSetu
     return 0;
 }
 
-vector<Operation> PluginServer::GetOperationResult(void)
+vector<mlir::Plugin::FunctionOp> PluginServer::GetFunctionOpResult(void)
 {
-    vector<Operation> retOps = opData;
-    opData.clear();
+    vector<mlir::Plugin::FunctionOp> retOps = funcOpData;
+    funcOpData.clear();
     return retOps;
-}
-
-Decl PluginServer::GetDeclResult(void)
-{
-    Decl decl = dlData;
-    dlData.GetAttributes().clear();
-    return decl;
-}
-
-Type PluginServer::GetTypeResult(void)
-{
-    Type type = tpData;
-    tpData.GetAttributes().clear();
-    return type;
 }
 
 void PluginServer::JsonGetAttributes(Json::Value node, map<string, string>& attributes)
@@ -106,94 +98,37 @@ static uintptr_t GetID(Json::Value node)
 
 void PluginServer::JsonDeSerialize(const string& key, const string& data)
 {
-    if (key == "OperationResult") {
-        OperationJsonDeSerialize(data);
-    } else if (key == "DeclResult") {
-        DeclJsonDeSerialize(data);
-    } else if (key == "TypeResult") {
-        TypeJsonDeSerialize(data);
+    if (key == "FuncOpResult") {
+        FuncOpJsonDeSerialize(data);
     } else {
         cout << "not Json,key:" << key << ",value:" << data << endl;
     }
 }
 
-void PluginServer::OperationJsonDeSerialize(const string& data)
+void PluginServer::FuncOpJsonDeSerialize(const string& data)
 {
     Json::Value root;
     Json::Reader reader;
     Json::Value node;
     reader.parse(data, root);
 
-    Operation op;
     Json::Value::Members operation = root.getMemberNames();
 
+    context.getOrLoadDialect<PluginDialect>();
+    mlir::OpBuilder builder(&context);
     for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
         string operationKey = *iter;
         node = root[operationKey];
-        op.SetID(GetID(node["id"]));
-        op.SetOpcode((Opcode)node["opCode"].asInt());
+        int64_t id = GetID(node["id"]);
         Json::Value attributes = node["attributes"];
-        JsonGetAttributes(attributes, op.GetAttributes());
-
-        Json::Value resultType = node["resultType"];
-        op.GetResultTypes().SetID(GetID(resultType["id"]));
-        op.GetResultTypes().SetTypeCode((TypeCode)resultType["typeCode"].asInt());
-        op.GetResultTypes().SetTQual(resultType["tQual"].asInt());
-        JsonGetAttributes(resultType["attributes"], op.GetResultTypes().GetAttributes());
-
-        Json::Value operands = node["operands"];
-        Json::Value::Members opKey = operands.getMemberNames();
-        for (unsigned int i = 0; i < opKey.size(); i++) {
-            string key = opKey[i];
-            Json::Value decl = operands[key.c_str()];
-            Decl operand;
-            operand.SetID(GetID(decl["id"]));
-            operand.SetDeclCode((DeclCode)decl["declCode"].asInt());
-            JsonGetAttributes(decl["attributes"], operand.GetAttributes());
-
-            Json::Value declType = decl["declType"];
-            operand.GetType().SetID(GetID(declType["id"]));
-            operand.GetType().SetTypeCode((TypeCode)declType["typeCode"].asInt());
-            operand.GetType().SetTQual(declType["tQual"].asInt());
-            JsonGetAttributes(declType["attributes"], operand.GetType().GetAttributes());
-            op.AddOperand(key, operand);
-        }
-        opData.push_back(op);
+        map<string, string> funcAttributes;
+        JsonGetAttributes(attributes, funcAttributes);
+        bool declaredInline = false;
+        if (funcAttributes["declaredInline"] == "1") declaredInline = true;
+        auto location = builder.getUnknownLoc();
+        FunctionOp op = builder.create<FunctionOp>(location, id, funcAttributes["funcName"], declaredInline);
+        funcOpData.push_back(op);
     }
-}
-
-void PluginServer::DeclJsonDeSerialize(const string& data)
-{
-    Json::Value root;
-    Json::Reader reader;
-    Json::Value node;
-    reader.parse(data, root);
-
-    Json::Value decl = root["decl"];
-    dlData.SetID(GetID(decl["id"]));
-    dlData.SetDeclCode((DeclCode)decl["declCode"].asInt());
-    JsonGetAttributes(decl["attributes"], dlData.GetAttributes());
-    Json::Value declType = decl["declType"];
-    Type type;
-    type.SetID(GetID(declType["id"]));
-    type.SetTypeCode((TypeCode)declType["typeCode"].asInt());
-    type.SetTQual(declType["tQual"].asInt());
-    JsonGetAttributes(declType["attributes"], type.GetAttributes());
-    dlData.SetType(type);
-}
-
-void PluginServer::TypeJsonDeSerialize(const string& data)
-{
-    Json::Value root;
-    Json::Reader reader;
-    Json::Value node;
-    reader.parse(data, root);
-
-    Json::Value type = root["type"];
-    tpData.SetID(GetID(type["id"]));
-    tpData.SetTypeCode((TypeCode)type["typeCode"].asInt());
-    tpData.SetTQual(type["tQual"].asInt());
-    JsonGetAttributes(type["attributes"], tpData.GetAttributes());
 }
 
 /* 线程函数，执行用户注册函数，客户端返回数据后退出 */
