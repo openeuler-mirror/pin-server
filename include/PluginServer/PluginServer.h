@@ -33,6 +33,7 @@
 #include "Dialect/PluginOps.h"
 #include "plugin.grpc.pb.h"
 #include "mlir/IR/MLIRContext.h"
+#include "Dialect/PluginTypes.h"
 
 namespace PinServer {
 using grpc::Server;
@@ -171,6 +172,7 @@ public:
         timeout = time;
     }
     void FuncOpJsonDeSerialize(const string& data);
+    void TypeJsonDeSerialize(const string& data);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */
@@ -216,6 +218,7 @@ private:
     volatile UserFunStateEnum userFunState;
     mlir::MLIRContext context;
     vector<mlir::Plugin::FunctionOp> funcOpData;
+    PluginIR::PluginTypeBase pluginType;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */
     map<InjectPoint, vector<RecordedUserFunc>> userFunc;
     string apiFuncName; // 保存用户调用PluginAPI的函数名

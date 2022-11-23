@@ -33,6 +33,7 @@
 #include "user.h"
 #include "PluginServer/PluginLog.h"
 #include "PluginServer/PluginServer.h"
+#include "Dialect/PluginTypes.h"
 
 namespace PinServer {
 using namespace mlir::Plugin;
@@ -103,6 +104,45 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
     } else {
         cout << "not Json,key:" << key << ",value:" << data << endl;
     }
+}
+
+void PluginServer::TypeJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+
+    Json::Value type = root["type"];
+    uint64_t id = GetID(type["id"]);
+    PluginIR::PluginTypeID PluginTypeId = static_cast<PluginIR::PluginTypeID>(id);
+
+    if (type["signed"] && (id >= static_cast<uint64_t>(PluginIR::UIntegerTy1ID) && id <= static_cast<uint64_t>(PluginIR::IntegerTy64ID))) {
+        string s = type["signed"].asString();
+        uint64_t width = GetID(type["width"]);
+        if (s == "1") {
+            pluginType = PluginIR::PluginIntegerType::get(&context, width, PluginIR::PluginIntegerType::Signed);
+        }
+        else {
+            pluginType = PluginIR::PluginIntegerType::get(&context, width, PluginIR::PluginIntegerType::Unsigned);
+        }
+    }
+    else if (type["width"] && (id == static_cast<uint64_t>(PluginIR::FloatTyID) || id == static_cast<uint64_t>(PluginIR::DoubleTyID)) ) {
+        uint64_t width = GetID(type["width"]);
+        pluginType = PluginIR::PluginFloatType::get(&context, width);
+    }else {
+        if (PluginTypeId == PluginIR::VoidTyID)
+            pluginType = PluginIR::PluginVoidType::get(&context);
+        if (PluginTypeId == PluginIR::BooleanTyID)
+            pluginType = PluginIR::PluginBooleanType::get(&context);
+        if (PluginTypeId == PluginIR::UndefTyID)
+            pluginType = PluginIR::PluginUndefType::get(&context);
+    }
+    if (type["readonly"] == "1")
+        pluginType.setReadOnlyFlag(1);
+    else
+        pluginType.setReadOnlyFlag(0);
+    return;
 }
 
 void PluginServer::FuncOpJsonDeSerialize(const string& data)

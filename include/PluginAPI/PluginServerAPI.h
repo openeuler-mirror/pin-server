@@ -23,6 +23,7 @@
 
 #include "BasicPluginOpsAPI.h"
 #include "PluginServer/PluginServer.h"
+#include "Dialect/PluginTypes.h"
 
 namespace PluginAPI {
 
@@ -35,6 +36,7 @@ public:
     ~PluginServerAPI () = default;
 
     vector<FunctionOp> GetAllFunc() override;
+    PluginIR::PluginTypeID GetTypeCodeFromString(string type);
 private:
     vector<FunctionOp> GetOperationResult(const string& funName, const string& params);
     void WaitClientResult(const string& funName, const string& params);

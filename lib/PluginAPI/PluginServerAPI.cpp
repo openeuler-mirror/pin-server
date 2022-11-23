@@ -70,4 +70,39 @@ vector<FunctionOp> PluginServerAPI::GetAllFunc()
     return GetOperationResult(funName, params);
 }
 
+PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)
+{
+    if (type == "VoidTy") {
+        return PluginIR::PluginTypeID::VoidTyID;
+    }else if (type == "UIntegerTy1") {
+        return PluginIR::PluginTypeID::UIntegerTy1ID;
+    }else if (type == "UIntegerTy8") {
+        return PluginIR::PluginTypeID::UIntegerTy8ID;
+    }else if (type == "UIntegerTy16") {
+        return PluginIR::PluginTypeID::UIntegerTy16ID;
+    }else if (type == "UIntegerTy32") {
+        return PluginIR::PluginTypeID::UIntegerTy32ID;
+    }else if (type == "UIntegerTy64") {
+        return PluginIR::PluginTypeID::UIntegerTy64ID;
+    }else if (type == "IntegerTy1") {
+        return PluginIR::PluginTypeID::IntegerTy1ID;
+    }else if (type == "IntegerTy8") {
+        return PluginIR::PluginTypeID::IntegerTy8ID;
+    }else if (type == "IntegerTy16") {
+        return PluginIR::PluginTypeID::IntegerTy16ID;
+    }else if (type == "IntegerTy32") {
+        return PluginIR::PluginTypeID::IntegerTy32ID;
+    }else if (type == "IntegerTy64") {
+        return PluginIR::PluginTypeID::IntegerTy64ID;
+    }else if (type == "BooleanTy") {
+        return PluginIR::PluginTypeID::BooleanTyID;
+    }else if (type == "FloatTy") {
+        return PluginIR::PluginTypeID::FloatTyID;
+    }else if (type == "DoubleTy") {
+        return PluginIR::PluginTypeID::DoubleTyID;
+    }
+    
+    return PluginIR::PluginTypeID::UndefTyID;
+}
+
 } // namespace Plugin_IR

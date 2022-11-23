@@ -1,4 +1,5 @@
 add_mlir_dialect_library(MLIRPlugin
+  PluginTypes.cpp
   PluginDialect.cpp
   PluginOps.cpp
 
