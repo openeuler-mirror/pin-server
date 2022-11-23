@@ -24,80 +24,38 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "PluginAPI/PluginAPI_Server.h"
+#include "PluginAPI/PluginServerAPI.h"
 #include "PluginServer/PluginLog.h"
 
 using std::string;
 using std::vector;
 using std::cout;
-using namespace Plugin_API;
+using namespace mlir;
+using namespace mlir::Plugin;
+using namespace PluginAPI;
 using namespace PinServer;
 using namespace std;
 
 static void UserOptimizeFunc(void)
 {
-    PluginAPI_Server pluginAPI;
-    vector<Operation> inlineFunction = pluginAPI.SelectOperation(OP_FUNCTION, "declaredInline");
-    LOGI("declaredInline have %ld functions were declared inline.\n", inlineFunction.size());
-    printf("declaredInline have %ld functions were declared inline.\n", inlineFunction.size());
-}
-
-static void Split(const string& s, vector<string>& token, const string& delimiters = " ")
-{
-    istringstream iss(s);
-    string str;
-    while (getline(iss, str, delimiters.c_str()[0])) {
-        token.push_back(str);
+    PluginServerAPI pluginAPI;
+    vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
+    int count = 0;
+    for (size_t i = 0; i < allFunction.size(); i++) {
+        if (allFunction[i].declaredInlineAttr().getValue())
+            count++;
     }
-}
-
-static void VariablesSummery(void)
-{
-    PluginAPI_Server pluginAPI;
-    vector<Operation> allFunction = pluginAPI.SelectOperation(OP_FUNCTION, "");
-    map<string, string> args = PluginServer::GetInstance()->GetArgs();
-
-    for (auto& f : allFunction) {
-        printf("\nvariables_summary for %s: \n", f.GetAttribute("name").c_str());
-        if (f.GetAttribute("localDecl") == "") {
-            printf("0");
-            continue;
-        }
-        vector<string> localDeclStr;
-        Split(f.GetAttribute("localDecl"), localDeclStr, ",");
-        for (auto& s : localDeclStr) {
-            if (s == "") continue;
-            Decl decl = pluginAPI.SelectDeclByID(stol(s.c_str()));
-            if (args.find("type_code") != args.end()) {
-                if ((decl.GetType().GetTypeCode() == pluginAPI.GetTypeCodeFromString(args["type_code"]))) {
-                    printf("%s %s;", decl.GetAttribute("name").c_str(), args["type_code"].c_str());
-                }
-            } else {
-                if ((decl.GetType().GetTypeCode() == TC_I32) || (decl.GetType().GetTypeCode() == TC_I16)) {
-                    printf("%s;", decl.GetAttribute("name").c_str());
-                }
-            }
-        }
-    }
-    printf("\n");
-}
-
-static void AllFunc(void)
-{
-    PluginAPI_Server pluginAPI;
-    vector<Operation> allFunction = pluginAPI.GetAllFunc("name");
-    printf("allfunction have %ld functions were declared\n", allFunction.size());
+    printf("declaredInline have %d functions were declared.\n", count);
 }
 
 static void PassManagerSetupFunc(void)
 {
     printf("PassManagerSetupFunc in\n");
 }
+
 void RegisterCallbacks(void)
 {
     PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, UserOptimizeFunc);
-    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, VariablesSummery);
-    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_AFTER_IPA, AllFunc);
     ManagerSetupData setupData;
     setupData.refPassName = PASS_CFG;
     setupData.passNum = 1;

@@ -30,17 +30,11 @@
 
 #include <json/json.h>
 #include <grpcpp/grpcpp.h>
+#include "Dialect/PluginOps.h"
 #include "plugin.grpc.pb.h"
-#include "IR/Operation.h"
+#include "mlir/IR/MLIRContext.h"
 
 namespace PinServer {
-using Plugin_IR::Opcode;
-using Plugin_IR::TypeCode;
-using Plugin_IR::DeclCode;
-using Plugin_IR::Operation;
-using Plugin_IR::Decl;
-using Plugin_IR::Type;
-
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -132,9 +126,7 @@ public:
     int ClientMsgProc(ServerReaderWriter<ServerMsg, ClientMsg>* stream, const string& attribute, const string& value);
     /* 获取server对象实例,有且只有一个实例对象 */
     static PluginServer *GetInstance(void);
-    vector<Operation> GetOperationResult(void);
-    Decl GetDeclResult(void);
-    Type GetTypeResult(void);
+    vector<mlir::Plugin::FunctionOp> GetFunctionOpResult(void);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
     int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
@@ -178,12 +170,7 @@ public:
     {
         timeout = time;
     }
-    /* 将从client接收到的Operation类型数据反序列化 */
-    void OperationJsonDeSerialize(const string& data);
-    /* 将从client接收到的Decl类型数据反序列化 */
-    void DeclJsonDeSerialize(const string& data);
-    /* 将从client接收到的Type类型数据反序列化 */
-    void TypeJsonDeSerialize(const string& data);
+    void FuncOpJsonDeSerialize(const string& data);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */
@@ -227,9 +214,8 @@ private:
     bool shutdown; // 是否关闭server
     /* 用户函数执行状态，client返回结果后为STATE_RETURN,开始执行下一个函数 */
     volatile UserFunStateEnum userFunState;
-    vector<Operation> opData;
-    Decl dlData;
-    Type tpData;
+    mlir::MLIRContext context;
+    vector<mlir::Plugin::FunctionOp> funcOpData;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */
     map<InjectPoint, vector<RecordedUserFunc>> userFunc;
     string apiFuncName; // 保存用户调用PluginAPI的函数名

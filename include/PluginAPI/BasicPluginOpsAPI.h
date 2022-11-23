@@ -12,37 +12,31 @@
    License for the specific language governing permissions and limitations
    under the License.
 
-   Author: Mingchuan Wu and Yancheng Li
-   Create: 2022-08-18
-   Description:
-    This file contains the declaration of the BasicPluginAPI class.
 */
 
-#ifndef BASIC_PLUGIN_FRAMEWORK_API_H
-#define BASIC_PLUGIN_FRAMEWORK_API_H
+#ifndef BASIC_PLUGIN_OPS_FRAMEWORK_API_H
+#define BASIC_PLUGIN_OPS_FRAMEWORK_API_H
+
+#include "Dialect/PluginOps.h"
 
 #include <vector>
 #include <string>
-#include "IR/Operation.h"
-#include "IR/Decl.h"
 
-namespace Plugin_API {
-using namespace Plugin_IR;
+namespace PluginAPI {
 using std::vector;
 using std::string;
+using namespace mlir::Plugin;
 
-/* The BasicPluginAPI class defines the basic plugin API, both the plugin
+/* The BasicPluginOpsAPI class defines the basic plugin API, both the plugin
    client and the server should inherit this class and implement there own
    defined API. */
-class BasicPluginAPI {
+class BasicPluginOpsAPI {
 public:
-    BasicPluginAPI() = default;
-    virtual ~BasicPluginAPI() = default;
+    BasicPluginOpsAPI() = default;
+    virtual ~BasicPluginOpsAPI() = default;
 
-    virtual vector<Operation> SelectOperation(Opcode op, string attribute) = 0;
-    virtual vector<Operation> GetAllFunc(string attribute) = 0;
-    virtual Decl SelectDeclByID(uintptr_t id) = 0;
-}; // class BasicPluginAPI
-} // namespace Plugin_API
+    virtual vector<FunctionOp> GetAllFunc() = 0;
+}; // class BasicPluginOpsAPI
+} // namespace PluginAPI
 
-#endif // PLUGIN_FRAMEWORK_API_H
+#endif // BASIC_PLUGIN_OPS_FRAMEWORK_API_H

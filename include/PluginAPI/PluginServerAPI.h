@@ -18,33 +18,27 @@
     This file contains the declaration of the PluginAPI_Server class.
 */
 
-#ifndef PLUGIN_FRAMEWORK_API_H
-#define PLUGIN_FRAMEWORK_API_H
+#ifndef PLUGIN_FRAMEWORK_SERVER_API_H
+#define PLUGIN_FRAMEWORK_SERVER_API_H
 
-#include "BasicPluginAPI.h"
+#include "BasicPluginOpsAPI.h"
 #include "PluginServer/PluginServer.h"
 
-namespace Plugin_API {
-/* The PluginAPI class is the client implementation of plugin api. */
-using namespace Plugin_IR;
+namespace PluginAPI {
 
 using std::vector;
 using std::string;
-class PluginAPI_Server : public BasicPluginAPI {
+using namespace mlir::Plugin;
+class PluginServerAPI : public BasicPluginOpsAPI {
 public:
-    PluginAPI_Server () = default;
-    ~PluginAPI_Server () = default;
+    PluginServerAPI () = default;
+    ~PluginServerAPI () = default;
 
-    vector<Operation> SelectOperation(Opcode op, string attribute) override;
-    vector<Operation> GetAllFunc(string attribute) override;
-    Decl SelectDeclByID(uintptr_t id) override;
-    TypeCode GetTypeCodeFromString(string type);
+    vector<FunctionOp> GetAllFunc() override;
 private:
-    vector<Operation> GetOperationResult(const string& funName, const string& params);
-    Decl GetDeclResult(const string& funName, const string& params);
-    Type GetTypeResult(const string& funName, const string& params);
+    vector<FunctionOp> GetOperationResult(const string& funName, const string& params);
     void WaitClientResult(const string& funName, const string& params);
-}; // class PluginAPI_Server
-} // namespace Plugin_API
+}; // class PluginServerAPI
+} // namespace PluginAPI
 
-#endif // PLUGIN_FRAMEWORK_API_H
+#endif // PLUGIN_FRAMEWORK_SERVER_API_H
