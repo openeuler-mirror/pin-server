@@ -128,6 +128,7 @@ public:
     /* 获取server对象实例,有且只有一个实例对象 */
     static PluginServer *GetInstance(void);
     vector<mlir::Plugin::FunctionOp> GetFunctionOpResult(void);
+    vector<mlir::Plugin::LocalDeclOp> GetLocalDeclResult(void);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
     int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
@@ -173,6 +174,7 @@ public:
     }
     void FuncOpJsonDeSerialize(const string& data);
     void TypeJsonDeSerialize(const string& data);
+    void LocalDeclOpJsonDeSerialize(const string& data);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */
@@ -219,6 +221,7 @@ private:
     mlir::MLIRContext context;
     vector<mlir::Plugin::FunctionOp> funcOpData;
     PluginIR::PluginTypeBase pluginType;
+    vector<mlir::Plugin::LocalDeclOp> decls;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */
     map<InjectPoint, vector<RecordedUserFunc>> userFunc;
     string apiFuncName; // 保存用户调用PluginAPI的函数名

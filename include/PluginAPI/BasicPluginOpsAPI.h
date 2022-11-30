@@ -36,6 +36,7 @@ public:
     virtual ~BasicPluginOpsAPI() = default;
 
     virtual vector<FunctionOp> GetAllFunc() = 0;
+    virtual vector<LocalDeclOp> GetDecls(uint64_t) = 0;
 }; // class BasicPluginOpsAPI
 } // namespace PluginAPI
 

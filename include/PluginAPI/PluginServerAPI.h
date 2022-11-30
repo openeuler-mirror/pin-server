@@ -36,9 +36,11 @@ public:
     ~PluginServerAPI () = default;
 
     vector<FunctionOp> GetAllFunc() override;
+    vector<LocalDeclOp> GetDecls(uint64_t) override;
     PluginIR::PluginTypeID GetTypeCodeFromString(string type);
 private:
     vector<FunctionOp> GetOperationResult(const string& funName, const string& params);
+    vector<LocalDeclOp> GetDeclOperationResult(const string& funName, const string& params);
     void WaitClientResult(const string& funName, const string& params);
 }; // class PluginServerAPI
 } // namespace PluginAPI

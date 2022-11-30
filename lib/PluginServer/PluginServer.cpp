@@ -81,6 +81,13 @@ vector<mlir::Plugin::FunctionOp> PluginServer::GetFunctionOpResult(void)
     return retOps;
 }
 
+vector<mlir::Plugin::LocalDeclOp> PluginServer::GetLocalDeclResult()
+{
+    vector<mlir::Plugin::LocalDeclOp> retOps = decls;
+    decls.clear();
+    return retOps;
+}
+
 void PluginServer::JsonGetAttributes(Json::Value node, map<string, string>& attributes)
 {
     Json::Value::Members attMember = node.getMemberNames();
@@ -101,7 +108,9 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
 {
     if (key == "FuncOpResult") {
         FuncOpJsonDeSerialize(data);
-    } else {
+    } else if (key == "LocalDeclOpResult") {
+        LocalDeclOpJsonDeSerialize(data);
+    }else {
         cout << "not Json,key:" << key << ",value:" << data << endl;
     }
 }
@@ -168,6 +177,33 @@ void PluginServer::FuncOpJsonDeSerialize(const string& data)
         auto location = builder.getUnknownLoc();
         FunctionOp op = builder.create<FunctionOp>(location, id, funcAttributes["funcName"], declaredInline);
         funcOpData.push_back(op);
+    }
+}
+
+void PluginServer::LocalDeclOpJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+
+    Json::Value::Members operation = root.getMemberNames();
+
+    context.getOrLoadDialect<PluginDialect>();
+    mlir::OpBuilder builder(&context);
+    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
+        string operationKey = *iter;
+        node = root[operationKey];
+        int64_t id = GetID(node["id"]);
+        Json::Value attributes = node["attributes"];
+        map<string, string> declAttributes;
+        JsonGetAttributes(attributes, declAttributes);
+	string symName = declAttributes["symName"];
+	uint64_t typeID = atol(declAttributes["typeID"].c_str());
+	uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
+        auto location = builder.getUnknownLoc();
+        LocalDeclOp op = builder.create<LocalDeclOp>(location, id, symName, typeID, typeWidth);
+        decls.push_back(op);
     }
 }
 
