@@ -105,4 +105,21 @@ PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)
     return PluginIR::PluginTypeID::UndefTyID;
 }
 
+vector<LocalDeclOp> PluginServerAPI::GetDeclOperationResult(const string&funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    vector<LocalDeclOp> retDecls = PluginServer::GetInstance()->GetLocalDeclResult();
+    return retDecls;
+}
+
+vector<LocalDeclOp> PluginServerAPI::GetDecls(uint64_t funcID)
+{
+    Json::Value root;
+    string funName("GetLocalDecls");
+    root[std::to_string(0)] = std::to_string(funcID);
+    string params = root.toStyledString();
+
+    return GetDeclOperationResult(funName, params);
+}
+
 } // namespace Plugin_IR
