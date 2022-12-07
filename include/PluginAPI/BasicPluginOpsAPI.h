@@ -25,6 +25,7 @@
 namespace PluginAPI {
 using std::vector;
 using std::string;
+using std::pair;
 using namespace mlir::Plugin;
 
 /* The BasicPluginOpsAPI class defines the basic plugin API, both the plugin
@@ -37,6 +38,16 @@ public:
 
     virtual vector<FunctionOp> GetAllFunc() = 0;
     virtual vector<LocalDeclOp> GetDecls(uint64_t) = 0;
+    virtual LoopOp AllocateNewLoop(uint64_t) = 0;
+    virtual vector<LoopOp> GetLoopsFromFunc(uint64_t) = 0;
+    virtual LoopOp GetLoopById(uint64_t) = 0;
+    virtual void AddLoop(uint64_t, uint64_t, uint64_t) = 0;
+    virtual void DeleteLoop(uint64_t) = 0;
+    virtual vector<uint64_t> GetLoopBody(uint64_t) = 0;
+    virtual bool IsBlockInLoop(uint64_t, uint64_t) = 0;
+    virtual pair<uint64_t, uint64_t> LoopSingleExit(uint64_t) = 0;
+    virtual vector<pair<uint64_t, uint64_t> > GetLoopExitEdges(uint64_t) = 0;
+    virtual LoopOp GetBlockLoopFather(uint64_t) = 0;
 }; // class BasicPluginOpsAPI
 } // namespace PluginAPI
 

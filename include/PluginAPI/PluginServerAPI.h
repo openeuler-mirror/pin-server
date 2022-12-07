@@ -29,6 +29,7 @@ namespace PluginAPI {
 
 using std::vector;
 using std::string;
+using std::pair;
 using namespace mlir::Plugin;
 class PluginServerAPI : public BasicPluginOpsAPI {
 public:
@@ -38,9 +39,28 @@ public:
     vector<FunctionOp> GetAllFunc() override;
     vector<LocalDeclOp> GetDecls(uint64_t) override;
     PluginIR::PluginTypeID GetTypeCodeFromString(string type);
+    LoopOp AllocateNewLoop(uint64_t funcID);
+    LoopOp GetLoopById(uint64_t loopID);
+    vector<LoopOp> GetLoopsFromFunc(uint64_t funcID);
+    bool IsBlockInLoop(uint64_t loopID, uint64_t blockID);
+    void DeleteLoop(uint64_t loopID);
+    void AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID);
+    pair<uint64_t, uint64_t> LoopSingleExit(uint64_t loopID);
+    vector<pair<uint64_t, uint64_t> > GetLoopExitEdges(uint64_t loopID);
+    uint64_t GetHeader(uint64_t loopID);
+    uint64_t GetLatch(uint64_t loopID);
+    vector<uint64_t> GetLoopBody(uint64_t loopID);
+    LoopOp GetBlockLoopFather(uint64_t blockID);
 private:
     vector<FunctionOp> GetOperationResult(const string& funName, const string& params);
     vector<LocalDeclOp> GetDeclOperationResult(const string& funName, const string& params);
+    LoopOp GetLoopResult(const string&funName, const string& params);
+    vector<LoopOp> GetLoopsResult(const string& funName, const string& params);
+    bool GetBoolResult(const string& funName, const string& params);
+    pair<uint64_t, uint64_t> EdgeResult(const string& funName, const string& params);
+    vector<pair<uint64_t, uint64_t> > EdgesResult(const string& funName, const string& params);
+    uint64_t BlockResult(const string& funName, const string& params);
+    vector<uint64_t> BlocksResult(const string& funName, const string& params);
     void WaitClientResult(const string& funName, const string& params);
 }; // class PluginServerAPI
 } // namespace PluginAPI

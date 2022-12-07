@@ -40,6 +40,7 @@ using namespace mlir::Plugin;
 
 using std::cout;
 using std::endl;
+using std::pair;
 static std::unique_ptr<Server> g_server; // grpc对象指针
 static PluginServer g_service; // 插件server对象
 
@@ -88,6 +89,52 @@ vector<mlir::Plugin::LocalDeclOp> PluginServer::GetLocalDeclResult()
     return retOps;
 }
 
+vector<mlir::Plugin::LoopOp> PluginServer::LoopOpsResult()
+{
+    vector<mlir::Plugin::LoopOp> retLoops = loops;
+    loops.clear();
+    return retLoops;
+}
+
+LoopOp PluginServer::LoopOpResult()
+{
+    mlir::Plugin::LoopOp retLoop = loop;
+    return retLoop;
+}
+
+bool PluginServer::BoolResult()
+{
+    return boolRes;
+}
+
+uint64_t PluginServer::BlockIdResult()
+{
+    return blockId;
+}
+
+vector<uint64_t> PluginServer::BlockIdsResult()
+{
+    vector<uint64_t> retIds = blockIds;
+    blockIds.clear();
+    return retIds;
+}
+
+pair<uint64_t, uint64_t> PluginServer::EdgeResult()
+{
+    pair<uint64_t, uint64_t> e;
+    e.first = edge.first;
+    e.second = edge.second;
+    return e;
+}
+
+vector<pair<uint64_t, uint64_t> > PluginServer::EdgesResult()
+{
+    vector<pair<uint64_t, uint64_t> > retEdges;
+    retEdges = edges;
+    edges.clear();
+    return retEdges;
+}
+
 void PluginServer::JsonGetAttributes(Json::Value node, map<string, string>& attributes)
 {
     Json::Value::Members attMember = node.getMemberNames();
@@ -110,7 +157,23 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
         FuncOpJsonDeSerialize(data);
     } else if (key == "LocalDeclOpResult") {
         LocalDeclOpJsonDeSerialize(data);
-    }else {
+    } else if (key == "LoopOpResult") {
+        LoopOpJsonDeSerialize (data);
+    } else if (key == "LoopOpsResult") {
+        LoopOpsJsonDeSerialize (data);
+    } else if (key == "BoolResult") {
+        BoolResJsonDeSerialize(data);
+    } else if (key == "VoidResult") {
+        ;
+    } else if (key == "BlockIdResult") {
+        BlockJsonDeSerialize(data);
+    } else if (key == "EdgeResult") {
+        EdgeJsonDeSerialize(data);
+    } else if (key == "EdgesResult") {
+        EdgesJsonDeSerialize(data);
+    } else if (key == "BlockIdsResult") {
+        BlocksJsonDeSerialize(data);
+    } else {
         cout << "not Json,key:" << key << ",value:" << data << endl;
     }
 }
@@ -198,13 +261,127 @@ void PluginServer::LocalDeclOpJsonDeSerialize(const string& data)
         Json::Value attributes = node["attributes"];
         map<string, string> declAttributes;
         JsonGetAttributes(attributes, declAttributes);
-	string symName = declAttributes["symName"];
-	uint64_t typeID = atol(declAttributes["typeID"].c_str());
-	uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
+        string symName = declAttributes["symName"];
+        uint64_t typeID = atol(declAttributes["typeID"].c_str());
+        uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
         auto location = builder.getUnknownLoc();
         LocalDeclOp op = builder.create<LocalDeclOp>(location, id, symName, typeID, typeWidth);
         decls.push_back(op);
     }
+}
+void PluginServer::LoopOpsJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+
+    Json::Value::Members operation = root.getMemberNames();
+    context.getOrLoadDialect<PluginDialect>();
+    mlir::OpBuilder builder(&context);
+    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
+        string operationKey = *iter;
+        node = root[operationKey];
+        int64_t id = GetID(node["id"]);
+        Json::Value attributes = node["attributes"];
+        map<string, string> loopAttributes;
+        JsonGetAttributes(attributes, loopAttributes);
+        uint32_t index = atoi(attributes["index"].asString().c_str());
+        uint64_t innerId = atol(loopAttributes["innerLoopId"].c_str());
+        uint64_t outerId = atol(loopAttributes["outerLoopId"].c_str());
+        uint32_t numBlock = atoi(loopAttributes["numBlock"].c_str());
+        auto location = builder.getUnknownLoc();
+        LoopOp op = builder.create<LoopOp>(location, id, index, innerId, outerId, numBlock);
+        loops.push_back(op);
+    }
+}
+
+void PluginServer::LoopOpJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+
+    context.getOrLoadDialect<PluginDialect>();
+    mlir::OpBuilder builder(&context);
+
+    uint64_t id = GetID(root["id"]);
+    Json::Value attributes = root["attributes"];
+    uint32_t index = atoi(attributes["index"].asString().c_str());
+    uint64_t innerLoopId = atol(attributes["innerLoopId"].asString().c_str());
+    uint64_t outerLoopId = atol(attributes["outerLoopId"].asString().c_str());
+    uint32_t numBlock = atoi(attributes["numBlock"].asString().c_str());
+    auto location = builder.getUnknownLoc();
+    loop = builder.create<LoopOp>(location, id, index, innerLoopId, outerLoopId, numBlock);
+}
+
+void PluginServer::BoolResJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+
+    boolRes = (bool)atoi(root["result"].asString().c_str());
+}
+
+void PluginServer::EdgesJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+
+    Json::Value::Members operation = root.getMemberNames();
+    context.getOrLoadDialect<PluginDialect>();
+    mlir::OpBuilder builder(&context);
+    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
+        string operationKey = *iter;
+        node = root[operationKey];
+        uint64_t src = atol(node["src"].asString().c_str());
+        uint64_t dest = atol(node["dest"].asString().c_str());
+        pair<uint64_t, uint64_t> e;
+        e.first = src;
+        e.second = dest;
+        edges.push_back(e);
+    }
+}
+
+void PluginServer::EdgeJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+    uint64_t src = atol(root["src"].asString().c_str());
+    uint64_t dest = atol(root["dest"].asString().c_str());
+    edge.first = src;
+    edge.second = dest;
+}
+
+void PluginServer::BlocksJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+
+    Json::Value::Members operation = root.getMemberNames();
+    context.getOrLoadDialect<PluginDialect>();
+    mlir::OpBuilder builder(&context);
+    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
+        string operationKey = *iter;
+        node = root[operationKey];
+        uint64_t id = atol(node["id"].asString().c_str());
+        blockIds.push_back(id);
+    }
+}
+
+void PluginServer::BlockJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+
+    blockId = (uint64_t)atol(root["id"].asString().c_str());
 }
 
 /* 线程函数，执行用户注册函数，客户端返回数据后退出 */

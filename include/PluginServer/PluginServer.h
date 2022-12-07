@@ -130,6 +130,13 @@ public:
     static PluginServer *GetInstance(void);
     vector<mlir::Plugin::FunctionOp> GetFunctionOpResult(void);
     vector<mlir::Plugin::LocalDeclOp> GetLocalDeclResult(void);
+    mlir::Plugin::LoopOp LoopOpResult(void);
+    vector<mlir::Plugin::LoopOp> LoopOpsResult(void);
+    vector<uint64_t> BlockIdsResult(void);
+    uint64_t BlockIdResult(void);
+    vector<std::pair<uint64_t, uint64_t> > EdgesResult(void);
+    std::pair<uint64_t, uint64_t> EdgeResult(void);
+    bool BoolResult(void);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
     int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
@@ -176,6 +183,13 @@ public:
     void FuncOpJsonDeSerialize(const string& data);
     void TypeJsonDeSerialize(const string& data);
     void LocalDeclOpJsonDeSerialize(const string& data);
+    void LoopOpsJsonDeSerialize(const string& data);
+    void LoopOpJsonDeSerialize(const string& data);
+    void BoolResJsonDeSerialize(const string& data);
+    void EdgesJsonDeSerialize(const string& data);
+    void EdgeJsonDeSerialize(const string& data);
+    void BlocksJsonDeSerialize(const string& data);
+    void BlockJsonDeSerialize(const string& data);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */
@@ -223,6 +237,13 @@ private:
     vector<mlir::Plugin::FunctionOp> funcOpData;
     PluginIR::PluginTypeBase pluginType;
     vector<mlir::Plugin::LocalDeclOp> decls;
+    vector<mlir::Plugin::LoopOp> loops;
+    mlir::Plugin::LoopOp loop;
+    vector<std::pair<uint64_t, uint64_t> > edges;
+    std::pair<uint64_t, uint64_t> edge;
+    vector<uint64_t> blockIds;
+    uint64_t blockId;
+    bool boolRes;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */
     map<InjectPoint, vector<RecordedUserFunc>> userFunc;
     string apiFuncName; // 保存用户调用PluginAPI的函数名

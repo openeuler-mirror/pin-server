@@ -20,6 +20,7 @@
 
 include "PluginDialect.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/Interfaces/CallInterfaces.td"
 
 def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
   let summary = "function with a region";
@@ -38,6 +39,10 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$funcName, "bool":$declaredInline)>
   ];
+
+  let extraClassDeclaration = [{
+    std::vector<LoopOp> GetAllLoops();
+  }];
 }
 
 def LocalDeclOp : Plugin_Op<"declaration", [NoSideEffect]> {
@@ -52,6 +57,36 @@ def LocalDeclOp : Plugin_Op<"declaration", [NoSideEffect]> {
     OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$symName,
                   "int64_t":$typeID, "uint64_t":$typeWidth)>
   ];
+}
+
+def LoopOp : Plugin_Op<"loop", [NoSideEffect]> {
+  let summary = "loop operation";
+  let description = [{
+        TODO.
+  }];
+  let arguments = (ins OptionalAttr<UI64Attr>:$id,
+                       OptionalAttr<UI32Attr>:$index,
+                       OptionalAttr<UI64Attr>:$innerLoopId,
+                       OptionalAttr<UI64Attr>:$outerLoopId,
+                       OptionalAttr<UI32Attr>:$numBlock);
+  let regions = (region AnyRegion:$bodyRegion);
+  let builders = [
+    OpBuilderDAG<(ins "uint64_t":$id, "uint32_t":$index,
+                      "uint64_t":$innerLoopId, "uint64_t":$outerLoopId,
+                      "uint32_t":$numBlock)>
+  ];
+  let extraClassDeclaration = [{
+    uint64_t GetHeader();
+    uint64_t GetLatch();
+    std::pair<uint64_t, uint64_t> GetSingleExit();
+    void Delete();
+    LoopOp GetInnerLoop();
+    LoopOp GetOuterLoop();
+    bool IsBlockInside(uint64_t);
+    std::vector<std::pair<uint64_t, uint64_t> > GetExitEdges();
+    std::vector<uint64_t> GetLoopBody(); 
+    void AddLoop(uint64_t, uint64_t);
+  }];
 }
 
 #endif // PLUGIN_OPS_TD
