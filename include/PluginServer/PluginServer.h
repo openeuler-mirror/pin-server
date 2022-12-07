@@ -79,6 +79,7 @@ enum InjectPoint : uint8_t {
 // 参考点名称
 enum RefPassName {
     PASS_CFG,
+    PASS_PHIOPT,
     PASS_SSA,
     PASS_LOOP,
 };
