@@ -72,6 +72,25 @@ namespace detail {
 
         unsigned width : 30;
     };
+
+    struct PluginPointerTypeStorage : public TypeStorage {
+        using KeyTy = Type;
+
+        PluginPointerTypeStorage(const KeyTy &key)
+            : pointee(key) {}
+
+        static PluginPointerTypeStorage *construct(TypeStorageAllocator &allocator,
+                                            KeyTy key) {
+            return new (allocator.allocate<PluginPointerTypeStorage>())
+                PluginPointerTypeStorage(key);
+        }
+
+        bool operator==(const KeyTy &key) const {
+            return KeyTy(pointee) == key;
+        }
+
+        Type pointee;
+    };
 }
 }
 
@@ -92,6 +111,9 @@ PluginTypeID PluginTypeBase::getPluginTypeID ()
         return Ty.getPluginTypeID ();
     }
     if (auto Ty = dyn_cast<PluginIR::PluginVoidType>()) {
+        return Ty.getPluginTypeID ();
+    }
+    if (auto Ty = dyn_cast<PluginIR::PluginPointerType>()) {
         return Ty.getPluginTypeID ();
     }
     return PluginTypeID::UndefTyID;    
@@ -252,4 +274,23 @@ PluginTypeID PluginVoidType::getPluginTypeID()
 PluginTypeID PluginUndefType::getPluginTypeID()
 {
     return PluginTypeID::UndefTyID;
+}
+
+//===----------------------------------------------------------------------===//
+// Plugin Pointer Type
+//===----------------------------------------------------------------------===//
+
+PluginTypeID PluginPointerType::getPluginTypeID()
+{
+    return PluginTypeID::PointerTyID;
+}
+
+Type PluginPointerType::getElementType()
+{
+    return getImpl()->pointee;
+}
+
+PluginPointerType PluginPointerType::get (MLIRContext *context, Type pointee)
+{
+    return Base::get(context, pointee);
 }
