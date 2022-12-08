@@ -116,10 +116,179 @@ vector<LocalDeclOp> PluginServerAPI::GetDecls(uint64_t funcID)
 {
     Json::Value root;
     string funName("GetLocalDecls");
-    root[std::to_string(0)] = std::to_string(funcID);
+    root["funcId"] = std::to_string(funcID);
     string params = root.toStyledString();
 
     return GetDeclOperationResult(funName, params);
+}
+
+vector<LoopOp> PluginServerAPI::GetLoopsResult(const string& funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    vector<LoopOp> loops = PluginServer::GetInstance()->LoopOpsResult();
+    return loops;
+}
+
+LoopOp PluginServerAPI::GetLoopResult(const string& funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    LoopOp loop = PluginServer::GetInstance()->LoopOpResult();
+    return loop;
+}
+
+bool PluginServerAPI::GetBoolResult(const string& funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->BoolResult();
+}
+
+pair<uint64_t, uint64_t> PluginServerAPI::EdgeResult(const string& funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    pair<uint64_t, uint64_t> e = PluginServer::GetInstance()->EdgeResult();
+    return e;
+}
+
+vector<pair<uint64_t, uint64_t> > PluginServerAPI::EdgesResult(const string& funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    vector<pair<uint64_t, uint64_t> > retEdges = PluginServer::GetInstance()->EdgesResult();
+    return retEdges;
+}
+
+uint64_t PluginServerAPI::BlockResult(const string& funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->BlockIdResult();
+}
+
+vector<uint64_t> PluginServerAPI::BlocksResult(const string& funName, const string& params)
+{
+    WaitClientResult(funName, params);
+    vector<uint64_t> retBlocks = PluginServer::GetInstance()->BlockIdsResult();
+    return retBlocks;
+}
+
+vector<LoopOp> PluginServerAPI::GetLoopsFromFunc(uint64_t funcID)
+{
+    Json::Value root;
+    string funName("GetLoopsFromFunc");
+    root["funcId"] = std::to_string(funcID);
+    string params = root.toStyledString();
+
+    return GetLoopsResult(funName, params);
+}
+
+// FIXME: 入参void
+LoopOp PluginServerAPI::AllocateNewLoop(uint64_t funcID)
+{
+    Json::Value root;
+    string funName("AllocateNewLoop");
+    root["funcId"] = std::to_string(funcID);
+    string params = root.toStyledString();
+
+    return GetLoopResult(funName, params);
+}
+
+LoopOp PluginServerAPI::GetLoopById(uint64_t loopID)
+{
+    Json::Value root;
+    string funName("GetLoopById");
+    root["loopId"] = std::to_string(loopID);
+    string params = root.toStyledString();
+
+    return GetLoopResult(funName, params);
+}
+
+void PluginServerAPI::DeleteLoop(uint64_t loopID)
+{
+    Json::Value root;
+    string funName("DeleteLoop");
+    root["loopId"] = std::to_string(loopID);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+}
+
+void PluginServerAPI::AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID)
+{
+    Json::Value root;
+    string funName("AddLoop");
+    root["loopId"] = loopID;
+    root["outerId"] = outerID;
+    root["funcId"] = funcID;
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+}
+
+bool PluginServerAPI::IsBlockInLoop(uint64_t loopID, uint64_t blockID)
+{
+    Json::Value root;
+    string funName("IsBlockInside");
+    root["loopId"] = std::to_string(loopID);
+    root["blockId"] = std::to_string(blockID);
+    string params = root.toStyledString();
+
+    return GetBoolResult(funName, params);
+}
+
+uint64_t PluginServerAPI::GetHeader(uint64_t loopID)
+{
+    Json::Value root;
+    string funName("GetHeader");
+    root["loopId"] = std::to_string(loopID);
+    string params = root.toStyledString();
+
+    return BlockResult(funName, params);
+}
+
+uint64_t PluginServerAPI::GetLatch(uint64_t loopID)
+{
+    Json::Value root;
+    string funName("GetLatch");
+    root["loopId"] = std::to_string(loopID);
+    string params = root.toStyledString();
+
+    return BlockResult(funName, params);
+}
+
+pair<uint64_t, uint64_t> PluginServerAPI::LoopSingleExit(uint64_t loopID)
+{
+    Json::Value root;
+    string funName("GetLoopSingleExit");
+    root["loopId"] = std::to_string(loopID);
+    string params = root.toStyledString();
+
+    return EdgeResult(funName, params);
+}
+
+vector<pair<uint64_t, uint64_t> > PluginServerAPI::GetLoopExitEdges(uint64_t loopID)
+{
+    Json::Value root;
+    string funName("GetExitEdges");
+    root["loopId"] = std::to_string(loopID);
+    string params = root.toStyledString();
+
+    return EdgesResult(funName, params);
+}
+
+vector<uint64_t> PluginServerAPI::GetLoopBody(uint64_t loopID)
+{
+    Json::Value root;
+    string funName("GetBlocksInLoop");
+    root["loopId"] = std::to_string(loopID);
+    string params = root.toStyledString();
+
+    return BlocksResult(funName, params);
+}
+
+LoopOp PluginServerAPI::GetBlockLoopFather(uint64_t blockID)
+{
+    Json::Value root;
+    string funName("GetBlockLoopFather");
+    root["blockId"] = std::to_string(blockID);
+    string params = root.toStyledString();
+
+    return GetLoopResult(funName, params);
 }
 
 } // namespace Plugin_IR

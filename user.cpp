@@ -77,13 +77,51 @@ static void PassManagerSetupFunc(void)
     printf("PassManagerSetupFunc in\n");
 }
 
+static bool
+determineLoopForm(LoopOp loop)
+{
+    if (loop.innerLoopIdAttr().getInt() != 0 || loop.numBlockAttr().getInt() != 3)
+    {
+        printf ("\nWrong loop form, there is inner loop or redundant bb.\n");
+        return false;
+    }
+
+    if (loop.GetSingleExit().first != 0 || !loop.GetLatch())
+    {
+        printf ("\nWrong loop form, only one exit or loop_latch does not exist.\n");
+        return false;
+    }
+    return true;
+}
+
+static void
+ProcessArrayWiden(void)
+{
+    std::cout << "Running first pass, awiden\n";
+
+    PluginServerAPI pluginAPI;
+    vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
+
+    for (auto &funcOp : allFunction) {
+        string name = funcOp.funcNameAttr().getValue().str();
+        printf("Now process func : %s \n", name.c_str());
+        vector<LoopOp> allLoop = funcOp.GetAllLoops();
+        for (auto &loop : allLoop) {
+            if (determineLoopForm(loop)) {
+                printf("The %ldth loop form is success matched, and the loop can be optimized.\n", loop.indexAttr().getInt());
+                return;
+            }
+        }
+    }
+}
+
 void RegisterCallbacks(void)
 {
     PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, UserOptimizeFunc);
     PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, LocalVarSummery);
     ManagerSetupData setupData;
-    setupData.refPassName = PASS_CFG;
+    setupData.refPassName = PASS_PHIOPT;
     setupData.passNum = 1;
     setupData.passPosition = PASS_INSERT_AFTER;
-    PluginServer::GetInstance()->RegisterPassManagerSetup(HANDLE_MANAGER_SETUP, setupData, PassManagerSetupFunc);
+    PluginServer::GetInstance()->RegisterPassManagerSetup(HANDLE_MANAGER_SETUP, setupData, ProcessArrayWiden);
 }
