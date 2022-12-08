@@ -27,7 +27,6 @@
 #include "Dialect/PluginDialect.h"
 #include "PluginAPI/PluginServerAPI.h"
 #include "mlir/IR/Attributes.h"
-#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "user.h"
@@ -37,7 +36,6 @@
 
 namespace PinServer {
 using namespace mlir::Plugin;
-
 using std::cout;
 using std::endl;
 using std::pair;
@@ -73,6 +71,13 @@ int PluginServer::RegisterPassManagerSetup(InjectPoint inject, const ManagerSetu
 
     userFunc[inject].push_back(RecordedUserFunc(params, func));
     return 0;
+}
+
+vector<mlir::Operation *> PluginServer::GetOpResult(void)
+{
+    vector<mlir::Operation *> retOps = opData;
+    opData.clear();
+    return retOps;
 }
 
 vector<mlir::Plugin::FunctionOp> PluginServer::GetFunctionOpResult(void)
@@ -135,6 +140,21 @@ vector<pair<uint64_t, uint64_t> > PluginServer::EdgesResult()
     return retEdges;
 }
 
+bool PluginServer::GetBoolResult()
+{
+    return this->boolResult;
+}
+
+uint64_t PluginServer::GetIdResult()
+{
+    return this->idResult;
+}
+
+mlir::Value PluginServer::GetValueResult()
+{
+    return this->valueResult;
+}
+
 void PluginServer::JsonGetAttributes(Json::Value node, map<string, string>& attributes)
 {
     Json::Value::Members attMember = node.getMemberNames();
@@ -149,6 +169,27 @@ static uintptr_t GetID(Json::Value node)
 {
     string id = node.asString();
     return atol(id.c_str());
+}
+
+mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
+{
+    uint64_t opId = GetID(valueJson["id"]);
+    IDefineCode defCode = IDefineCode(
+            atoi(valueJson["defCode"].asString().c_str()));
+    switch (defCode) {
+        case IDefineCode::MemRef : {
+            break;
+        }
+        case IDefineCode::IntCST : {
+            break;
+        }
+        default:
+            break;
+    }
+    mlir::Type retType = PluginIR::PluginUndefType::get(&context); // FIXME!
+    mlir::Value opValue = opBuilder.create<PlaceholderOp>(
+            opBuilder.getUnknownLoc(), opId, defCode, retType);
+    return opValue;
 }
 
 void PluginServer::JsonDeSerialize(const string& key, const string& data)
@@ -173,6 +214,12 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
         EdgesJsonDeSerialize(data);
     } else if (key == "BlockIdsResult") {
         BlocksJsonDeSerialize(data);
+    } else if (key == "IdResult") {
+        this->idResult = atol(data.c_str());
+    } else if (key == "ValueResult") {
+        context.getOrLoadDialect<PluginDialect>();
+        opBuilder = mlir::OpBuilder(&context);
+        this->valueResult = ValueJsonDeSerialize(data.c_str());
     } else {
         cout << "not Json,key:" << key << ",value:" << data << endl;
     }
@@ -217,6 +264,46 @@ void PluginServer::TypeJsonDeSerialize(const string& data)
     return;
 }
 
+bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
+                                const Json::Value& blockJson)
+{
+    if (blockJson.isNull()) {
+        return false;
+    }
+    // todo process func return type
+    // todo isDeclaration
+
+    // process each stmt
+    opBuilder.setInsertionPointToStart(block);
+    Json::Value::Members opMember = blockJson.getMemberNames();
+    for (Json::Value::Members::iterator opIdx = opMember.begin();
+            opIdx != opMember.end(); opIdx++) {
+        string baseOpKey = *opIdx;
+        Json::Value opJson = blockJson[baseOpKey];
+        if (opJson.isNull()) continue;
+        // llvm::StringRef opCode(opJson["OperationName"].asString().c_str());
+        string opCode = opJson["OperationName"].asString();
+        if (opCode == PhiOp::getOperationName().str()) {
+            PhiOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == CallOp::getOperationName().str()) {
+            CallOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == AssignOp::getOperationName().str()) {
+            AssignOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == CondOp::getOperationName().str()) {
+            CondOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == RetOp::getOperationName().str()) {
+            RetOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == FallThroughOp::getOperationName().str()) {
+            FallThroughOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == BaseOp::getOperationName().str()) {
+            uint64_t opID = GetID(opJson["id"]);
+            opBuilder.create<BaseOp>(opBuilder.getUnknownLoc(), opID, opCode);
+        }
+    }
+    // fprintf(stderr, "[bb] op:%ld, succ: %d\n", block->getOperations().size(), block->getNumSuccessors());
+    return true;
+}
+
 void PluginServer::FuncOpJsonDeSerialize(const string& data)
 {
     Json::Value root;
@@ -227,8 +314,9 @@ void PluginServer::FuncOpJsonDeSerialize(const string& data)
     Json::Value::Members operation = root.getMemberNames();
 
     context.getOrLoadDialect<PluginDialect>();
-    mlir::OpBuilder builder(&context);
-    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
+    opBuilder = mlir::OpBuilder(&context);
+    for (Json::Value::Members::iterator iter = operation.begin();
+         iter != operation.end(); iter++) {
         string operationKey = *iter;
         node = root[operationKey];
         int64_t id = GetID(node["id"]);
@@ -237,9 +325,30 @@ void PluginServer::FuncOpJsonDeSerialize(const string& data)
         JsonGetAttributes(attributes, funcAttributes);
         bool declaredInline = false;
         if (funcAttributes["declaredInline"] == "1") declaredInline = true;
-        auto location = builder.getUnknownLoc();
-        FunctionOp op = builder.create<FunctionOp>(location, id, funcAttributes["funcName"], declaredInline);
-        funcOpData.push_back(op);
+        auto location = opBuilder.getUnknownLoc();
+        FunctionOp fOp = opBuilder.create<FunctionOp>(
+                location, id, funcAttributes["funcName"], declaredInline);
+        mlir::Region &bodyRegion = fOp.bodyRegion();
+        Json::Value regionJson = node["region"];
+        Json::Value::Members bbMember = regionJson.getMemberNames();
+        // We must create Blocks before process ops
+        for (Json::Value::Members::iterator bbIdx = bbMember.begin();
+             bbIdx != bbMember.end(); bbIdx++) {
+            string blockKey = *bbIdx;
+            Json::Value blockJson = regionJson[blockKey];
+            mlir::Block* block = opBuilder.createBlock(&bodyRegion);
+            this->blockMaps.insert({GetID(blockJson["address"]), block});
+        }
+        
+        for (Json::Value::Members::iterator bbIdx = bbMember.begin();
+             bbIdx != bbMember.end(); bbIdx++) {
+            string blockKey = *bbIdx;
+            Json::Value blockJson = regionJson[blockKey];
+            uint64_t bbAddress = GetID(blockJson["address"]);
+            ProcessBlock(this->blockMaps[bbAddress], bodyRegion, blockJson["ops"]);
+        }
+        funcOpData.push_back(fOp);
+        opBuilder.setInsertionPointAfter(fOp.getOperation());
     }
 }
 
@@ -253,7 +362,7 @@ void PluginServer::LocalDeclOpJsonDeSerialize(const string& data)
     Json::Value::Members operation = root.getMemberNames();
 
     context.getOrLoadDialect<PluginDialect>();
-    mlir::OpBuilder builder(&context);
+    opBuilder = mlir::OpBuilder(&context);
     for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
         string operationKey = *iter;
         node = root[operationKey];
@@ -261,11 +370,11 @@ void PluginServer::LocalDeclOpJsonDeSerialize(const string& data)
         Json::Value attributes = node["attributes"];
         map<string, string> declAttributes;
         JsonGetAttributes(attributes, declAttributes);
-        string symName = declAttributes["symName"];
-        uint64_t typeID = atol(declAttributes["typeID"].c_str());
-        uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
-        auto location = builder.getUnknownLoc();
-        LocalDeclOp op = builder.create<LocalDeclOp>(location, id, symName, typeID, typeWidth);
+	    string symName = declAttributes["symName"];
+	    uint64_t typeID = atol(declAttributes["typeID"].c_str());
+	    uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
+        auto location = opBuilder.getUnknownLoc();
+        LocalDeclOp op = opBuilder.create<LocalDeclOp>(location, id, symName, typeID, typeWidth);
         decls.push_back(op);
     }
 }
@@ -382,6 +491,121 @@ void PluginServer::BlockJsonDeSerialize(const string& data)
     reader.parse(data, root);
 
     blockId = (uint64_t)atol(root["id"].asString().c_str());
+}
+
+void PluginServer::CallOpJsonDeSerialize(const string& data)
+{
+    Json::Value node;
+    Json::Reader reader;
+    reader.parse(data, node);
+    Json::Value operandJson = node["operands"];
+    Json::Value::Members operandMember = operandJson.getMemberNames();
+    llvm::SmallVector<mlir::Value, 4> ops;
+    for (Json::Value::Members::iterator opIter = operandMember.begin();
+            opIter != operandMember.end(); opIter++) {
+        string key = *opIter;
+        mlir::Value opValue = ValueJsonDeSerialize(operandJson[key.c_str()]);
+        ops.push_back(opValue);
+    }
+    int64_t id = GetID(node["id"]);
+    mlir::StringRef callName(node["callee"].asString());
+    CallOp op = opBuilder.create<CallOp>(opBuilder.getUnknownLoc(),
+                                            id, callName, ops);
+    opData.push_back(op.getOperation());
+}
+
+void PluginServer::CondOpJsonDeSerialize(const string& data)
+{
+    Json::Value node;
+    Json::Reader reader;
+    reader.parse(data, node);
+    mlir::Value LHS = ValueJsonDeSerialize(node["lhs"]);
+    mlir::Value RHS = ValueJsonDeSerialize(node["rhs"]);
+    mlir::Value trueLabel = nullptr;
+    mlir::Value falseLabel = nullptr;
+    int64_t id = GetID(node["id"]);
+    int64_t address = GetID(node["address"]);
+    int64_t tbaddr = GetID(node["tbaddr"]);
+    int64_t fbaddr = GetID(node["fbaddr"]);
+    assert (this->blockMaps.find(tbaddr) != this->blockMaps.end());
+    assert (this->blockMaps.find(fbaddr) != this->blockMaps.end());
+    mlir::Block* tb = this->blockMaps[tbaddr];
+    mlir::Block* fb = this->blockMaps[fbaddr];
+    IComparisonCode iCode = IComparisonCode(
+            atoi(node["condCode"].asString().c_str()));
+    CondOp op = opBuilder.create<CondOp>(opBuilder.getUnknownLoc(), id,
+                address, iCode, LHS, RHS, tb, fb, tbaddr, fbaddr,
+                trueLabel, falseLabel);
+    opData.push_back(op.getOperation());
+}
+
+void PluginServer::RetOpJsonDeSerialize(const string& data)
+{
+    Json::Value node;
+    Json::Reader reader;
+    reader.parse(data, node);
+    int64_t address = GetID(node["address"]);
+    RetOp op = opBuilder.create<RetOp>(opBuilder.getUnknownLoc(), address);
+    opData.push_back(op.getOperation());
+}
+
+void PluginServer::FallThroughOpJsonDeSerialize(const string& data)
+{
+    Json::Value node;
+    Json::Reader reader;
+    reader.parse(data, node);
+    int64_t address = GetID(node["address"]);
+    int64_t destaddr = GetID(node["destaddr"]);
+    assert (this->blockMaps.find(destaddr) != this->blockMaps.end());
+    mlir::Block* succ = this->blockMaps[destaddr];
+    FallThroughOp op = opBuilder.create<FallThroughOp>(opBuilder.getUnknownLoc(),
+                                                        address, succ, destaddr);
+    opData.push_back(op.getOperation());
+}
+
+void PluginServer::PhiOpJsonDeSerialize(const string& data)
+{
+    Json::Value node;
+    Json::Reader reader;
+    reader.parse(data, node);
+    Json::Value operandJson = node["operands"];
+    Json::Value::Members operandMember = operandJson.getMemberNames();
+    llvm::SmallVector<mlir::Value, 4> ops;
+    for (Json::Value::Members::iterator opIter = operandMember.begin();
+            opIter != operandMember.end(); opIter++) {
+        string key = *opIter;
+        mlir::Value opValue = ValueJsonDeSerialize(operandJson[key.c_str()]);
+        ops.push_back(opValue);
+    }
+    int64_t id = GetID(node["id"]);
+    uint32_t capacity = atoi(node["capacity"].asString().c_str());
+    uint32_t nArgs = atoi(node["nArgs"].asString().c_str());
+    mlir::Type retType = nullptr;
+    PhiOp op = opBuilder.create<PhiOp>(opBuilder.getUnknownLoc(),
+                                        id, capacity, nArgs, ops, retType);
+    opData.push_back(op.getOperation());
+}
+
+void PluginServer::AssignOpJsonDeSerialize(const string& data)
+{
+    Json::Value node;
+    Json::Reader reader;
+    reader.parse(data, node);
+    Json::Value operandJson = node["operands"];
+    Json::Value::Members operandMember = operandJson.getMemberNames();
+    llvm::SmallVector<mlir::Value, 4> ops;
+    for (Json::Value::Members::iterator opIter = operandMember.begin();
+            opIter != operandMember.end(); opIter++) {
+        string key = *opIter;
+        mlir::Value opValue = ValueJsonDeSerialize(operandJson[key.c_str()]);
+        ops.push_back(opValue);
+    }
+    int64_t id = GetID(node["id"]);
+    IExprCode iCode = IExprCode(atoi(node["exprCode"].asString().c_str()));
+    mlir::Type retType = nullptr;
+    AssignOp op = opBuilder.create<AssignOp>(opBuilder.getUnknownLoc(),
+                                                id, iCode, ops, retType);
+    opData.push_back(op.getOperation());
 }
 
 /* 线程函数，执行用户注册函数，客户端返回数据后退出 */

@@ -33,6 +33,7 @@
 #include "Dialect/PluginOps.h"
 #include "plugin.grpc.pb.h"
 #include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/Builders.h"
 #include "Dialect/PluginTypes.h"
 
 namespace PinServer {
@@ -120,6 +121,7 @@ private:
 
 class PluginServer final : public PluginService::Service {
 public:
+    PluginServer() : opBuilder(&context){}
     /* 定义的grpc服务端和客户端通信的接口函数 */
     Status ReceiveSendMsg(ServerContext* context, ServerReaderWriter<ServerMsg, ClientMsg>* stream) override;
     /* 服务端发送数据给client接口 */
@@ -137,6 +139,10 @@ public:
     vector<std::pair<uint64_t, uint64_t> > EdgesResult(void);
     std::pair<uint64_t, uint64_t> EdgeResult(void);
     bool BoolResult(void);
+    vector<mlir::Operation *> GetOpResult(void);
+    bool GetBoolResult(void);
+    uint64_t GetIdResult(void);
+    mlir::Value GetValueResult(void);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
     int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
@@ -190,6 +196,13 @@ public:
     void EdgeJsonDeSerialize(const string& data);
     void BlocksJsonDeSerialize(const string& data);
     void BlockJsonDeSerialize(const string& data);
+    void CallOpJsonDeSerialize(const string& data);
+    void CondOpJsonDeSerialize(const string& data);
+    void RetOpJsonDeSerialize(const string& data);
+    void FallThroughOpJsonDeSerialize(const string& data);
+    void PhiOpJsonDeSerialize(const string& data);
+    void AssignOpJsonDeSerialize(const string& data);
+    mlir::Value ValueJsonDeSerialize(Json::Value valueJson);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */
@@ -234,6 +247,7 @@ private:
     /* 用户函数执行状态，client返回结果后为STATE_RETURN,开始执行下一个函数 */
     volatile UserFunStateEnum userFunState;
     mlir::MLIRContext context;
+    mlir::OpBuilder opBuilder;
     vector<mlir::Plugin::FunctionOp> funcOpData;
     PluginIR::PluginTypeBase pluginType;
     vector<mlir::Plugin::LocalDeclOp> decls;
@@ -244,6 +258,10 @@ private:
     vector<uint64_t> blockIds;
     uint64_t blockId;
     bool boolRes;
+    vector<mlir::Operation *> opData;
+    bool boolResult;
+    bool idResult;
+    mlir::Value valueResult;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */
     map<InjectPoint, vector<RecordedUserFunc>> userFunc;
     string apiFuncName; // 保存用户调用PluginAPI的函数名
@@ -252,6 +270,10 @@ private:
     timer_t timerId;
     map<string, string> args; // 保存gcc编译时用户传入参数
     sem_t sem[2];
+
+    // process Block.
+    std::map<uint64_t, mlir::Block*> blockMaps;
+    bool ProcessBlock(mlir::Block*, mlir::Region&, const Json::Value&);
 }; // class PluginServer
 
 void RunServer(int timeout, string& port);
