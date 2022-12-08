@@ -35,6 +35,7 @@ void PluginDialect::initialize() {
   addTypes<
            PluginIR::PluginIntegerType,
            PluginIR::PluginFloatType,
+           PluginIR::PluginPointerType,
            PluginIR::PluginBooleanType,
            PluginIR::PluginVoidType,
            PluginIR::PluginUndefType>();

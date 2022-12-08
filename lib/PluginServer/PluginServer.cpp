@@ -225,12 +225,14 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
     }
 }
 
-void PluginServer::TypeJsonDeSerialize(const string& data)
+PluginIR::PluginTypeBase PluginServer::TypeJsonDeSerialize(const string& data)
 {
     Json::Value root;
     Json::Reader reader;
     Json::Value node;
     reader.parse(data, root);
+
+    PluginIR::PluginTypeBase baseType;
 
     Json::Value type = root["type"];
     uint64_t id = GetID(type["id"]);
@@ -240,28 +242,34 @@ void PluginServer::TypeJsonDeSerialize(const string& data)
         string s = type["signed"].asString();
         uint64_t width = GetID(type["width"]);
         if (s == "1") {
-            pluginType = PluginIR::PluginIntegerType::get(&context, width, PluginIR::PluginIntegerType::Signed);
+            baseType = PluginIR::PluginIntegerType::get(&context, width, PluginIR::PluginIntegerType::Signed);
         }
         else {
-            pluginType = PluginIR::PluginIntegerType::get(&context, width, PluginIR::PluginIntegerType::Unsigned);
+            baseType = PluginIR::PluginIntegerType::get(&context, width, PluginIR::PluginIntegerType::Unsigned);
         }
     }
     else if (type["width"] && (id == static_cast<uint64_t>(PluginIR::FloatTyID) || id == static_cast<uint64_t>(PluginIR::DoubleTyID)) ) {
         uint64_t width = GetID(type["width"]);
-        pluginType = PluginIR::PluginFloatType::get(&context, width);
+        baseType = PluginIR::PluginFloatType::get(&context, width);
+    }else if (id == static_cast<uint64_t>(PluginIR::PointerTyID)) {
+        mlir::Type elemTy = TypeJsonDeSerialize(type["elementType"].toStyledString());
+        auto ty = elemTy.dyn_cast<PluginIR::PluginTypeBase>();
+        baseType = PluginIR::PluginPointerType::get(&context, elemTy);
     }else {
         if (PluginTypeId == PluginIR::VoidTyID)
-            pluginType = PluginIR::PluginVoidType::get(&context);
+            baseType = PluginIR::PluginVoidType::get(&context);
         if (PluginTypeId == PluginIR::BooleanTyID)
-            pluginType = PluginIR::PluginBooleanType::get(&context);
+            baseType = PluginIR::PluginBooleanType::get(&context);
         if (PluginTypeId == PluginIR::UndefTyID)
-            pluginType = PluginIR::PluginUndefType::get(&context);
+            baseType = PluginIR::PluginUndefType::get(&context);
     }
     if (type["readonly"] == "1")
-        pluginType.setReadOnlyFlag(1);
+        baseType.setReadOnlyFlag(1);
     else
-        pluginType.setReadOnlyFlag(0);
-    return;
+        baseType.setReadOnlyFlag(0);
+
+    pluginType = baseType;
+    return baseType;
 }
 
 bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
