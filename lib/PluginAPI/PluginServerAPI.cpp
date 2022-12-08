@@ -54,7 +54,7 @@ void PluginServerAPI::WaitClientResult(const string& funName, const string& para
     }
 }
 
-vector<FunctionOp> PluginServerAPI::GetOperationResult(const string& funName, const string& params)
+vector<FunctionOp> PluginServerAPI::GetFunctionOpResult(const string& funName, const string& params)
 {
     WaitClientResult(funName, params);
     vector<FunctionOp> retOps = PluginServer::GetInstance()->GetFunctionOpResult();
@@ -67,7 +67,63 @@ vector<FunctionOp> PluginServerAPI::GetAllFunc()
     string funName = __func__;
     string params = root.toStyledString();
 
-    return GetOperationResult(funName, params);
+    return GetFunctionOpResult(funName, params);
+}
+
+PhiOp PluginServerAPI::GetPhiOp(uint64_t id)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult();
+    return llvm::dyn_cast<PhiOp>(opRet[0]);
+}
+
+CallOp PluginServerAPI::GetCallOp(uint64_t id)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult();
+    return llvm::dyn_cast<CallOp>(opRet[0]);
+}
+
+bool PluginServerAPI::SetLhsInCallOp(uint64_t callId, uint64_t lhsId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["callId"] = std::to_string(callId);
+    root["lhsId"] = std::to_string(lhsId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetBoolResult();
+}
+
+uint64_t PluginServerAPI::CreateCondOp(IComparisonCode iCode,
+                                       uint64_t lhs, uint64_t rhs)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["condCode"] = std::to_string(static_cast<int32_t>(iCode));
+    root["lhsId"] = std::to_string(lhs);
+    root["rhsId"] = std::to_string(rhs);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetIdResult();
+}
+
+mlir::Value PluginServerAPI::GetResultFromPhi(uint64_t phiId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(phiId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
 }
 
 PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)

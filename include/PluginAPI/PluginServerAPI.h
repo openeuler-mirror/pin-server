@@ -38,6 +38,8 @@ public:
 
     vector<FunctionOp> GetAllFunc() override;
     vector<LocalDeclOp> GetDecls(uint64_t) override;
+    PhiOp GetPhiOp(uint64_t) override;
+    CallOp GetCallOp(uint64_t) override;
     PluginIR::PluginTypeID GetTypeCodeFromString(string type);
     LoopOp AllocateNewLoop(uint64_t funcID);
     LoopOp GetLoopById(uint64_t loopID);
@@ -51,8 +53,14 @@ public:
     uint64_t GetLatch(uint64_t loopID);
     vector<uint64_t> GetLoopBody(uint64_t loopID);
     LoopOp GetBlockLoopFather(uint64_t blockID);
+    /* Plugin API for CallOp. */
+    bool SetLhsInCallOp(uint64_t, uint64_t);
+    /* Plugin API for CondOp. */
+    uint64_t CreateCondOp(IComparisonCode, uint64_t, uint64_t) override;
+    mlir::Value GetResultFromPhi(uint64_t) override;
+
 private:
-    vector<FunctionOp> GetOperationResult(const string& funName, const string& params);
+    vector<FunctionOp> GetFunctionOpResult(const string& funName, const string& params);
     vector<LocalDeclOp> GetDeclOperationResult(const string& funName, const string& params);
     LoopOp GetLoopResult(const string&funName, const string& params);
     vector<LoopOp> GetLoopsResult(const string& funName, const string& params);
