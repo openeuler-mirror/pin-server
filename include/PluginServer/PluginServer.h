@@ -141,6 +141,7 @@ public:
     bool BoolResult(void);
     vector<mlir::Operation *> GetOpResult(void);
     bool GetBoolResult(void);
+    uint64_t GetBlockResult(mlir::Block*);
     uint64_t GetIdResult(void);
     mlir::Value GetValueResult(void);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
@@ -273,6 +274,7 @@ private:
 
     // process Block.
     std::map<uint64_t, mlir::Block*> blockMaps;
+    std::map<mlir::Block*, uint64_t> basicblockMaps;
     bool ProcessBlock(mlir::Block*, mlir::Region&, const Json::Value&);
 }; // class PluginServer
 

@@ -36,6 +36,8 @@ public:
     BasicPluginOpsAPI() = default;
     virtual ~BasicPluginOpsAPI() = default;
 
+    virtual uint64_t CreateBlock(mlir::Block*, uint64_t, uint64_t) = 0;
+
     virtual vector<FunctionOp> GetAllFunc() = 0;
     virtual vector<LocalDeclOp> GetDecls(uint64_t) = 0;
     virtual LoopOp AllocateNewLoop(uint64_t) = 0;

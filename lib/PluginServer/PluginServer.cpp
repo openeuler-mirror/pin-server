@@ -112,6 +112,15 @@ bool PluginServer::BoolResult()
     return boolRes;
 }
 
+uint64_t PluginServer::GetBlockResult(mlir::Block* b)
+{
+    uint64_t newAddr = BlockIdResult();
+    mlir::Block* block = opBuilder.createBlock(b);
+    this->blockMaps.insert({newAddr, block});
+    this->basicblockMaps.insert({block, newAddr});
+    return newAddr;
+}
+
 uint64_t PluginServer::BlockIdResult()
 {
     return blockId;
@@ -346,6 +355,7 @@ void PluginServer::FuncOpJsonDeSerialize(const string& data)
             Json::Value blockJson = regionJson[blockKey];
             mlir::Block* block = opBuilder.createBlock(&bodyRegion);
             this->blockMaps.insert({GetID(blockJson["address"]), block});
+            this->basicblockMaps.insert({block, GetID(blockJson["address"])});
         }
         
         for (Json::Value::Members::iterator bbIdx = bbMember.begin();
