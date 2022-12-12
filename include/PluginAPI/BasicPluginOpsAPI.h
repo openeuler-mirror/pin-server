@@ -45,10 +45,10 @@ public:
     virtual LoopOp GetLoopById(uint64_t) = 0;
     virtual void AddLoop(uint64_t, uint64_t, uint64_t) = 0;
     virtual void DeleteLoop(uint64_t) = 0;
-    virtual vector<uint64_t> GetLoopBody(uint64_t) = 0;
+    virtual vector<mlir::Block*> GetLoopBody(uint64_t) = 0;
     virtual bool IsBlockInLoop(uint64_t, uint64_t) = 0;
-    virtual pair<uint64_t, uint64_t> LoopSingleExit(uint64_t) = 0;
-    virtual vector<pair<uint64_t, uint64_t> > GetLoopExitEdges(uint64_t) = 0;
+    virtual pair<mlir::Block*, mlir::Block*> LoopSingleExit(uint64_t) = 0;
+    virtual vector<pair<mlir::Block*, mlir::Block*> > GetLoopExitEdges(uint64_t) = 0;
     virtual LoopOp GetBlockLoopFather(uint64_t) = 0;
     virtual PhiOp GetPhiOp(uint64_t) = 0;
     virtual CallOp GetCallOp(uint64_t) = 0;

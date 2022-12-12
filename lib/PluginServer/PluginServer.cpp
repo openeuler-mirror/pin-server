@@ -107,43 +107,40 @@ LoopOp PluginServer::LoopOpResult()
     return retLoop;
 }
 
-bool PluginServer::BoolResult()
+mlir::Block* PluginServer::FindBlock(uint64_t id)
 {
-    return boolRes;
+    auto iter = this->blockMaps.find(id);
+    assert(iter != this->blockMaps.end());
+    return iter->second;
 }
 
 uint64_t PluginServer::GetBlockResult(mlir::Block* b)
 {
-    uint64_t newAddr = BlockIdResult();
+    uint64_t newAddr = GetIdResult();
     mlir::Block* block = opBuilder.createBlock(b);
     this->blockMaps.insert({newAddr, block});
     this->basicblockMaps.insert({block, newAddr});
     return newAddr;
 }
 
-uint64_t PluginServer::BlockIdResult()
+uint64_t PluginServer::FindBasicBlock(mlir::Block* b)
 {
-    return blockId;
+    auto bbIter = basicblockMaps.find(b);
+    assert(bbIter != basicblockMaps.end());
+    return bbIter->second;
 }
 
-vector<uint64_t> PluginServer::BlockIdsResult()
+pair<mlir::Block*, mlir::Block*> PluginServer::EdgeResult()
 {
-    vector<uint64_t> retIds = blockIds;
-    blockIds.clear();
-    return retIds;
-}
-
-pair<uint64_t, uint64_t> PluginServer::EdgeResult()
-{
-    pair<uint64_t, uint64_t> e;
+    pair<mlir::Block*, mlir::Block*> e;
     e.first = edge.first;
     e.second = edge.second;
     return e;
 }
 
-vector<pair<uint64_t, uint64_t> > PluginServer::EdgesResult()
+vector<pair<mlir::Block*, mlir::Block*> > PluginServer::EdgesResult()
 {
-    vector<pair<uint64_t, uint64_t> > retEdges;
+    vector<pair<mlir::Block*, mlir::Block*> > retEdges;
     retEdges = edges;
     edges.clear();
     return retEdges;
@@ -157,6 +154,13 @@ bool PluginServer::GetBoolResult()
 uint64_t PluginServer::GetIdResult()
 {
     return this->idResult;
+}
+
+vector<uint64_t> PluginServer::GetIdsResult()
+{
+    vector<uint64_t> retIds = idsResult;
+    idsResult.clear();
+    return retIds;
 }
 
 mlir::Value PluginServer::GetValueResult()
@@ -212,17 +216,15 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
     } else if (key == "LoopOpsResult") {
         LoopOpsJsonDeSerialize (data);
     } else if (key == "BoolResult") {
-        BoolResJsonDeSerialize(data);
+        this->boolResult = (bool)atol(data.c_str());
     } else if (key == "VoidResult") {
         ;
-    } else if (key == "BlockIdResult") {
-        BlockJsonDeSerialize(data);
     } else if (key == "EdgeResult") {
         EdgeJsonDeSerialize(data);
     } else if (key == "EdgesResult") {
         EdgesJsonDeSerialize(data);
-    } else if (key == "BlockIdsResult") {
-        BlocksJsonDeSerialize(data);
+    } else if (key == "IdsResult") {
+        IdsJsonDeSerialize(data);
     } else if (key == "IdResult") {
         this->idResult = atol(data.c_str());
     } else if (key == "ValueResult") {
@@ -442,15 +444,6 @@ void PluginServer::LoopOpJsonDeSerialize(const string& data)
     loop = builder.create<LoopOp>(location, id, index, innerLoopId, outerLoopId, numBlock);
 }
 
-void PluginServer::BoolResJsonDeSerialize(const string& data)
-{
-    Json::Value root;
-    Json::Reader reader;
-    reader.parse(data, root);
-
-    boolRes = (bool)atoi(root["result"].asString().c_str());
-}
-
 void PluginServer::EdgesJsonDeSerialize(const string& data)
 {
     Json::Value root;
@@ -466,9 +459,19 @@ void PluginServer::EdgesJsonDeSerialize(const string& data)
         node = root[operationKey];
         uint64_t src = atol(node["src"].asString().c_str());
         uint64_t dest = atol(node["dest"].asString().c_str());
-        pair<uint64_t, uint64_t> e;
-        e.first = src;
-        e.second = dest;
+        pair<mlir::Block*, mlir::Block*> e;
+        auto iterSrc = this->blockMaps.find(src);
+        if(iterSrc != blockMaps.end())
+            edge.first = iterSrc->second;
+        else
+            edge.first = nullptr;
+
+        auto iterDest = this->blockMaps.find(dest);
+        if(iterDest != blockMaps.end())
+            edge.second = iterDest->second;
+        else
+            edge.second = nullptr;
+
         edges.push_back(e);
     }
 }
@@ -480,11 +483,20 @@ void PluginServer::EdgeJsonDeSerialize(const string& data)
     reader.parse(data, root);
     uint64_t src = atol(root["src"].asString().c_str());
     uint64_t dest = atol(root["dest"].asString().c_str());
-    edge.first = src;
-    edge.second = dest;
+    auto iterSrc = this->blockMaps.find(src);
+    if(iterSrc != blockMaps.end())
+        edge.first = iterSrc->second;
+    else
+        edge.first = nullptr;
+
+    auto iterDest = this->blockMaps.find(dest);
+    if(iterDest != blockMaps.end())
+        edge.second = iterDest->second;
+    else
+        edge.second = nullptr;
 }
 
-void PluginServer::BlocksJsonDeSerialize(const string& data)
+void PluginServer::IdsJsonDeSerialize(const string& data)
 {
     Json::Value root;
     Json::Reader reader;
@@ -498,17 +510,8 @@ void PluginServer::BlocksJsonDeSerialize(const string& data)
         string operationKey = *iter;
         node = root[operationKey];
         uint64_t id = atol(node["id"].asString().c_str());
-        blockIds.push_back(id);
+        idsResult.push_back(id);
     }
-}
-
-void PluginServer::BlockJsonDeSerialize(const string& data)
-{
-    Json::Value root;
-    Json::Reader reader;
-    reader.parse(data, root);
-
-    blockId = (uint64_t)atol(root["id"].asString().c_str());
 }
 
 void PluginServer::CallOpJsonDeSerialize(const string& data)

@@ -42,6 +42,7 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
 
   let extraClassDeclaration = [{
     std::vector<LoopOp> GetAllLoops();
+    LoopOp AllocateNewLoop();
   }];
 }
 
@@ -76,15 +77,16 @@ def LoopOp : Plugin_Op<"loop", [NoSideEffect]> {
                       "uint32_t":$numBlock)>
   ];
   let extraClassDeclaration = [{
-    uint64_t GetHeader();
-    uint64_t GetLatch();
-    std::pair<uint64_t, uint64_t> GetSingleExit();
+    mlir::Block* GetHeader();
+    mlir::Block* GetLatch();
+    std::pair<mlir::Block*, mlir::Block*> GetSingleExit();
     void Delete();
     LoopOp GetInnerLoop();
     LoopOp GetOuterLoop();
     bool IsBlockInside(uint64_t);
-    std::vector<std::pair<uint64_t, uint64_t> > GetExitEdges();
-    std::vector<uint64_t> GetLoopBody(); 
+    bool IsLoopFather(mlir::Block*);
+    std::vector<std::pair<mlir::Block*, mlir::Block*> > GetExitEdges();
+    std::vector<mlir::Block*> GetLoopBody(); 
     void AddLoop(uint64_t, uint64_t);
   }];
 }

@@ -49,6 +49,13 @@ vector<LoopOp> FunctionOp::GetAllLoops()
     return pluginAPI.GetLoopsFromFunc(funcId);
 }
 
+LoopOp FunctionOp::AllocateNewLoop()
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t funcId = idAttr().getInt();
+    return pluginAPI.AllocateNewLoop(funcId);
+}
+
 void LocalDeclOp::build(OpBuilder &builder, OperationState &state,
                         uint64_t id, StringRef symName,
                         int64_t typeID, uint64_t typeWidth)
@@ -71,30 +78,28 @@ void LoopOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
         builder.getI32IntegerAttr(numBlock));
 }
 
-// FIXME: use Block instead of uint64_t
-uint64_t LoopOp::GetHeader()
+Block* LoopOp::GetHeader()
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
     return pluginAPI.GetHeader(loopId);
 }
 
-// FIXME: use Block instead of uint64_t
-uint64_t LoopOp::GetLatch()
+Block* LoopOp::GetLatch()
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
     return pluginAPI.GetLatch(loopId);
 }
 
-vector<uint64_t> LoopOp::GetLoopBody()
+vector<mlir::Block*> LoopOp::GetLoopBody()
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
     return pluginAPI.GetLoopBody(loopId);
 }
 
-pair<uint64_t, uint64_t> LoopOp::GetSingleExit()
+pair<mlir::Block*, mlir::Block*> LoopOp::GetSingleExit()
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
@@ -130,7 +135,17 @@ bool LoopOp::IsBlockInside(uint64_t b)
     return pluginAPI.IsBlockInLoop(loopId, b);
 }
 
-vector<pair<uint64_t, uint64_t> > LoopOp::GetExitEdges()
+bool LoopOp::IsLoopFather(mlir::Block* b)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t loopId = idAttr().getInt();
+    uint64_t blockId = pluginAPI.FindBasicBlock(b);
+    LoopOp loopFather = pluginAPI.GetBlockLoopFather(blockId);
+    uint64_t id = loopFather.idAttr().getInt();
+    return id == loopId;
+}
+
+vector<pair<mlir::Block*, mlir::Block*> > LoopOp::GetExitEdges()
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
