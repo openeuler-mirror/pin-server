@@ -134,15 +134,16 @@ public:
     vector<mlir::Plugin::LocalDeclOp> GetLocalDeclResult(void);
     mlir::Plugin::LoopOp LoopOpResult(void);
     vector<mlir::Plugin::LoopOp> LoopOpsResult(void);
-    vector<uint64_t> BlockIdsResult(void);
-    uint64_t BlockIdResult(void);
-    vector<std::pair<uint64_t, uint64_t> > EdgesResult(void);
-    std::pair<uint64_t, uint64_t> EdgeResult(void);
-    bool BoolResult(void);
+    vector<std::pair<mlir::Block*, mlir::Block*> > EdgesResult(void);
+    std::pair<mlir::Block*, mlir::Block*> EdgeResult(void);
     vector<mlir::Operation *> GetOpResult(void);
     bool GetBoolResult(void);
+    uint64_t GetBlockResult(mlir::Block*);
     uint64_t GetIdResult(void);
+    vector<uint64_t> GetIdsResult(void);
     mlir::Value GetValueResult(void);
+    mlir::Block* FindBlock(uint64_t);
+    uint64_t FindBasicBlock(mlir::Block*);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
     int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
@@ -191,11 +192,9 @@ public:
     void LocalDeclOpJsonDeSerialize(const string& data);
     void LoopOpsJsonDeSerialize(const string& data);
     void LoopOpJsonDeSerialize(const string& data);
-    void BoolResJsonDeSerialize(const string& data);
     void EdgesJsonDeSerialize(const string& data);
     void EdgeJsonDeSerialize(const string& data);
-    void BlocksJsonDeSerialize(const string& data);
-    void BlockJsonDeSerialize(const string& data);
+    void IdsJsonDeSerialize(const string& data);
     void CallOpJsonDeSerialize(const string& data);
     void CondOpJsonDeSerialize(const string& data);
     void RetOpJsonDeSerialize(const string& data);
@@ -253,14 +252,12 @@ private:
     vector<mlir::Plugin::LocalDeclOp> decls;
     vector<mlir::Plugin::LoopOp> loops;
     mlir::Plugin::LoopOp loop;
-    vector<std::pair<uint64_t, uint64_t> > edges;
-    std::pair<uint64_t, uint64_t> edge;
-    vector<uint64_t> blockIds;
-    uint64_t blockId;
-    bool boolRes;
+    vector<std::pair<mlir::Block*, mlir::Block*> > edges;
+    std::pair<mlir::Block*, mlir::Block*> edge;
     vector<mlir::Operation *> opData;
     bool boolResult;
     bool idResult;
+    vector<uint64_t> idsResult;
     mlir::Value valueResult;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */
     map<InjectPoint, vector<RecordedUserFunc>> userFunc;
@@ -273,6 +270,7 @@ private:
 
     // process Block.
     std::map<uint64_t, mlir::Block*> blockMaps;
+    std::map<mlir::Block*, uint64_t> basicblockMaps;
     bool ProcessBlock(mlir::Block*, mlir::Region&, const Json::Value&);
 }; // class PluginServer
 

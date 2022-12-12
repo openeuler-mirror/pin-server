@@ -36,6 +36,8 @@ public:
     PluginServerAPI () = default;
     ~PluginServerAPI () = default;
 
+    uint64_t CreateBlock(mlir::Block*, uint64_t, uint64_t) override;
+
     vector<FunctionOp> GetAllFunc() override;
     vector<LocalDeclOp> GetDecls(uint64_t) override;
     PhiOp GetPhiOp(uint64_t) override;
@@ -47,12 +49,14 @@ public:
     bool IsBlockInLoop(uint64_t loopID, uint64_t blockID);
     void DeleteLoop(uint64_t loopID);
     void AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID);
-    pair<uint64_t, uint64_t> LoopSingleExit(uint64_t loopID);
-    vector<pair<uint64_t, uint64_t> > GetLoopExitEdges(uint64_t loopID);
-    uint64_t GetHeader(uint64_t loopID);
-    uint64_t GetLatch(uint64_t loopID);
-    vector<uint64_t> GetLoopBody(uint64_t loopID);
+    pair<mlir::Block*, mlir::Block*> LoopSingleExit(uint64_t loopID);
+    vector<pair<mlir::Block*, mlir::Block*> > GetLoopExitEdges(uint64_t loopID);
+    mlir::Block* GetHeader(uint64_t loopID);
+    mlir::Block* GetLatch(uint64_t loopID);
+    vector<mlir::Block*> GetLoopBody(uint64_t loopID);
     LoopOp GetBlockLoopFather(uint64_t blockID);
+    mlir::Block* FindBlock(uint64_t);
+    uint64_t FindBasicBlock(mlir::Block*);
     /* Plugin API for CallOp. */
     bool SetLhsInCallOp(uint64_t, uint64_t);
     /* Plugin API for CondOp. */
@@ -65,10 +69,10 @@ private:
     LoopOp GetLoopResult(const string&funName, const string& params);
     vector<LoopOp> GetLoopsResult(const string& funName, const string& params);
     bool GetBoolResult(const string& funName, const string& params);
-    pair<uint64_t, uint64_t> EdgeResult(const string& funName, const string& params);
-    vector<pair<uint64_t, uint64_t> > EdgesResult(const string& funName, const string& params);
-    uint64_t BlockResult(const string& funName, const string& params);
-    vector<uint64_t> BlocksResult(const string& funName, const string& params);
+    pair<mlir::Block*, mlir::Block*> EdgeResult(const string& funName, const string& params);
+    vector<pair<mlir::Block*, mlir::Block*> > EdgesResult(const string& funName, const string& params);
+    mlir::Block* BlockResult(const string& funName, const string& params);
+    vector<mlir::Block*> BlocksResult(const string& funName, const string& params);
     void WaitClientResult(const string& funName, const string& params);
 }; // class PluginServerAPI
 } // namespace PluginAPI

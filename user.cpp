@@ -48,6 +48,30 @@ static void UserOptimizeFunc(void)
     printf("declaredInline have %d functions were declared.\n", count);
 }
 
+static uint64_t getBlockAddress(mlir::Block* b)
+{
+    if (mlir::Plugin::CondOp oops = dyn_cast<mlir::Plugin::CondOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::FallThroughOp oops = dyn_cast<mlir::Plugin::FallThroughOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::RetOp oops = dyn_cast<mlir::Plugin::RetOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else {
+        assert(false);
+    }
+}
+
+static void printBlock(mlir::Block* b)
+{
+    printf("[bb%ld]", getBlockAddress(b));
+    printf(": has op %ld\n", b->getOperations().size());
+    for (unsigned i = 0; i < b->getNumSuccessors(); i++) {
+        printf("  --> ");
+        printf("[bb%ld]", getBlockAddress(b->getSuccessor(i)));
+        printf("\n");
+    }
+}
+
 static void LocalVarSummery(void)
 {
     PluginServerAPI pluginAPI;

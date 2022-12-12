@@ -38,6 +38,20 @@ int CheckID(uintptr_t id)
     return 0;
 }
 
+uint64_t PluginServerAPI::CreateBlock(mlir::Block* b, uint64_t funcAddr,
+                                      uint64_t bbAddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    assert(funcAddr);
+    assert(bbAddr);
+    root["funcaddr"] = std::to_string(funcAddr);
+    root["bbaddr"] = std::to_string(bbAddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetBlockResult(b);
+}
+
 void PluginServerAPI::WaitClientResult(const string& funName, const string& params)
 {
     PluginServer *server = PluginServer::GetInstance();
@@ -195,34 +209,40 @@ LoopOp PluginServerAPI::GetLoopResult(const string& funName, const string& param
 bool PluginServerAPI::GetBoolResult(const string& funName, const string& params)
 {
     WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->BoolResult();
+    return PluginServer::GetInstance()->GetBoolResult();
 }
 
-pair<uint64_t, uint64_t> PluginServerAPI::EdgeResult(const string& funName, const string& params)
+pair<mlir::Block*, mlir::Block*> PluginServerAPI::EdgeResult(const string& funName, const string& params)
 {
     WaitClientResult(funName, params);
-    pair<uint64_t, uint64_t> e = PluginServer::GetInstance()->EdgeResult();
+    pair<mlir::Block*, mlir::Block*> e = PluginServer::GetInstance()->EdgeResult();
     return e;
 }
 
-vector<pair<uint64_t, uint64_t> > PluginServerAPI::EdgesResult(const string& funName, const string& params)
+vector<pair<mlir::Block*, mlir::Block*> > PluginServerAPI::EdgesResult(const string& funName, const string& params)
 {
     WaitClientResult(funName, params);
-    vector<pair<uint64_t, uint64_t> > retEdges = PluginServer::GetInstance()->EdgesResult();
+    vector<pair<mlir::Block*, mlir::Block*> > retEdges = PluginServer::GetInstance()->EdgesResult();
     return retEdges;
 }
 
-uint64_t PluginServerAPI::BlockResult(const string& funName, const string& params)
+mlir::Block* PluginServerAPI::BlockResult(const string& funName, const string& params)
 {
     WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->BlockIdResult();
+    uint64_t blockId =  PluginServer::GetInstance()->GetIdResult();
+    return PluginServer::GetInstance()->FindBlock(blockId);
 }
 
-vector<uint64_t> PluginServerAPI::BlocksResult(const string& funName, const string& params)
+vector<mlir::Block*> PluginServerAPI::BlocksResult(const string& funName, const string& params)
 {
+    vector<mlir::Block*> res;
+    PluginServer *server = PluginServer::GetInstance();
     WaitClientResult(funName, params);
-    vector<uint64_t> retBlocks = PluginServer::GetInstance()->BlockIdsResult();
-    return retBlocks;
+    vector<uint64_t> blockIds = server->GetIdsResult();
+    for(auto b : blockIds) {
+        res.push_back(server->FindBlock(b));
+    }
+    return res;
 }
 
 vector<LoopOp> PluginServerAPI::GetLoopsFromFunc(uint64_t funcID)
@@ -235,7 +255,6 @@ vector<LoopOp> PluginServerAPI::GetLoopsFromFunc(uint64_t funcID)
     return GetLoopsResult(funName, params);
 }
 
-// FIXME: 入参void
 LoopOp PluginServerAPI::AllocateNewLoop(uint64_t funcID)
 {
     Json::Value root;
@@ -287,7 +306,7 @@ bool PluginServerAPI::IsBlockInLoop(uint64_t loopID, uint64_t blockID)
     return GetBoolResult(funName, params);
 }
 
-uint64_t PluginServerAPI::GetHeader(uint64_t loopID)
+mlir::Block* PluginServerAPI::GetHeader(uint64_t loopID)
 {
     Json::Value root;
     string funName("GetHeader");
@@ -297,7 +316,7 @@ uint64_t PluginServerAPI::GetHeader(uint64_t loopID)
     return BlockResult(funName, params);
 }
 
-uint64_t PluginServerAPI::GetLatch(uint64_t loopID)
+mlir::Block* PluginServerAPI::GetLatch(uint64_t loopID)
 {
     Json::Value root;
     string funName("GetLatch");
@@ -307,7 +326,7 @@ uint64_t PluginServerAPI::GetLatch(uint64_t loopID)
     return BlockResult(funName, params);
 }
 
-pair<uint64_t, uint64_t> PluginServerAPI::LoopSingleExit(uint64_t loopID)
+pair<mlir::Block*, mlir::Block*> PluginServerAPI::LoopSingleExit(uint64_t loopID)
 {
     Json::Value root;
     string funName("GetLoopSingleExit");
@@ -317,7 +336,7 @@ pair<uint64_t, uint64_t> PluginServerAPI::LoopSingleExit(uint64_t loopID)
     return EdgeResult(funName, params);
 }
 
-vector<pair<uint64_t, uint64_t> > PluginServerAPI::GetLoopExitEdges(uint64_t loopID)
+vector<pair<mlir::Block*, mlir::Block*> > PluginServerAPI::GetLoopExitEdges(uint64_t loopID)
 {
     Json::Value root;
     string funName("GetExitEdges");
@@ -327,7 +346,7 @@ vector<pair<uint64_t, uint64_t> > PluginServerAPI::GetLoopExitEdges(uint64_t loo
     return EdgesResult(funName, params);
 }
 
-vector<uint64_t> PluginServerAPI::GetLoopBody(uint64_t loopID)
+vector<mlir::Block*> PluginServerAPI::GetLoopBody(uint64_t loopID)
 {
     Json::Value root;
     string funName("GetBlocksInLoop");
@@ -345,6 +364,18 @@ LoopOp PluginServerAPI::GetBlockLoopFather(uint64_t blockID)
     string params = root.toStyledString();
 
     return GetLoopResult(funName, params);
+}
+
+mlir::Block* PluginServerAPI::FindBlock(uint64_t b)
+{
+    PluginServer *server = PluginServer::GetInstance();
+    return server->FindBlock(b);
+}
+
+uint64_t PluginServerAPI::FindBasicBlock(mlir::Block* b)
+{
+    PluginServer *server = PluginServer::GetInstance();
+    return server->FindBasicBlock(b);
 }
 
 } // namespace Plugin_IR
