@@ -73,22 +73,10 @@ vector<PhiOp> ControlFlowAPI::GetAllPhiOpInsideBlock(mlir::Block *b)
     PluginServer *server = PluginServer::GetInstance();
     Json::Value root;
     string funName = __func__;
-    root["bbAddr"] = std::to_string(server.FindBasicBlock(b));
+    root["bbAddr"] = std::to_string(server->FindBasicBlock(b));
     string params = root.toStyledString();
 
     return GetPhiOperationResult(funName, params);
-}
-
-void ControlFlowAPI::SetImmediateDominatorInBlock(mlir::Block *b, mlir::Block *dominated)
-{
-    PluginServer *server = PluginServer::GetInstance();
-    Json::Value root;
-    string funName = __func__;
-    root["bbAddr"] = std::to_string(server.FindBasicBlock(b));
-    root["domAddr"] = std::to_string(server.FindBasicBlock(dominated));
-    string params = root.toStyledString();
-
-    return GetDominatorSetOperationResult(funName, params);
 }
 
 uint64_t ControlFlowAPI::CreateBlock(mlir::Block* b, uint64_t funcAddr, uint64_t bbAddr)
@@ -143,7 +131,7 @@ uint64_t ControlFlowAPI::GetImmediateDominator(uint64_t dir, uint64_t bbAddr)
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
     WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->BlockIdResult();
+    return PluginServer::GetInstance()->GetIdResult();
 }
 
 /* dir: 1 or 2 */
@@ -156,7 +144,7 @@ uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
     WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->BlockIdResult();
+    return PluginServer::GetInstance()->GetIdResult();
 }
 
 
