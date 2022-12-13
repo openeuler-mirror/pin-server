@@ -237,6 +237,40 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
     }
 }
 
+Json::Value PluginServer::TypeJsonSerialize (PluginIR::PluginTypeBase& type)
+{
+    Json::Value root;
+    Json::Value operationObj;
+    Json::Value item;
+
+    uint64_t ReTypeId;
+    uint64_t ReTypeWidth;
+
+    ReTypeId = static_cast<uint64_t>(type.getPluginTypeID());
+    item["id"] = std::to_string(ReTypeId);
+
+    if (auto elemTy = type.dyn_cast<PluginIR::PluginPointerType>()) {
+        auto baseTy = elemTy.getElementType().dyn_cast<PluginIR::PluginTypeBase>();
+        item["elementType"] = TypeJsonSerialize(baseTy);
+    }
+
+    if (type.getPluginIntOrFloatBitWidth() != 0) {
+        ReTypeWidth = type.getPluginIntOrFloatBitWidth();
+        item["width"] = std::to_string(ReTypeWidth);
+    }
+
+    if (type.isSignedPluginInteger()) {
+        item["signed"] = "1";
+    }
+
+    if (type.isUnsignedPluginInteger()) {
+        item["signed"] = "0";
+    }
+
+    root["type"] = item;
+    return root;
+}
+
 PluginIR::PluginTypeBase PluginServer::TypeJsonDeSerialize(const string& data)
 {
     Json::Value root;
@@ -275,10 +309,6 @@ PluginIR::PluginTypeBase PluginServer::TypeJsonDeSerialize(const string& data)
         if (PluginTypeId == PluginIR::UndefTyID)
             baseType = PluginIR::PluginUndefType::get(&context);
     }
-    if (type["readonly"] == "1")
-        baseType.setReadOnlyFlag(1);
-    else
-        baseType.setReadOnlyFlag(0);
 
     pluginType = baseType;
     return baseType;

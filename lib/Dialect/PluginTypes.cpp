@@ -156,16 +156,6 @@ unsigned PluginTypeBase::getTypeSize ()
     return size;
 }
 
-void PluginTypeBase::setReadOnlyFlag (unsigned readOnlyFlag)
-{
-    this->readOnlyFlag = readOnlyFlag;
-}
-
-unsigned PluginTypeBase::getReadOnlyFlag ()
-{
-    return readOnlyFlag;
-}
-
 //===----------------------------------------------------------------------===//
 // Plugin Integer Type
 //===----------------------------------------------------------------------===//

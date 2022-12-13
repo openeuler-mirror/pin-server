@@ -68,13 +68,10 @@ public:
     bool isSignedPluginInteger ();
     bool isUnsignedPluginInteger ();
     void setTypeSize (unsigned size);
-    void setReadOnlyFlag (unsigned readOnlyFlag);
     unsigned getTypeSize ();
-    unsigned getReadOnlyFlag ();
 
 private:
     unsigned size;
-    unsigned readOnlyFlag;
 }; // class PluginTypeBase
 
 namespace detail {

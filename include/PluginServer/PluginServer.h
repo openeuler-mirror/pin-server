@@ -188,6 +188,7 @@ public:
         timeout = time;
     }
     void FuncOpJsonDeSerialize(const string& data);
+    Json::Value TypeJsonSerialize(PluginIR::PluginTypeBase& type);
     PluginIR::PluginTypeBase TypeJsonDeSerialize(const string& data);
     void LocalDeclOpJsonDeSerialize(const string& data);
     void LoopOpsJsonDeSerialize(const string& data);
