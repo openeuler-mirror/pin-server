@@ -241,6 +241,20 @@ vector<LoopOp> PluginServerAPI::GetLoopsFromFunc(uint64_t funcID)
     return GetLoopsResult(funName, params);
 }
 
+bool PluginServerAPI::IsDomInfoAvailable()
+{
+    Json::Value root;
+    string funName("IsDomInfoAvailable");
+    return GetDomInfoAvaiResult(funName);
+}
+
+bool PluginServerAPI::GetDomInfoAvaiResult(const string& funName)
+{
+    Json::Value root;
+    WaitClientResult(funName, root.toStyledString());
+    return PluginServer::GetInstance()->GetBoolResult();
+}
+
 LoopOp PluginServerAPI::AllocateNewLoop(uint64_t funcID)
 {
     Json::Value root;

@@ -60,6 +60,7 @@ public:
     /* Plugin API for CondOp. */
     uint64_t CreateCondOp(IComparisonCode, uint64_t, uint64_t) override;
     mlir::Value GetResultFromPhi(uint64_t) override;
+    bool IsDomInfoAvailable() override;
 
 private:
     vector<FunctionOp> GetFunctionOpResult(const string& funName, const string& params);
@@ -72,6 +73,7 @@ private:
     mlir::Block* BlockResult(const string& funName, const string& params);
     vector<mlir::Block*> BlocksResult(const string& funName, const string& params);
     void WaitClientResult(const string& funName, const string& params);
+    bool GetDomInfoAvaiResult(const string& funName);
 }; // class PluginServerAPI
 } // namespace PluginAPI
 

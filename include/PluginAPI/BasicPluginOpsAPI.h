@@ -53,6 +53,7 @@ public:
     virtual bool SetLhsInCallOp(uint64_t, uint64_t) = 0;
     virtual uint64_t CreateCondOp(IComparisonCode, uint64_t, uint64_t) = 0;
     virtual mlir::Value GetResultFromPhi(uint64_t) = 0;
+    virtual bool IsDomInfoAvailable() = 0;
 }; // class BasicPluginOpsAPI
 } // namespace PluginAPI
 

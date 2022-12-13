@@ -56,6 +56,12 @@ LoopOp FunctionOp::AllocateNewLoop()
     return pluginAPI.AllocateNewLoop(funcId);
 }
 
+bool FunctionOp::IsDomInfoAvailable()
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    return pluginAPI.IsDomInfoAvailable();
+}
+
 void LocalDeclOp::build(OpBuilder &builder, OperationState &state,
                         uint64_t id, StringRef symName,
                         int64_t typeID, uint64_t typeWidth)
