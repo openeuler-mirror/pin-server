@@ -199,7 +199,8 @@ mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
         default:
             break;
     }
-    mlir::Type retType = PluginIR::PluginUndefType::get(&context); // FIXME!
+    mlir::Type retType = TypeJsonDeSerialize(
+            valueJson["retType"].toStyledString());
     mlir::Value opValue = opBuilder.create<PlaceholderOp>(
             opBuilder.getUnknownLoc(), opId, defCode, retType);
     return opValue;
@@ -300,7 +301,6 @@ bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
         string baseOpKey = *opIdx;
         Json::Value opJson = blockJson[baseOpKey];
         if (opJson.isNull()) continue;
-        // llvm::StringRef opCode(opJson["OperationName"].asString().c_str());
         string opCode = opJson["OperationName"].asString();
         if (opCode == PhiOp::getOperationName().str()) {
             PhiOpJsonDeSerialize(opJson.toStyledString());
@@ -530,8 +530,9 @@ void PluginServer::CallOpJsonDeSerialize(const string& data)
     }
     int64_t id = GetID(node["id"]);
     mlir::StringRef callName(node["callee"].asString());
+    mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     CallOp op = opBuilder.create<CallOp>(opBuilder.getUnknownLoc(),
-                                            id, callName, ops);
+                                            id, callName, ops, retType);
     opData.push_back(op.getOperation());
 }
 
@@ -601,7 +602,7 @@ void PluginServer::PhiOpJsonDeSerialize(const string& data)
     int64_t id = GetID(node["id"]);
     uint32_t capacity = atoi(node["capacity"].asString().c_str());
     uint32_t nArgs = atoi(node["nArgs"].asString().c_str());
-    mlir::Type retType = nullptr;
+    mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     PhiOp op = opBuilder.create<PhiOp>(opBuilder.getUnknownLoc(),
                                         id, capacity, nArgs, ops, retType);
     opData.push_back(op.getOperation());
@@ -623,7 +624,7 @@ void PluginServer::AssignOpJsonDeSerialize(const string& data)
     }
     int64_t id = GetID(node["id"]);
     IExprCode iCode = IExprCode(atoi(node["exprCode"].asString().c_str()));
-    mlir::Type retType = nullptr;
+    mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     AssignOp op = opBuilder.create<AssignOp>(opBuilder.getUnknownLoc(),
                                                 id, iCode, ops, retType);
     opData.push_back(op.getOperation());

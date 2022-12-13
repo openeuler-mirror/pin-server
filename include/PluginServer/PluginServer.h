@@ -256,7 +256,7 @@ private:
     std::pair<mlir::Block*, mlir::Block*> edge;
     vector<mlir::Operation *> opData;
     bool boolResult;
-    bool idResult;
+    uint64_t idResult;
     vector<uint64_t> idsResult;
     mlir::Value valueResult;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */
