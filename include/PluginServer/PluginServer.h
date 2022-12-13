@@ -138,6 +138,7 @@ public:
     std::pair<mlir::Block*, mlir::Block*> EdgeResult(void);
     vector<mlir::Operation *> GetOpResult(void);
     bool GetBoolResult(void);
+    void EraseBlock(mlir::Block*);
     uint64_t GetBlockResult(mlir::Block*);
     uint64_t GetIdResult(void);
     vector<uint64_t> GetIdsResult(void);
@@ -274,7 +275,7 @@ private:
     std::map<uint64_t, mlir::Block*> blockMaps;
     std::map<mlir::Block*, uint64_t> basicblockMaps;
     bool ProcessBlock(mlir::Block*, mlir::Region&, const Json::Value&);
-    vector<mlir::Plugin::PhiOp> phiOps;
+
 }; // class PluginServer
 
 void RunServer(int timeout, string& port);

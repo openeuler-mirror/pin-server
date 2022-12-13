@@ -91,4 +91,73 @@ void ControlFlowAPI::SetImmediateDominatorInBlock(mlir::Block *b, mlir::Block *d
     return GetDominatorSetOperationResult(funName, params);
 }
 
+uint64_t ControlFlowAPI::CreateBlock(mlir::Block* b, uint64_t funcAddr, uint64_t bbAddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    assert(funcAddr);
+    assert(bbAddr);
+    root["funcaddr"] = std::to_string(funcAddr);
+    root["bbaddr"] = std::to_string(bbAddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetBlockResult(b);
+}
+
+void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr,
+                                  uint64_t bbAddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    assert(funcAddr);
+    assert(bbAddr);
+    root["funcaddr"] = std::to_string(funcAddr);
+    root["bbaddr"] = std::to_string(bbAddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    PluginServer::GetInstance()->EraseBlock(b);
+    b->erase();
+}
+
+/* dir: 1 or 2 */
+void ControlFlowAPI::SetImmediateDominator(uint64_t dir, uint64_t bbAddr,
+                                            uint64_t domiAddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    assert(dir && bbAddr && domiAddr);
+    root["dir"] = std::to_string(dir);
+    root["bbaddr"] = std::to_string(bbAddr);
+    root["domiAddr"] = std::to_string(domiAddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+}
+
+/* dir: 1 or 2 */
+uint64_t ControlFlowAPI::GetImmediateDominator(uint64_t dir, uint64_t bbAddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    assert(dir && bbAddr);
+    root["dir"] = std::to_string(dir);
+    root["bbaddr"] = std::to_string(bbAddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->BlockIdResult();
+}
+
+/* dir: 1 or 2 */
+uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    assert(dir && bbAddr);
+    root["dir"] = std::to_string(dir);
+    root["bbaddr"] = std::to_string(bbAddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->BlockIdResult();
+}
+
+
 } // namespace Plugin_IR

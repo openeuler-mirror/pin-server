@@ -107,6 +107,17 @@ LoopOp PluginServer::LoopOpResult()
     return retLoop;
 }
 
+void PluginServer::EraseBlock(mlir::Block* b)
+{
+    if (auto bbit = basicblockMaps.find(b); bbit != basicblockMaps.end()) {
+        uint64_t addr = bbit->second;
+        basicblockMaps.erase(bbit);
+        if (auto bit = blockMaps.find(addr); bit != blockMaps.end()) {
+            blockMaps.erase(bit);
+        }
+    }
+}
+
 mlir::Block* PluginServer::FindBlock(uint64_t id)
 {
     auto iter = this->blockMaps.find(id);

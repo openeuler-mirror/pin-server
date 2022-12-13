@@ -36,8 +36,6 @@ public:
     PluginServerAPI () = default;
     ~PluginServerAPI () = default;
 
-    uint64_t CreateBlock(mlir::Block*, uint64_t, uint64_t) override;
-
     vector<FunctionOp> GetAllFunc() override;
     vector<LocalDeclOp> GetDecls(uint64_t) override;
     PhiOp GetPhiOp(uint64_t) override;

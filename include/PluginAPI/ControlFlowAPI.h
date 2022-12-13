@@ -39,7 +39,12 @@ public:
 
     bool UpdateSSA(void);
     vector<PhiOp> GetAllPhiOpInsideBlock(mlir::Block *b);
-    void SetImmediateDominatorInBlock(mlir::Block *b, mlir::Block *dominated);
+
+    uint64_t CreateBlock(mlir::Block*, uint64_t, uint64_t);
+    void DeleteBlock(mlir::Block*, uint64_t, uint64_t);
+    void SetImmediateDominator(uint64_t, uint64_t, uint64_t);
+    uint64_t GetImmediateDominator(uint64_t, uint64_t);
+    uint64_t RecomputeDominator(uint64_t, uint64_t);
 
 private:
     bool GetUpdateOperationResult(const string &funName);
