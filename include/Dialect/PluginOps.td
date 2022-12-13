@@ -37,7 +37,9 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
   // the `state` that MLIR uses to create operations, i.e. these are used when
   // using `builder.create<Op>(...)`.
   let builders = [
-    OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$funcName, "bool":$declaredInline)>
+    OpBuilderDAG<(ins "uint64_t":$id,
+                      "StringRef":$funcName,
+                      "bool":$declaredInline)>
   ];
 
   let extraClassDeclaration = [{
@@ -57,7 +59,7 @@ def LocalDeclOp : Plugin_Op<"declaration", [NoSideEffect]> {
   let regions = (region AnyRegion:$bodyRegion);
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$symName,
-                  "int64_t":$typeID, "uint64_t":$typeWidth)>
+                      "int64_t":$typeID, "uint64_t":$typeWidth)>
   ];
 }
 
@@ -107,10 +109,15 @@ def CallOp : Plugin_Op<"call", [
   let results = (outs Optional<AnyType>:$result);
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$callee,
-                  "ArrayRef<Value>":$arguments)>
+                      "ArrayRef<Value>":$arguments, "Type":$retType)>,
+    // Only for server.
+    OpBuilderDAG<(ins "Value":$func,
+                      "ArrayRef<Value>":$arguments,
+                      "Type":$retType)>
   ];
   let extraClassDeclaration = [{
     bool SetLHS(Value lhs);
+    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
   }];
   let assemblyFormat = [{
     $callee `(` $inputs `)` attr-dict `:` functional-type($inputs, results)
@@ -127,12 +134,16 @@ def PhiOp : Plugin_Op<"phi", [NoSideEffect]> {
   let results = (outs AnyType:$result);
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "uint32_t":$capacity,
-                  "uint32_t":$nArgs, "ArrayRef<Value>":$operands,
-                  "Type":$resultType)>
+                      "uint32_t":$nArgs, "ArrayRef<Value>":$operands,
+                      "Type":$resultType)>
   ];
   let extraClassDeclaration = [{
-    Value GetResult();
+    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
     Value GetArgDef(int i) { return getOperand(i); }
+    // Only for server.
+    Value GetResult();
+    bool AddArg(Value arg, Block *pred, Block *succ);
+    PhiOp CreatePhi(Value arg, Block *block);
   }];
 }
 
@@ -145,9 +156,14 @@ def AssignOp : Plugin_Op<"assign", [NoSideEffect]> {
   let results = (outs AnyType:$result);
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "IExprCode":$exprCode,
-                  "ArrayRef<Value>":$operands, "Type":$resultType)>
+                      "ArrayRef<Value>":$operands, "Type":$resultType)>,
+    // Only for server.
+    OpBuilderDAG<(ins "IExprCode":$exprCode,
+                      "ArrayRef<Value>":$operands,
+                      "Type":$retType)>
   ];
   let extraClassDeclaration = [{
+    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
     Value GetLHS() { return getOperand(0); }
     Value GetRHS1() { return getOperand(1); }
     Value GetRHS2() { return getOperand(2); }
@@ -163,6 +179,9 @@ def PlaceholderOp : Plugin_Op<"placeholder", [NoSideEffect]> {
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "IDefineCode":$defCode, "Type":$retType)>
   ];
+  let extraClassDeclaration = [{
+    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
+  }];
 }
 
 def BaseOp : Plugin_Op<"statement_base", [NoSideEffect]> {
@@ -206,12 +225,12 @@ def CondOp : Plugin_TerminatorOp<"condition", [NoSideEffect]> {
   let successors = (successor AnySuccessor:$tb, AnySuccessor:$fb);
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "uint64_t":$address, "IComparisonCode":$condCode,
-                  "Value":$lhs, "Value":$rhs, "Block*":$tb, "Block*":$fb,
-                  "uint64_t":$tbaddr, "uint64_t":$fbaddr, "Value":$trueLabel,
-                  "Value":$falseLabel)>,
+                      "Value":$lhs, "Value":$rhs, "Block*":$tb, "Block*":$fb,
+                      "uint64_t":$tbaddr, "uint64_t":$fbaddr, "Value":$trueLabel,
+                      "Value":$falseLabel)>,
     // Only for server.
     OpBuilderDAG<(ins "IComparisonCode":$condCode,
-                  "Value":$lhs, "Value":$rhs)>
+                      "Value":$lhs, "Value":$rhs)>
   ];
   let extraClassDeclaration = [{
     Value GetLHS() { return getOperand(0); }
