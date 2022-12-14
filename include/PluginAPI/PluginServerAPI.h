@@ -70,6 +70,8 @@ public:
 	mlir::Value ConfirmValue(mlir::Value);
 	mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value);
 
+    void WaitClientResult(const string& funName, const string& params);
+
 private:
     vector<FunctionOp> GetFunctionOpResult(const string& funName, const string& params);
     vector<LocalDeclOp> GetDeclOperationResult(const string& funName, const string& params);
@@ -80,7 +82,6 @@ private:
     vector<pair<mlir::Block*, mlir::Block*> > EdgesResult(const string& funName, const string& params);
     mlir::Block* BlockResult(const string& funName, const string& params);
     vector<mlir::Block*> BlocksResult(const string& funName, const string& params);
-    void WaitClientResult(const string& funName, const string& params);
     bool GetDomInfoAvaiResult(const string& funName);
 }; // class PluginServerAPI
 } // namespace PluginAPI
