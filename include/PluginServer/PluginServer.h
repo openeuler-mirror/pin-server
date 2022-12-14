@@ -146,6 +146,7 @@ public:
     vector<mlir::Plugin::PhiOp> GetPhiOpsResult(void);
     mlir::Block* FindBlock(uint64_t);
     uint64_t FindBasicBlock(mlir::Block*);
+    bool InsertValue(uint64_t, mlir::Value);
     mlir::Operation* FindDefOperation(uint64_t);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
@@ -248,6 +249,8 @@ public:
         sem_destroy(&sem[1]);
     }
 
+    void SetOpBuilder(mlir::OpBuilder builder) { this->opBuilder = builder; }
+
 private:
     bool shutdown; // 是否关闭server
     /* 用户函数执行状态，client返回结果后为STATE_RETURN,开始执行下一个函数 */
@@ -275,6 +278,7 @@ private:
     map<string, string> args; // 保存gcc编译时用户传入参数
     sem_t sem[2];
 
+    std::map<uint64_t, mlir::Value> valueMaps;
     // process Block.
     std::map<uint64_t, mlir::Block*> blockMaps;
     std::map<mlir::Block*, uint64_t> basicblockMaps;

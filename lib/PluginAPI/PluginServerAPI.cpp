@@ -54,6 +54,48 @@ void PluginServerAPI::WaitClientResult(const string& funName, const string& para
     }
 }
 
+bool PluginServerAPI::SetCurrentDefInSSA(uint64_t varId, uint64_t defId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["varId"] = std::to_string(varId);
+    root["defId"] = std::to_string(defId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetBoolResult();
+}
+
+mlir::Value PluginServerAPI::GetCurrentDefFromSSA(uint64_t varId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["varId"] = std::to_string(varId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
+
+mlir::Value PluginServerAPI::CopySSAOp(uint64_t id)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
+
+mlir::Value PluginServerAPI::CreateSSAOp(mlir::Type t)
+{
+    Json::Value root;
+    string funName = __func__;
+    auto baseTy = t.dyn_cast<PluginIR::PluginTypeBase>();
+    root = PluginServer::GetInstance()->TypeJsonSerialize(baseTy);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
+
 vector<FunctionOp> PluginServerAPI::GetFunctionOpResult(const string& funName, const string& params)
 {
     WaitClientResult(funName, params);
@@ -171,6 +213,22 @@ uint64_t PluginServerAPI::CreateCallOp(uint64_t blockId, uint64_t funcId,
     string params = root.toStyledString();
     WaitClientResult(funName, params);
     return PluginServer::GetInstance()->GetIdResult();
+}
+
+mlir::Value PluginServerAPI::CreateConstOp(mlir::Attribute attr, mlir::Type type)
+{
+    Json::Value root;
+    string funName = __func__;
+    auto baseTy = type.dyn_cast<PluginIR::PluginTypeBase>();
+    root = PluginServer::GetInstance()->TypeJsonSerialize(baseTy);
+    string valueStr;
+    if (type.isa<PluginIR::PluginIntegerType>()) {
+        valueStr = std::to_string(attr.cast<mlir::IntegerAttr>().getInt());
+    }
+    root["value"] = valueStr;
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
 }
 
 mlir::Value PluginServerAPI::GetResultFromPhi(uint64_t phiId)
@@ -476,6 +534,12 @@ uint64_t PluginServerAPI::FindBasicBlock(mlir::Block* b)
 {
     PluginServer *server = PluginServer::GetInstance();
     return server->FindBasicBlock(b);
+}
+
+bool PluginServerAPI::InsertValue(uint64_t id, mlir::Value v)
+{
+    PluginServer *server = PluginServer::GetInstance();
+    return server->InsertValue(id, v);
 }
 
 bool PluginServerAPI::RedirectFallthroughTarget(FallThroughOp& fop,
