@@ -154,7 +154,7 @@ void ControlFlowAPI::CreateFallthroughOp(
     root["address"] = std::to_string(address);
     root["destaddr"] = std::to_string(destaddr);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);
 }
 
-} // namespace Plugin_IR
+} // namespace PluginAPI
