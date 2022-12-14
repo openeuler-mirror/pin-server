@@ -71,6 +71,9 @@ public:
 	mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value);
     bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) override;
     mlir::Operation* GetSSADefOperation(uint64_t) override;
+
+    void WaitClientResult(const string& funName, const string& params);
+
 private:
     vector<FunctionOp> GetFunctionOpResult(const string& funName, const string& params);
     vector<LocalDeclOp> GetDeclOperationResult(const string& funName, const string& params);
@@ -81,7 +84,6 @@ private:
     vector<pair<mlir::Block*, mlir::Block*> > EdgesResult(const string& funName, const string& params);
     mlir::Block* BlockResult(const string& funName, const string& params);
     vector<mlir::Block*> BlocksResult(const string& funName, const string& params);
-    void WaitClientResult(const string& funName, const string& params);
     bool GetDomInfoAvaiResult(const string& funName);
 }; // class PluginServerAPI
 } // namespace PluginAPI
