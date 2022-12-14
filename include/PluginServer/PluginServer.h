@@ -206,6 +206,7 @@ public:
     void AssignOpJsonDeSerialize(const string& data);
     void GetPhiOpsJsonDeSerialize(const string& data);
     mlir::Value ValueJsonDeSerialize(Json::Value valueJson);
+	mlir::Value MemRefDeSerialize(const string& data);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */

@@ -211,8 +211,10 @@ mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
     uint64_t opId = GetID(valueJson["id"]);
     IDefineCode defCode = IDefineCode(
             atoi(valueJson["defCode"].asString().c_str()));
+	bool readOnly = (bool)atoi(valueJson["readOnly"].asString().c_str());
     switch (defCode) {
         case IDefineCode::MemRef : {
+            return MemRefDeSerialize(valueJson.toStyledString());
             break;
         }
         case IDefineCode::IntCST : {
@@ -224,8 +226,25 @@ mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
     mlir::Type retType = TypeJsonDeSerialize(
             valueJson["retType"].toStyledString());
     mlir::Value opValue = opBuilder.create<PlaceholderOp>(
-            opBuilder.getUnknownLoc(), opId, defCode, retType);
+            opBuilder.getUnknownLoc(), opId, defCode, readOnly, retType);
     return opValue;
+}
+
+mlir::Value PluginServer::MemRefDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+    uint64_t id = atol(root["id"].asString().c_str());
+    IDefineCode defCode = IDefineCode(
+            atoi(root["defCode"].asString().c_str()));
+	bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
+    mlir::Value base = ValueJsonDeSerialize(root["base"].toStyledString());
+    mlir::Value offset = ValueJsonDeSerialize(root["offset"].toStyledString());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
+    mlir::Value memRef = opBuilder.create<MemOp>(opBuilder.getUnknownLoc(), id,
+                            IDefineCode::MemRef, readOnly, base, offset, retType);
+    return memRef;
 }
 
 void PluginServer::JsonDeSerialize(const string& key, const string& data)
@@ -449,9 +468,9 @@ void PluginServer::LocalDeclOpJsonDeSerialize(const string& data)
         Json::Value attributes = node["attributes"];
         map<string, string> declAttributes;
         JsonGetAttributes(attributes, declAttributes);
-	    string symName = declAttributes["symName"];
-	    uint64_t typeID = atol(declAttributes["typeID"].c_str());
-	    uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
+        string symName = declAttributes["symName"];
+        uint64_t typeID = atol(declAttributes["typeID"].c_str());
+        uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
         auto location = opBuilder.getUnknownLoc();
         LocalDeclOp op = opBuilder.create<LocalDeclOp>(location, id, symName, typeID, typeWidth);
         decls.push_back(op);

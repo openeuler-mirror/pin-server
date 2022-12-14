@@ -192,6 +192,35 @@ PhiOp PluginServerAPI::CreatePhiOp(uint64_t argId, uint64_t blockId)
     return llvm::dyn_cast<PhiOp>(opRet[0]);
 }
 
+mlir::Value PluginServerAPI::ConfirmValue(mlir::Value v)
+{
+    Json::Value root;
+    string funName = "ConfirmValue";
+    PlaceholderOp placeholder = v.getDefiningOp<PlaceholderOp>();
+    uint64_t valId = placeholder.idAttr().getInt();
+    root["valId"] = std::to_string(valId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
+
+mlir::Value PluginServerAPI::BuildMemRef(PluginIR::PluginTypeBase type,
+                                         mlir::Value base, mlir::Value offset)
+{
+    Json::Value root;
+    string funName = "BuildMemRef";
+    PlaceholderOp phBase = base.getDefiningOp<PlaceholderOp>();
+    uint64_t baseId = phBase.idAttr().getInt();
+    PlaceholderOp phOffset = offset.getDefiningOp<PlaceholderOp>();
+    uint64_t offsetId = phOffset.idAttr().getInt();
+    root["baseId"] = baseId;
+    root["offsetId"] = offsetId;
+    root["type"] = (PluginServer::GetInstance()->TypeJsonSerialize(type).toStyledString());
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
+
 PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)
 {
     if (type == "VoidTy") {
