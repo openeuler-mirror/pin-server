@@ -55,6 +55,7 @@ public:
     LoopOp GetBlockLoopFather(uint64_t blockID);
     mlir::Block* FindBlock(uint64_t);
     uint64_t FindBasicBlock(mlir::Block*);
+    bool InsertValue(uint64_t, mlir::Value);
     /* Plugin API for CallOp. */
     bool SetLhsInCallOp(uint64_t, uint64_t) override;
     uint64_t CreateCallOp(uint64_t, uint64_t, vector<uint64_t> &) override;
@@ -67,6 +68,13 @@ public:
     /* Plugin API for PhiOp. */
     bool AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) override;
     PhiOp CreatePhiOp(uint64_t, uint64_t) override;
+    /* Plugin API for ConstOp. */
+    mlir::Value CreateConstOp(mlir::Attribute, mlir::Type) override;
+
+    mlir::Value GetCurrentDefFromSSA(uint64_t) override;
+    bool SetCurrentDefInSSA(uint64_t, uint64_t) override;
+    mlir::Value CopySSAOp(uint64_t) override;
+    mlir::Value CreateSSAOp(mlir::Type) override;
 	mlir::Value ConfirmValue(mlir::Value);
 	mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value);
     bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) override;

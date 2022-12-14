@@ -46,6 +46,8 @@ public:
     void SetImmediateDominator(uint64_t, uint64_t, uint64_t);
     uint64_t GetImmediateDominator(uint64_t, uint64_t);
     uint64_t RecomputeDominator(uint64_t, uint64_t);
+    mlir::Value CreateNewDef(mlir::Value, mlir::Operation *, mlir::Value);
+
     void CreateFallthroughOp(uint64_t, uint64_t);
 private:
     bool GetUpdateOperationResult(const string &funName);

@@ -12,9 +12,6 @@
    License for the specific language governing permissions and limitations
    under the License.
 
-   Author: Mingchuan Wu and Yancheng Li
-   Create: 2022-08-18
-   Description: This file contains the implementation of the PluginAPI_Server class
 */
 
 #include "PluginAPI/ControlFlowAPI.h"
@@ -145,6 +142,25 @@ uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
     return PluginServer::GetInstance()->GetIdResult();
 }
 
+mlir::Value ControlFlowAPI::CreateNewDef(mlir::Value oldValue,
+                                         mlir::Operation *op,
+                                         mlir::Value defValue)
+{
+    Json::Value root;
+    string funName = __func__;
+    // FIXME: use baseOp.
+    uint64_t opId = llvm::dyn_cast<PhiOp>(op).idAttr().getInt();
+    root["opId"] = std::to_string(opId);
+    PlaceholderOp oldOp = oldValue.getDefiningOp<PlaceholderOp>();
+    uint64_t valueId = oldOp.idAttr().getInt();
+    root["valueId"] = std::to_string(valueId);
+    PlaceholderOp defOp = defValue.getDefiningOp<PlaceholderOp>();
+    uint64_t defId = defOp.idAttr().getInt();
+    root["defId"] = std::to_string(defId);
+    string params = root.toStyledString();
+    pluginAPI.WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
 
 void ControlFlowAPI::CreateFallthroughOp(
     uint64_t address, uint64_t destaddr)

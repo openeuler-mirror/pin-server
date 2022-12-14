@@ -106,21 +106,16 @@ def CallOp : Plugin_Op<"call", [
   let arguments = (ins UI64Attr:$id,
                        FlatSymbolRefAttr:$callee,
                        Variadic<AnyType>:$inputs);
-  let results = (outs Optional<AnyType>:$result);
   let builders = [
-    OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$callee,
-                      "ArrayRef<Value>":$arguments, "Type":$retType)>,
+    OpBuilderDAG<(ins "int64_t":$id, "StringRef":$callee,
+                      "ArrayRef<Value>":$arguments)>,
     // Only for server.
     OpBuilderDAG<(ins "Value":$func,
-                      "ArrayRef<Value>":$arguments,
-                      "Type":$retType)>
+                      "ArrayRef<Value>":$arguments)>,
+    OpBuilderDAG<(ins "ArrayRef<Value>":$arguments)>
   ];
   let extraClassDeclaration = [{
     bool SetLHS(Value lhs);
-    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
-  }];
-  let assemblyFormat = [{
-    $callee `(` $inputs `)` attr-dict `:` functional-type($inputs, results)
   }];
 }
 
@@ -132,19 +127,19 @@ def PhiOp : Plugin_Op<"phi", [NoSideEffect]> {
                        UI32Attr:$nArgs,
                        UI64Attr:$defStmtId,
                        Variadic<AnyType>:$operands);
-  let results = (outs AnyType:$result);
   let builders = [
-    OpBuilderDAG<(ins "uint64_t":$id, "uint32_t":$capacity,
-                  "uint32_t":$nArgs, "uint64_t":$defStmtId,
-                  "ArrayRef<Value>":$operands, "Type":$resultType)>
+    OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
+                      "uint64_t":$id,
+                      "uint32_t":$capacity,
+                      "uint32_t":$nArgs,
+                      "uint64_t":$defStmtId)>
   ];
   let extraClassDeclaration = [{
-    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
     Value GetArgDef(int i) { return getOperand(i); }
     // Only for server.
     Value GetResult();
     bool AddArg(Value arg, Block *pred, Block *succ);
-    PhiOp CreatePhi(Value arg, Block *block);
+    static PhiOp CreatePhi(Value arg, Block *block);
   }];
 }
 
@@ -155,17 +150,16 @@ def AssignOp : Plugin_Op<"assign", [NoSideEffect]> {
                        IExprCodeAttr:$exprCode,
                        UI64Attr:$defStmtId,
                        Variadic<AnyType>:$operands);
-  let results = (outs AnyType:$result);
   let builders = [
-    OpBuilderDAG<(ins "uint64_t":$id, "IExprCode":$exprCode, "uint64_t":$defStmtId,
-                  "ArrayRef<Value>":$operands, "Type":$resultType)>,
+    OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
+                      "uint64_t":$id, "IExprCode":$exprCode,
+                      "uint64_t":$defStmtId)>,
     // Only for server.
-    OpBuilderDAG<(ins "IExprCode":$exprCode, "uint64_t":$defStmtId,
-                      "ArrayRef<Value>":$operands,
-                      "Type":$retType)>
+    OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
+                      "IExprCode":$exprCode,
+                      "uint64_t":$defStmtId)>
   ];
   let extraClassDeclaration = [{
-    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
     Value GetLHS() { return getOperand(0); }
     Value GetRHS1() { return getOperand(1); }
     Value GetRHS2() { return getOperand(2); }
@@ -189,7 +183,7 @@ class Pointer<string mnemonic> : Placeholder<mnemonic> {
 }
 
 class SSA<string mnemonic> : Placeholder<mnemonic> {
-  dag SSAArgs = (ins StrAttr:$SSAName,
+  dag SSAArgs = (ins UI64Attr:$SSAName,
                      UI64Attr:$ssaParmDecl,
                      UI64Attr:$version,
                      UI64Attr:$defStmtId,
@@ -204,7 +198,7 @@ class MemRef<string mnemonic> : Placeholder<mnemonic> {
 }
 
 class Constant<string mnemonic> : Placeholder<mnemonic> {
-    dag ConstArgs = (ins AnyType:$init);
+    dag ConstArgs = (ins AnyAttr:$init);
     let arguments = !con(commonArgs, ConstArgs);
 }
 
@@ -247,9 +241,15 @@ def SSAOp : SSA<"SSA"> {
   let description = [{TODO}];
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "IDefineCode":$defCode, "bool":$readOnly,
-                      "StringRef":$SSAName, "uint64_t":$ssaParmDecl, "uint64_t":$version,
-                      "uint64_t":$defStmtId, "uint64_t":$defOpId)>
+                      "uint64_t":$SSAName, "uint64_t":$ssaParmDecl, "uint64_t":$version,
+                      "uint64_t":$defStmtId, "uint64_t":$defOpId, "Type":$retType)>
   ];
+  let extraClassDeclaration = [{
+    static Value MakeSSA(OpBuilder &builder, Type t);
+    Value Copy();
+    Value GetCurrentDef();
+    bool SetCurrentDef(Value def);
+  }];
 }
 
 def ConstOp : Constant<"constant value"> {
@@ -259,6 +259,9 @@ def ConstOp : Constant<"constant value"> {
     OpBuilderDAG<(ins "uint64_t":$id, "IDefineCode":$defCode, "bool":$readOnly,
                       "Attribute":$init, "Type":$retType)>
   ];
+  let extraClassDeclaration = [{
+    Value CreateConst(OpBuilder &builder, Attribute value, Type retType);
+  }];
 }
 
 def BaseOp : Plugin_Op<"statement_base", [NoSideEffect]> {
