@@ -36,36 +36,22 @@ bool ControlFlowAPI::UpdateSSA(void)
 
 bool ControlFlowAPI::GetUpdateOperationResult(const string &funName)
 {
-    WaitClientResult(funName);
+    Json::Value root;
+    pluginAPI.WaitClientResult(funName, root.toStyledString());
     return PluginServer::GetInstance()->GetBoolResult();
 }
 
 vector<PhiOp> ControlFlowAPI::GetPhiOperationResult(const string &funName, const string& params)
 {
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);;
     vector<PhiOp> retOps = PluginServer::GetInstance()->GetPhiOpsResult();
     return retOps;
 }
 
 void ControlFlowAPI::GetDominatorSetOperationResult(const string &funName, const string& params)
 {
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);;
     return;
-}
-
-void ControlFlowAPI::WaitClientResult(const string &funName, const string &params)
-{
-    PluginServer *server = PluginServer::GetInstance();
-    server->SetApiFuncName(funName);
-    server->SetUserFunState(STATE_BEGIN);
-    server->SemPost();
-    while (1) {
-        server->ClientReturnSemWait();
-        if (server->GetUserFunState() == STATE_RETURN) {  // wait client result
-            server->SetUserFunState(STATE_WAIT_BEGIN);
-            break;
-        }
-    }
 }
 
 vector<PhiOp> ControlFlowAPI::GetAllPhiOpInsideBlock(mlir::Block *b)
@@ -88,7 +74,7 @@ uint64_t ControlFlowAPI::CreateBlock(mlir::Block* b, uint64_t funcAddr, uint64_t
     root["funcaddr"] = std::to_string(funcAddr);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);;
     return PluginServer::GetInstance()->GetBlockResult(b);
 }
 
@@ -102,7 +88,7 @@ void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr,
     root["funcaddr"] = std::to_string(funcAddr);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);;
     PluginServer::GetInstance()->EraseBlock(b);
     b->erase();
 }
@@ -118,7 +104,7 @@ void ControlFlowAPI::SetImmediateDominator(uint64_t dir, uint64_t bbAddr,
     root["bbaddr"] = std::to_string(bbAddr);
     root["domiAddr"] = std::to_string(domiAddr);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);;
 }
 
 /* dir: 1 or 2 */
@@ -130,7 +116,7 @@ uint64_t ControlFlowAPI::GetImmediateDominator(uint64_t dir, uint64_t bbAddr)
     root["dir"] = std::to_string(dir);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);;
     return PluginServer::GetInstance()->GetIdResult();
 }
 
@@ -143,7 +129,7 @@ uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
     root["dir"] = std::to_string(dir);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    pluginAPI.WaitClientResult(funName, params);;
     return PluginServer::GetInstance()->GetIdResult();
 }
 

@@ -24,6 +24,7 @@
 #include "BasicPluginOpsAPI.h"
 #include "PluginServer/PluginServer.h"
 #include "Dialect/PluginTypes.h"
+#include "PluginServerAPI.h"
 
 namespace PluginAPI {
 
@@ -50,7 +51,8 @@ private:
     bool GetUpdateOperationResult(const string &funName);
     vector<PhiOp> GetPhiOperationResult(const string &funName, const string& params);
     void GetDominatorSetOperationResult(const string &funName, const string& params);
-    void WaitClientResult(const string &funName, const string &params = {});
+
+    PluginServerAPI pluginAPI;
 };
 
 }  // namespace PluginAPI
