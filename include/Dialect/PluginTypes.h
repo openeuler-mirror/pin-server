@@ -121,9 +121,11 @@ public:
 
     PluginTypeID getPluginTypeID ();
 
-    static PluginPointerType get(MLIRContext *context, Type pointee);
+    static PluginPointerType get(MLIRContext *context, Type pointee, unsigned readOnlyPointee = 0);
 
     Type getElementType();
+
+    unsigned isReadOnlyElem();
 }; // class PluginPointerType
 
 class PluginVoidType : public Type::TypeBase<PluginVoidType, PluginTypeBase, TypeStorage> {
