@@ -281,7 +281,9 @@ def FallThroughOp : Plugin_TerminatorOp<"fallthrough", [NoSideEffect]> {
   let arguments = (ins UI64Attr:$address, UI64Attr:$destaddr);
   let results = (outs AnyType);
   let builders = [
-    OpBuilderDAG<(ins "uint64_t":$address, "Block*":$dest, "uint64_t":$destaddr)>
+    OpBuilderDAG<(ins "uint64_t":$address, "Block*":$dest, "uint64_t":$destaddr)>,
+    // Only for server.
+    OpBuilderDAG<(ins "uint64_t":$address, "Block*":$dest)>
   ];
 }
 
@@ -302,8 +304,8 @@ def CondOp : Plugin_TerminatorOp<"condition", [NoSideEffect]> {
                       "uint64_t":$tbaddr, "uint64_t":$fbaddr, "Value":$trueLabel,
                       "Value":$falseLabel)>,
     // Only for server.
-    OpBuilderDAG<(ins "IComparisonCode":$condCode,
-                      "Value":$lhs, "Value":$rhs)>
+    OpBuilderDAG<(ins "IComparisonCode":$condCode, "Value":$lhs, "Value":$rhs, 
+                      "Block*":$tb, "Block*":$fb)>
   ];
   let extraClassDeclaration = [{
     Value GetLHS() { return getOperand(0); }

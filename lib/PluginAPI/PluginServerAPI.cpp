@@ -120,7 +120,8 @@ bool PluginServerAPI::AddArgInPhiOp(uint64_t phiId,
 }
 
 uint64_t PluginServerAPI::CreateCondOp(uint64_t blockId, IComparisonCode iCode,
-                                       uint64_t lhs, uint64_t rhs)
+                                       uint64_t lhs, uint64_t rhs,
+                                       uint64_t tbaddr, uint64_t fbaddr)
 {
     Json::Value root;
     string funName = __func__;
@@ -128,6 +129,8 @@ uint64_t PluginServerAPI::CreateCondOp(uint64_t blockId, IComparisonCode iCode,
     root["condCode"] = std::to_string(static_cast<int32_t>(iCode));
     root["lhsId"] = std::to_string(lhs);
     root["rhsId"] = std::to_string(rhs);
+    root["tbaddr"] = std::to_string(tbaddr);
+    root["fbaddr"] = std::to_string(fbaddr);
     string params = root.toStyledString();
     WaitClientResult(funName, params);
     return PluginServer::GetInstance()->GetIdResult();

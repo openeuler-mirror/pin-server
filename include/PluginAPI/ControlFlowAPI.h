@@ -45,7 +45,7 @@ public:
     void SetImmediateDominator(uint64_t, uint64_t, uint64_t);
     uint64_t GetImmediateDominator(uint64_t, uint64_t);
     uint64_t RecomputeDominator(uint64_t, uint64_t);
-
+    void CreateFallthroughOp(uint64_t, uint64_t);
 private:
     bool GetUpdateOperationResult(const string &funName);
     vector<PhiOp> GetPhiOperationResult(const string &funName, const string& params);
