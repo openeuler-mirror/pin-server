@@ -252,6 +252,11 @@ Json::Value PluginServer::TypeJsonSerialize (PluginIR::PluginTypeBase& type)
     if (auto elemTy = type.dyn_cast<PluginIR::PluginPointerType>()) {
         auto baseTy = elemTy.getElementType().dyn_cast<PluginIR::PluginTypeBase>();
         item["elementType"] = TypeJsonSerialize(baseTy);
+        if (elemTy.isReadOnlyElem()) {
+            item["elemConst"] = "1";
+        }else {
+            item["elemConst"] = "0";
+        }
     }
 
     if (type.getPluginIntOrFloatBitWidth() != 0) {
@@ -300,7 +305,7 @@ PluginIR::PluginTypeBase PluginServer::TypeJsonDeSerialize(const string& data)
     }else if (id == static_cast<uint64_t>(PluginIR::PointerTyID)) {
         mlir::Type elemTy = TypeJsonDeSerialize(type["elementType"].toStyledString());
         auto ty = elemTy.dyn_cast<PluginIR::PluginTypeBase>();
-        baseType = PluginIR::PluginPointerType::get(&context, elemTy);
+        baseType = PluginIR::PluginPointerType::get(&context, elemTy, type["elemConst"].asString() == "1" ? 1 : 0);
     }else {
         if (PluginTypeId == PluginIR::VoidTyID)
             baseType = PluginIR::PluginVoidType::get(&context);
