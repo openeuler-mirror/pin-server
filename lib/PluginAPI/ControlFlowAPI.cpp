@@ -25,6 +25,18 @@ using namespace PinServer;
 using namespace mlir::Plugin;
 
 
+static uint64_t getBlockAddress(mlir::Block* b)
+{
+    if (mlir::Plugin::CondOp oops = llvm::dyn_cast<mlir::Plugin::CondOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::FallThroughOp oops = llvm::dyn_cast<mlir::Plugin::FallThroughOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::RetOp oops = llvm::dyn_cast<mlir::Plugin::RetOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    }
+    abort();
+}
+
 bool ControlFlowAPI::UpdateSSA(void)
 {
     Json::Value root;
@@ -147,5 +159,16 @@ uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
     return PluginServer::GetInstance()->GetIdResult();
 }
 
+
+void ControlFlowAPI::CreateFallthroughOp(
+    uint64_t address, uint64_t destaddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["address"] = std::to_string(address);
+    root["destaddr"] = std::to_string(destaddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+}
 
 } // namespace Plugin_IR

@@ -21,6 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "PluginAPI/PluginServerAPI.h"
+#include "PluginAPI/ControlFlowAPI.h"
 #include "Dialect/PluginDialect.h"
 #include "Dialect/PluginOps.h"
 
@@ -32,6 +33,19 @@ using namespace mlir;
 using namespace mlir::Plugin;
 using std::vector;
 using std::pair;
+
+static uint64_t getBlockAddress(mlir::Block* b)
+{
+    if (mlir::Plugin::CondOp oops = dyn_cast<mlir::Plugin::CondOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::FallThroughOp oops = dyn_cast<mlir::Plugin::FallThroughOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::RetOp oops = dyn_cast<mlir::Plugin::RetOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else {
+        assert(false);
+    }
+}
 
 void FunctionOp::build(OpBuilder &builder, OperationState &state,
                        uint64_t id, StringRef funcName, bool declaredInline)
@@ -319,7 +333,8 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
 }
 
 void CondOp::build(OpBuilder &builder, OperationState &state,
-                   IComparisonCode condCode, Value lhs, Value rhs)
+                   IComparisonCode condCode, Value lhs, Value rhs, Block* tb,
+                   Block* fb)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     PlaceholderOp lhsOp = lhs.getDefiningOp<PlaceholderOp>();
@@ -328,11 +343,18 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
     uint64_t rhsId = rhsOp.idAttr().getInt();
     Block *buildBlock = builder.getBlock();
     uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
-    uint64_t id = pluginAPI.CreateCondOp(blockId, condCode, lhsId, rhsId);
+    uint64_t tbaddr = getBlockAddress(tb);
+    uint64_t fbaddr = getBlockAddress(fb);
+    uint64_t id = pluginAPI.CreateCondOp(blockId, condCode, lhsId, rhsId,
+                                         tbaddr, fbaddr);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands({lhs, rhs});
     state.addAttribute("condCode",
             builder.getI32IntegerAttr(static_cast<int32_t>(condCode)));
+    state.addSuccessors(tb);
+    state.addSuccessors(fb);
+    state.addAttribute("tbaddr", builder.getI64IntegerAttr(tbaddr));
+    state.addAttribute("fbaddr", builder.getI64IntegerAttr(fbaddr));
 }
 
 //===----------------------------------------------------------------------===//
@@ -433,6 +455,19 @@ void BaseOp::build(OpBuilder &builder, OperationState &state,
 void FallThroughOp::build(OpBuilder &builder, OperationState &state,
                           uint64_t address, Block* dest, uint64_t destaddr)
 {
+    state.addAttribute("address", builder.getI64IntegerAttr(address));
+    state.addAttribute("destaddr", builder.getI64IntegerAttr(destaddr));
+    state.addSuccessors(dest);
+}
+
+void FallThroughOp::build(OpBuilder &builder, OperationState &state,
+                          uint64_t address, Block* dest)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t destaddr = pluginAPI.FindBasicBlock(dest);
+
+    PluginAPI::ControlFlowAPI cfgAPI;
+    cfgAPI.CreateFallthroughOp(address, destaddr);
     state.addAttribute("address", builder.getI64IntegerAttr(address));
     state.addAttribute("destaddr", builder.getI64IntegerAttr(destaddr));
     state.addSuccessors(dest);
