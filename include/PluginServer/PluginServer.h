@@ -190,6 +190,7 @@ public:
         timeout = time;
     }
     void FuncOpJsonDeSerialize(const string& data);
+    Json::Value TypeJsonSerialize(PluginIR::PluginTypeBase& type);
     PluginIR::PluginTypeBase TypeJsonDeSerialize(const string& data);
     void LocalDeclOpJsonDeSerialize(const string& data);
     void LoopOpsJsonDeSerialize(const string& data);
@@ -205,6 +206,7 @@ public:
     void AssignOpJsonDeSerialize(const string& data);
     void GetPhiOpsJsonDeSerialize(const string& data);
     mlir::Value ValueJsonDeSerialize(Json::Value valueJson);
+	mlir::Value MemRefDeSerialize(const string& data);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */
@@ -259,7 +261,7 @@ private:
     std::pair<mlir::Block*, mlir::Block*> edge;
     vector<mlir::Operation *> opData;
     bool boolResult;
-    bool idResult;
+    uint64_t idResult;
     vector<uint64_t> idsResult;
     mlir::Value valueResult;
     /* 保存用户注册的回调函数，它们将在注入点事件触发后调用 */

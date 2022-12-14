@@ -211,8 +211,10 @@ mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
     uint64_t opId = GetID(valueJson["id"]);
     IDefineCode defCode = IDefineCode(
             atoi(valueJson["defCode"].asString().c_str()));
+	bool readOnly = (bool)atoi(valueJson["readOnly"].asString().c_str());
     switch (defCode) {
         case IDefineCode::MemRef : {
+            return MemRefDeSerialize(valueJson.toStyledString());
             break;
         }
         case IDefineCode::IntCST : {
@@ -221,10 +223,28 @@ mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
         default:
             break;
     }
-    mlir::Type retType = PluginIR::PluginUndefType::get(&context); // FIXME!
+    mlir::Type retType = TypeJsonDeSerialize(
+            valueJson["retType"].toStyledString());
     mlir::Value opValue = opBuilder.create<PlaceholderOp>(
-            opBuilder.getUnknownLoc(), opId, defCode, retType);
+            opBuilder.getUnknownLoc(), opId, defCode, readOnly, retType);
     return opValue;
+}
+
+mlir::Value PluginServer::MemRefDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+    uint64_t id = atol(root["id"].asString().c_str());
+    IDefineCode defCode = IDefineCode(
+            atoi(root["defCode"].asString().c_str()));
+	bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
+    mlir::Value base = ValueJsonDeSerialize(root["base"].toStyledString());
+    mlir::Value offset = ValueJsonDeSerialize(root["offset"].toStyledString());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
+    mlir::Value memRef = opBuilder.create<MemOp>(opBuilder.getUnknownLoc(), id,
+                            IDefineCode::MemRef, readOnly, base, offset, retType);
+    return memRef;
 }
 
 void PluginServer::JsonDeSerialize(const string& key, const string& data)
@@ -260,6 +280,45 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
     }
 }
 
+Json::Value PluginServer::TypeJsonSerialize (PluginIR::PluginTypeBase& type)
+{
+    Json::Value root;
+    Json::Value operationObj;
+    Json::Value item;
+
+    uint64_t ReTypeId;
+    uint64_t ReTypeWidth;
+
+    ReTypeId = static_cast<uint64_t>(type.getPluginTypeID());
+    item["id"] = std::to_string(ReTypeId);
+
+    if (auto elemTy = type.dyn_cast<PluginIR::PluginPointerType>()) {
+        auto baseTy = elemTy.getElementType().dyn_cast<PluginIR::PluginTypeBase>();
+        item["elementType"] = TypeJsonSerialize(baseTy);
+        if (elemTy.isReadOnlyElem()) {
+            item["elemConst"] = "1";
+        }else {
+            item["elemConst"] = "0";
+        }
+    }
+
+    if (type.getPluginIntOrFloatBitWidth() != 0) {
+        ReTypeWidth = type.getPluginIntOrFloatBitWidth();
+        item["width"] = std::to_string(ReTypeWidth);
+    }
+
+    if (type.isSignedPluginInteger()) {
+        item["signed"] = "1";
+    }
+
+    if (type.isUnsignedPluginInteger()) {
+        item["signed"] = "0";
+    }
+
+    root["type"] = item;
+    return root;
+}
+
 PluginIR::PluginTypeBase PluginServer::TypeJsonDeSerialize(const string& data)
 {
     Json::Value root;
@@ -289,7 +348,7 @@ PluginIR::PluginTypeBase PluginServer::TypeJsonDeSerialize(const string& data)
     }else if (id == static_cast<uint64_t>(PluginIR::PointerTyID)) {
         mlir::Type elemTy = TypeJsonDeSerialize(type["elementType"].toStyledString());
         auto ty = elemTy.dyn_cast<PluginIR::PluginTypeBase>();
-        baseType = PluginIR::PluginPointerType::get(&context, elemTy);
+        baseType = PluginIR::PluginPointerType::get(&context, elemTy, type["elemConst"].asString() == "1" ? 1 : 0);
     }else {
         if (PluginTypeId == PluginIR::VoidTyID)
             baseType = PluginIR::PluginVoidType::get(&context);
@@ -298,10 +357,6 @@ PluginIR::PluginTypeBase PluginServer::TypeJsonDeSerialize(const string& data)
         if (PluginTypeId == PluginIR::UndefTyID)
             baseType = PluginIR::PluginUndefType::get(&context);
     }
-    if (type["readonly"] == "1")
-        baseType.setReadOnlyFlag(1);
-    else
-        baseType.setReadOnlyFlag(0);
 
     pluginType = baseType;
     return baseType;
@@ -324,7 +379,6 @@ bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
         string baseOpKey = *opIdx;
         Json::Value opJson = blockJson[baseOpKey];
         if (opJson.isNull()) continue;
-        // llvm::StringRef opCode(opJson["OperationName"].asString().c_str());
         string opCode = opJson["OperationName"].asString();
         if (opCode == PhiOp::getOperationName().str()) {
             PhiOpJsonDeSerialize(opJson.toStyledString());
@@ -414,9 +468,9 @@ void PluginServer::LocalDeclOpJsonDeSerialize(const string& data)
         Json::Value attributes = node["attributes"];
         map<string, string> declAttributes;
         JsonGetAttributes(attributes, declAttributes);
-	    string symName = declAttributes["symName"];
-	    uint64_t typeID = atol(declAttributes["typeID"].c_str());
-	    uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
+        string symName = declAttributes["symName"];
+        uint64_t typeID = atol(declAttributes["typeID"].c_str());
+        uint64_t typeWidth = atol(declAttributes["typeWidth"].c_str());
         auto location = opBuilder.getUnknownLoc();
         LocalDeclOp op = opBuilder.create<LocalDeclOp>(location, id, symName, typeID, typeWidth);
         decls.push_back(op);
@@ -554,8 +608,9 @@ void PluginServer::CallOpJsonDeSerialize(const string& data)
     }
     int64_t id = GetID(node["id"]);
     mlir::StringRef callName(node["callee"].asString());
+    mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     CallOp op = opBuilder.create<CallOp>(opBuilder.getUnknownLoc(),
-                                            id, callName, ops);
+                                            id, callName, ops, retType);
     opData.push_back(op.getOperation());
 }
 
@@ -625,7 +680,7 @@ void PluginServer::PhiOpJsonDeSerialize(const string& data)
     int64_t id = GetID(node["id"]);
     uint32_t capacity = atoi(node["capacity"].asString().c_str());
     uint32_t nArgs = atoi(node["nArgs"].asString().c_str());
-    mlir::Type retType = nullptr;
+    mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     PhiOp op = opBuilder.create<PhiOp>(opBuilder.getUnknownLoc(),
                                         id, capacity, nArgs, ops, retType);
     opData.push_back(op.getOperation());
@@ -647,7 +702,7 @@ void PluginServer::AssignOpJsonDeSerialize(const string& data)
     }
     int64_t id = GetID(node["id"]);
     IExprCode iCode = IExprCode(atoi(node["exprCode"].asString().c_str()));
-    mlir::Type retType = nullptr;
+    mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     AssignOp op = opBuilder.create<AssignOp>(opBuilder.getUnknownLoc(),
                                                 id, iCode, ops, retType);
     opData.push_back(op.getOperation());

@@ -103,14 +103,71 @@ bool PluginServerAPI::SetLhsInCallOp(uint64_t callId, uint64_t lhsId)
     return PluginServer::GetInstance()->GetBoolResult();
 }
 
-uint64_t PluginServerAPI::CreateCondOp(IComparisonCode iCode,
-                                       uint64_t lhs, uint64_t rhs)
+bool PluginServerAPI::AddArgInPhiOp(uint64_t phiId,
+                                    uint64_t argId,
+                                    uint64_t predId,
+                                    uint64_t succId)
 {
     Json::Value root;
     string funName = __func__;
+    root["phiId"] = std::to_string(phiId);
+    root["argId"] = std::to_string(argId);
+    root["predId"] = std::to_string(predId);
+    root["succId"] = std::to_string(succId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetBoolResult();
+}
+
+uint64_t PluginServerAPI::CreateCondOp(uint64_t blockId, IComparisonCode iCode,
+                                       uint64_t lhs, uint64_t rhs,
+                                       uint64_t tbaddr, uint64_t fbaddr)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["blockId"] = std::to_string(blockId);
     root["condCode"] = std::to_string(static_cast<int32_t>(iCode));
     root["lhsId"] = std::to_string(lhs);
     root["rhsId"] = std::to_string(rhs);
+    root["tbaddr"] = std::to_string(tbaddr);
+    root["fbaddr"] = std::to_string(fbaddr);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetIdResult();
+}
+
+uint64_t PluginServerAPI::CreateAssignOp(uint64_t blockId, IExprCode iCode, vector<uint64_t> &argIds)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["blockId"] = std::to_string(blockId);
+    root["exprCode"] = std::to_string(static_cast<int32_t>(iCode));
+    Json::Value item;
+    size_t idx = 0;
+    for (auto v : argIds) {
+        string idStr = "id" + std::to_string(idx++);
+        item[idStr] = std::to_string(v);
+    }
+    root["argIds"] = item;
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetIdResult();
+}
+
+uint64_t PluginServerAPI::CreateCallOp(uint64_t blockId, uint64_t funcId,
+                                       vector<uint64_t> &argIds)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["blockId"] = std::to_string(blockId);
+    root["funcId"] = std::to_string(funcId);
+    Json::Value item;
+    size_t idx = 0;
+    for (auto v : argIds) {
+        string idStr = "id" + std::to_string(idx++);
+        item[idStr] = std::to_string(v);
+    }
+    root["argIds"] = item;
     string params = root.toStyledString();
     WaitClientResult(funName, params);
     return PluginServer::GetInstance()->GetIdResult();
@@ -121,6 +178,47 @@ mlir::Value PluginServerAPI::GetResultFromPhi(uint64_t phiId)
     Json::Value root;
     string funName = __func__;
     root["id"] = std::to_string(phiId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
+
+PhiOp PluginServerAPI::CreatePhiOp(uint64_t argId, uint64_t blockId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["blockId"] = std::to_string(blockId);
+    root["argId"] = std::to_string(argId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult();
+    return llvm::dyn_cast<PhiOp>(opRet[0]);
+}
+
+mlir::Value PluginServerAPI::ConfirmValue(mlir::Value v)
+{
+    Json::Value root;
+    string funName = "ConfirmValue";
+    PlaceholderOp placeholder = v.getDefiningOp<PlaceholderOp>();
+    uint64_t valId = placeholder.idAttr().getInt();
+    root["valId"] = std::to_string(valId);
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    return PluginServer::GetInstance()->GetValueResult();
+}
+
+mlir::Value PluginServerAPI::BuildMemRef(PluginIR::PluginTypeBase type,
+                                         mlir::Value base, mlir::Value offset)
+{
+    Json::Value root;
+    string funName = "BuildMemRef";
+    PlaceholderOp phBase = base.getDefiningOp<PlaceholderOp>();
+    uint64_t baseId = phBase.idAttr().getInt();
+    PlaceholderOp phOffset = offset.getDefiningOp<PlaceholderOp>();
+    uint64_t offsetId = phOffset.idAttr().getInt();
+    root["baseId"] = baseId;
+    root["offsetId"] = offsetId;
+    root["type"] = (PluginServer::GetInstance()->TypeJsonSerialize(type).toStyledString());
     string params = root.toStyledString();
     WaitClientResult(funName, params);
     return PluginServer::GetInstance()->GetValueResult();
@@ -161,7 +259,8 @@ PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)
     return PluginIR::PluginTypeID::UndefTyID;
 }
 
-vector<LocalDeclOp> PluginServerAPI::GetDeclOperationResult(const string&funName, const string& params)
+vector<LocalDeclOp> PluginServerAPI::GetDeclOperationResult(const string&funName,
+                                                            const string& params)
 {
     WaitClientResult(funName, params);
     vector<LocalDeclOp> retDecls = PluginServer::GetInstance()->GetLocalDeclResult();
@@ -178,7 +277,8 @@ vector<LocalDeclOp> PluginServerAPI::GetDecls(uint64_t funcID)
     return GetDeclOperationResult(funName, params);
 }
 
-vector<LoopOp> PluginServerAPI::GetLoopsResult(const string& funName, const string& params)
+vector<LoopOp> PluginServerAPI::GetLoopsResult(const string& funName,
+                                               const string& params)
 {
     WaitClientResult(funName, params);
     vector<LoopOp> loops = PluginServer::GetInstance()->LoopOpsResult();

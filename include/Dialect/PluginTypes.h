@@ -68,13 +68,10 @@ public:
     bool isSignedPluginInteger ();
     bool isUnsignedPluginInteger ();
     void setTypeSize (unsigned size);
-    void setReadOnlyFlag (unsigned readOnlyFlag);
     unsigned getTypeSize ();
-    unsigned getReadOnlyFlag ();
 
 private:
     unsigned size;
-    unsigned readOnlyFlag;
 }; // class PluginTypeBase
 
 namespace detail {
@@ -124,9 +121,11 @@ public:
 
     PluginTypeID getPluginTypeID ();
 
-    static PluginPointerType get(MLIRContext *context, Type pointee);
+    static PluginPointerType get(MLIRContext *context, Type pointee, unsigned readOnlyPointee = 0);
 
     Type getElementType();
+
+    unsigned isReadOnlyElem();
 }; // class PluginPointerType
 
 class PluginVoidType : public Type::TypeBase<PluginVoidType, PluginTypeBase, TypeStorage> {

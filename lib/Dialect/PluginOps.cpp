@@ -21,6 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "PluginAPI/PluginServerAPI.h"
+#include "PluginAPI/ControlFlowAPI.h"
 #include "Dialect/PluginDialect.h"
 #include "Dialect/PluginOps.h"
 
@@ -32,6 +33,19 @@ using namespace mlir;
 using namespace mlir::Plugin;
 using std::vector;
 using std::pair;
+
+static uint64_t getBlockAddress(mlir::Block* b)
+{
+    if (mlir::Plugin::CondOp oops = dyn_cast<mlir::Plugin::CondOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::FallThroughOp oops = dyn_cast<mlir::Plugin::FallThroughOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::RetOp oops = dyn_cast<mlir::Plugin::RetOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else {
+        assert(false);
+    }
+}
 
 void FunctionOp::build(OpBuilder &builder, OperationState &state,
                        uint64_t id, StringRef funcName, bool declaredInline)
@@ -169,11 +183,75 @@ void LoopOp::AddLoop(uint64_t outerId, uint64_t funcId)
 // PlaceholderOp
 
 void PlaceholderOp::build(OpBuilder &builder, OperationState &state,
-                          uint64_t id, IDefineCode defCode, Type retType) {
+                          uint64_t id, IDefineCode defCode, bool readOnly,
+                          Type retType)
+{
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("defCode",
         builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// MemOp
+
+void MemOp::build(OpBuilder &builder, OperationState &state,
+                  uint64_t id, IDefineCode defCode, bool readOnly,
+                  Value addr, Value offset, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addOperands({addr, offset});
+    state.addAttribute("defCode",
+                       builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
     if (retType) state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// SSAOp
+
+void SSAOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                  IDefineCode defCode, bool readOnly,StringRef ssaName,
+                  uint64_t version, uint64_t defOpId)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+                       builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("ssaName", builder.getStringAttr(ssaName));
+    state.addAttribute("version", builder.getI64IntegerAttr(version));
+    state.addAttribute("defOpId", builder.getI64IntegerAttr(defOpId));
+}
+
+//===----------------------------------------------------------------------===//
+// ConstOp
+
+void ConstOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                    IDefineCode defCode, bool readOnly, Attribute init,
+                    Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+                       builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("init", init);
+    if (retType) state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// PointerOp
+
+void PointerOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                      IDefineCode defCode, bool readOnly, Type retType,
+                      bool pointeeReadOnly)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addTypes(retType);
+    state.addAttribute("pointeeReadOnly", builder.getBoolAttr(pointeeReadOnly));
 }
 
 //===----------------------------------------------------------------------===//
@@ -181,11 +259,12 @@ void PlaceholderOp::build(OpBuilder &builder, OperationState &state,
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
                    uint64_t id, StringRef callee,
-                   ArrayRef<Value> arguments)
+                   ArrayRef<Value> arguments, Type retType)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands(arguments);
     state.addAttribute("callee", builder.getSymbolRefAttr(callee));
+    state.addTypes(retType);
 }
 
 /// Return the callee of the generic call operation, this is required by the
@@ -204,7 +283,33 @@ bool CallOp::SetLHS(Value lhs)
     PlaceholderOp phOp = lhs.getDefiningOp<PlaceholderOp>();
     uint64_t lhsId = phOp.idAttr().getInt();
     PluginAPI::PluginServerAPI pluginAPI;
-    return pluginAPI.SetLhsInCallOp(this->idAttr().getInt(), lhsId);
+    if (pluginAPI.SetLhsInCallOp(this->idAttr().getInt(), lhsId)) {
+        (*this)->setOperand(0, lhs);
+        return true;
+    }
+    return false;
+}
+
+void CallOp::build(OpBuilder &builder, OperationState &state,
+                   Value func, ArrayRef<Value> arguments, Type retType)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    PlaceholderOp funcOp = func.getDefiningOp<PlaceholderOp>();
+    uint64_t funcId = funcOp.idAttr().getInt();
+    vector<uint64_t> argIds;
+    for (auto v : arguments) {
+        PlaceholderOp argOp = v.getDefiningOp<PlaceholderOp>();
+        uint64_t argId = argOp.idAttr().getInt();
+        argIds.push_back(argId);
+    }
+    Block *buildBlock = builder.getBlock();
+    uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
+    uint64_t id = pluginAPI.CreateCallOp(blockId, funcId, argIds);
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addOperands(arguments);
+    // FIXME: DEF_BUILTIN.
+    state.addAttribute("callee", builder.getSymbolRefAttr("ctzll"));
+    state.addTypes(retType);
 }
 
 //===----------------------------------------------------------------------===//
@@ -228,18 +333,28 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
 }
 
 void CondOp::build(OpBuilder &builder, OperationState &state,
-                   IComparisonCode condCode, Value lhs, Value rhs)
+                   IComparisonCode condCode, Value lhs, Value rhs, Block* tb,
+                   Block* fb)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     PlaceholderOp lhsOp = lhs.getDefiningOp<PlaceholderOp>();
     uint64_t lhsId = lhsOp.idAttr().getInt();
     PlaceholderOp rhsOp = rhs.getDefiningOp<PlaceholderOp>();
     uint64_t rhsId = rhsOp.idAttr().getInt();
-    uint64_t id = pluginAPI.CreateCondOp(condCode, lhsId, rhsId);
+    Block *buildBlock = builder.getBlock();
+    uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
+    uint64_t tbaddr = getBlockAddress(tb);
+    uint64_t fbaddr = getBlockAddress(fb);
+    uint64_t id = pluginAPI.CreateCondOp(blockId, condCode, lhsId, rhsId,
+                                         tbaddr, fbaddr);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands({lhs, rhs});
     state.addAttribute("condCode",
             builder.getI32IntegerAttr(static_cast<int32_t>(condCode)));
+    state.addSuccessors(tb);
+    state.addSuccessors(fb);
+    state.addAttribute("tbaddr", builder.getI64IntegerAttr(tbaddr));
+    state.addAttribute("fbaddr", builder.getI64IntegerAttr(fbaddr));
 }
 
 //===----------------------------------------------------------------------===//
@@ -253,13 +368,41 @@ void PhiOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("capacity", builder.getI32IntegerAttr(capacity));
     state.addAttribute("nArgs", builder.getI32IntegerAttr(nArgs));
     state.addOperands(operands);
-    if (resultType) state.addTypes(resultType);
+    state.addTypes(resultType);
 }
 
 Value PhiOp::GetResult()
 {
     PluginAPI::PluginServerAPI pluginAPI;
     return pluginAPI.GetResultFromPhi(this->idAttr().getInt());
+}
+
+PhiOp PhiOp::CreatePhi(Value arg, Block *block)
+{
+    uint64_t argId = 0;
+    if (arg != nullptr) {
+        PlaceholderOp phOp = arg.getDefiningOp<PlaceholderOp>();
+        argId = phOp.idAttr().getInt();
+    }
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t blockId = pluginAPI.FindBasicBlock(block);
+    return pluginAPI.CreatePhiOp(argId, blockId);
+}
+
+bool PhiOp::AddArg(Value arg, Block *pred, Block *succ)
+{
+    PlaceholderOp phOp = arg.getDefiningOp<PlaceholderOp>();
+    uint64_t argId = phOp.idAttr().getInt();
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t predId = pluginAPI.FindBasicBlock(pred);
+    uint64_t succId = pluginAPI.FindBasicBlock(succ);
+    if (pluginAPI.AddArgInPhiOp(this->idAttr().getInt(), argId, predId, succId)) {
+        uint32_t nArg = this->nArgsAttr().getInt() + 1;
+        OpBuilder builder(this->getOperation());
+        (*this)->setAttr("nArgs", builder.getI32IntegerAttr(nArg));
+        return true;
+    }
+    return false;
 }
 
 //===----------------------------------------------------------------------===//
@@ -273,7 +416,27 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("exprCode",
         builder.getI32IntegerAttr(static_cast<int32_t>(exprCode)));
     state.addOperands(operands);
-    if (resultType) state.addTypes(resultType);
+    state.addTypes(resultType);
+}
+
+void AssignOp::build(OpBuilder &builder, OperationState &state,
+                   IExprCode exprCode, ArrayRef<Value> operands, Type resultType)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    vector<uint64_t> argIds;
+    for (auto v : operands) {
+        PlaceholderOp argOp = v.getDefiningOp<PlaceholderOp>();
+        uint64_t argId = argOp.idAttr().getInt();
+        argIds.push_back(argId);
+    }
+    Block *buildBlock = builder.getBlock();
+    uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
+    uint64_t id = pluginAPI.CreateAssignOp(blockId, exprCode, argIds);
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("exprCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(exprCode)));
+    state.addOperands(operands);
+    state.addTypes(resultType);
 }
 
 //===----------------------------------------------------------------------===//
@@ -292,6 +455,19 @@ void BaseOp::build(OpBuilder &builder, OperationState &state,
 void FallThroughOp::build(OpBuilder &builder, OperationState &state,
                           uint64_t address, Block* dest, uint64_t destaddr)
 {
+    state.addAttribute("address", builder.getI64IntegerAttr(address));
+    state.addAttribute("destaddr", builder.getI64IntegerAttr(destaddr));
+    state.addSuccessors(dest);
+}
+
+void FallThroughOp::build(OpBuilder &builder, OperationState &state,
+                          uint64_t address, Block* dest)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t destaddr = pluginAPI.FindBasicBlock(dest);
+
+    PluginAPI::ControlFlowAPI cfgAPI;
+    cfgAPI.CreateFallthroughOp(address, destaddr);
     state.addAttribute("address", builder.getI64IntegerAttr(address));
     state.addAttribute("destaddr", builder.getI64IntegerAttr(destaddr));
     state.addSuccessors(dest);
