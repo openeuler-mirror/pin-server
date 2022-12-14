@@ -67,6 +67,8 @@ public:
     /* Plugin API for PhiOp. */
     bool AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) override;
     PhiOp CreatePhiOp(uint64_t, uint64_t) override;
+	mlir::Value ConfirmValue(mlir::Value);
+	mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value);
 
 private:
     vector<FunctionOp> GetFunctionOpResult(const string& funName, const string& params);

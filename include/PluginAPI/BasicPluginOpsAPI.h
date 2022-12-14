@@ -18,6 +18,7 @@
 #define BASIC_PLUGIN_OPS_FRAMEWORK_API_H
 
 #include "Dialect/PluginOps.h"
+#include "Dialect/PluginTypes.h"
 
 #include <vector>
 #include <string>
@@ -58,6 +59,8 @@ public:
     virtual uint64_t CreateAssignOp(uint64_t, IExprCode, vector<uint64_t> &) = 0;
     virtual bool AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) = 0;
     virtual PhiOp CreatePhiOp(uint64_t, uint64_t) = 0;
+	virtual mlir::Value ConfirmValue(mlir::Value) = 0;
+	virtual mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value) = 0;
 }; // class BasicPluginOpsAPI
 } // namespace PluginAPI
 
