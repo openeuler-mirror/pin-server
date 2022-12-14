@@ -61,6 +61,8 @@ public:
     virtual PhiOp CreatePhiOp(uint64_t, uint64_t) = 0;
 	virtual mlir::Value ConfirmValue(mlir::Value) = 0;
 	virtual mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value) = 0;
+    virtual bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) = 0;
+    virtual mlir::Operation* GetSSADefOperation(uint64_t) = 0;
 }; // class BasicPluginOpsAPI
 } // namespace PluginAPI
 

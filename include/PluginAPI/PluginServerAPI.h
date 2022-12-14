@@ -69,6 +69,8 @@ public:
     PhiOp CreatePhiOp(uint64_t, uint64_t) override;
 	mlir::Value ConfirmValue(mlir::Value);
 	mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value);
+    bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) override;
+    mlir::Operation* GetSSADefOperation(uint64_t) override;
 
     void WaitClientResult(const string& funName, const string& params);
 

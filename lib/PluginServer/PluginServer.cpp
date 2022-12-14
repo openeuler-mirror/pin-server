@@ -125,6 +125,13 @@ mlir::Block* PluginServer::FindBlock(uint64_t id)
     return iter->second;
 }
 
+mlir::Operation* PluginServer::FindDefOperation(uint64_t id)
+{
+    auto iter = this->defOpMaps.find(id);
+    assert(iter != this->defOpMaps.end());
+    return iter->second;
+}
+
 uint64_t PluginServer::GetBlockResult(mlir::Block* b)
 {
     uint64_t newAddr = GetIdResult();
@@ -384,6 +391,8 @@ bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
             PhiOpJsonDeSerialize(opJson.toStyledString());
         } else if (opCode == CallOp::getOperationName().str()) {
             CallOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == SSAOp::getOperationName().str()) {
+            SSAOpJsonDeSerialize(opJson.toStyledString());
         } else if (opCode == AssignOp::getOperationName().str()) {
             AssignOpJsonDeSerialize(opJson.toStyledString());
         } else if (opCode == CondOp::getOperationName().str()) {
@@ -680,9 +689,36 @@ void PluginServer::PhiOpJsonDeSerialize(const string& data)
     int64_t id = GetID(node["id"]);
     uint32_t capacity = atoi(node["capacity"].asString().c_str());
     uint32_t nArgs = atoi(node["nArgs"].asString().c_str());
+    uint64_t defStmtId = atoi(node["defStmtId"].asString().c_str());
     mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     PhiOp op = opBuilder.create<PhiOp>(opBuilder.getUnknownLoc(),
-                                        id, capacity, nArgs, ops, retType);
+                                        id, capacity, nArgs, defStmtId, ops, retType);
+    
+    defOpMaps.insert({defStmtId, op.getOperation()});
+    opData.push_back(op.getOperation());
+}
+
+void PluginServer::SSAOpJsonDeSerialize(const string& data)
+{
+    Json::Value node;
+    Json::Reader reader;
+    reader.parse(data, node);
+    Json::Value operandJson = node["operands"];
+    Json::Value::Members operandMember = operandJson.getMemberNames();
+
+    uint64_t id = GetID(node["id"]);
+    uint64_t defCode = atoi(node["defCode"].asString().c_str());
+    bool readOnly = (bool)atoi(node["readOnly"].asString().c_str());
+    const char* ssaName = node["ssaName"].asString().c_str();
+    uint64_t ssaParmDecl = atoi(node["ssaParmDecl"].asString().c_str());
+    uint64_t version = atoi(node["version"].asString().c_str());
+    uint64_t defStmtId = atoi(node["defStmtId"].asString().c_str());
+    uint64_t defOpId = atoi(node["defOpId"].asString().c_str());
+    SSAOp op = opBuilder.create<SSAOp>(opBuilder.getUnknownLoc(),
+                                        id, IDefineCode::SSA, readOnly, ssaName,
+                                        ssaParmDecl, version,
+                                        defStmtId, defOpId);
+    defOpMaps.insert({defStmtId, op.getOperation()});
     opData.push_back(op.getOperation());
 }
 
@@ -702,9 +738,11 @@ void PluginServer::AssignOpJsonDeSerialize(const string& data)
     }
     int64_t id = GetID(node["id"]);
     IExprCode iCode = IExprCode(atoi(node["exprCode"].asString().c_str()));
+    uint64_t defStmtId = atoi(node["defStmtId"].asString().c_str());
     mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString());
     AssignOp op = opBuilder.create<AssignOp>(opBuilder.getUnknownLoc(),
-                                                id, iCode, ops, retType);
+                                                id, iCode, defStmtId, ops, retType);
+    defOpMaps.insert({defStmtId, op.getOperation()});
     opData.push_back(op.getOperation());
 }
 

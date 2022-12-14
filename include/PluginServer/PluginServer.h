@@ -146,6 +146,7 @@ public:
     vector<mlir::Plugin::PhiOp> GetPhiOpsResult(void);
     mlir::Block* FindBlock(uint64_t);
     uint64_t FindBasicBlock(mlir::Block*);
+    mlir::Operation* FindDefOperation(uint64_t);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
     int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
@@ -201,6 +202,7 @@ public:
     void CallOpJsonDeSerialize(const string& data);
     void CondOpJsonDeSerialize(const string& data);
     void RetOpJsonDeSerialize(const string& data);
+    void SSAOpJsonDeSerialize(const string& data);
     void FallThroughOpJsonDeSerialize(const string& data);
     void PhiOpJsonDeSerialize(const string& data);
     void AssignOpJsonDeSerialize(const string& data);
@@ -276,6 +278,7 @@ private:
     // process Block.
     std::map<uint64_t, mlir::Block*> blockMaps;
     std::map<mlir::Block*, uint64_t> basicblockMaps;
+    std::map<uint64_t, mlir::Operation*> defOpMaps;
     bool ProcessBlock(mlir::Block*, mlir::Region&, const Json::Value&);
 
 }; // class PluginServer

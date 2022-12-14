@@ -67,10 +67,11 @@ def IComparisonAttr  : I32EnumAttr<
 
 def IDefineCodeMemRef    : I32EnumAttrCase<"MemRef", 0>;
 def IDefineCodeIntCST    : I32EnumAttrCase<"IntCST", 1>;
-def IDefineCodeUNDEF     : I32EnumAttrCase<"UNDEF", 2>;
+def IDefineCodeSSA       : I32EnumAttrCase<"SSA", 2>;
+def IDefineCodeUNDEF     : I32EnumAttrCase<"UNDEF", 3>;
 def IDefineCodeAttr  : I32EnumAttr<
    "IDefineCode", "plugin define code",
-   [IDefineCodeMemRef, IDefineCodeIntCST, IDefineCodeUNDEF]>{
+   [IDefineCodeMemRef, IDefineCodeIntCST, IDefineCodeSSA, IDefineCodeUNDEF]>{
   let cppNamespace = "::mlir::Plugin";
 }
 
