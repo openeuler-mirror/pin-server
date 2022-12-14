@@ -214,7 +214,7 @@ void MemOp::build(OpBuilder &builder, OperationState &state,
 void SSAOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
                   IDefineCode defCode, bool readOnly, StringRef ssaName,
                   uint64_t ssaParmDecl, uint64_t version, uint64_t defStmtId,
-                  uint64_t defOpId)
+                  uint64_t definingId)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("defCode",
@@ -224,7 +224,7 @@ void SSAOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
     state.addAttribute("ssaParmDecl", builder.getI64IntegerAttr(ssaParmDecl));
     state.addAttribute("version", builder.getI64IntegerAttr(version));
     state.addAttribute("defStmtId", builder.getI64IntegerAttr(defStmtId));
-    state.addAttribute("defOpId", builder.getI64IntegerAttr(defOpId));
+    state.addAttribute("definingId", builder.getI64IntegerAttr(definingId));
 }
 
 //===----------------------------------------------------------------------===//
