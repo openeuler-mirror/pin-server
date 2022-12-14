@@ -38,20 +38,6 @@ int CheckID(uintptr_t id)
     return 0;
 }
 
-uint64_t PluginServerAPI::CreateBlock(mlir::Block* b, uint64_t funcAddr,
-                                      uint64_t bbAddr)
-{
-    Json::Value root;
-    string funName = __func__;
-    assert(funcAddr);
-    assert(bbAddr);
-    root["funcaddr"] = std::to_string(funcAddr);
-    root["bbaddr"] = std::to_string(bbAddr);
-    string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetBlockResult(b);
-}
-
 void PluginServerAPI::WaitClientResult(const string& funName, const string& params)
 {
     PluginServer *server = PluginServer::GetInstance();
@@ -321,6 +307,20 @@ vector<LoopOp> PluginServerAPI::GetLoopsFromFunc(uint64_t funcID)
     string params = root.toStyledString();
 
     return GetLoopsResult(funName, params);
+}
+
+bool PluginServerAPI::IsDomInfoAvailable()
+{
+    Json::Value root;
+    string funName("IsDomInfoAvailable");
+    return GetDomInfoAvaiResult(funName);
+}
+
+bool PluginServerAPI::GetDomInfoAvaiResult(const string& funName)
+{
+    Json::Value root;
+    WaitClientResult(funName, root.toStyledString());
+    return PluginServer::GetInstance()->GetBoolResult();
 }
 
 LoopOp PluginServerAPI::AllocateNewLoop(uint64_t funcID)

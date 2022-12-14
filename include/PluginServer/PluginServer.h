@@ -138,10 +138,12 @@ public:
     std::pair<mlir::Block*, mlir::Block*> EdgeResult(void);
     vector<mlir::Operation *> GetOpResult(void);
     bool GetBoolResult(void);
+    void EraseBlock(mlir::Block*);
     uint64_t GetBlockResult(mlir::Block*);
     uint64_t GetIdResult(void);
     vector<uint64_t> GetIdsResult(void);
     mlir::Value GetValueResult(void);
+    vector<mlir::Plugin::PhiOp> GetPhiOpsResult(void);
     mlir::Block* FindBlock(uint64_t);
     uint64_t FindBasicBlock(mlir::Block*);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
@@ -201,6 +203,7 @@ public:
     void FallThroughOpJsonDeSerialize(const string& data);
     void PhiOpJsonDeSerialize(const string& data);
     void AssignOpJsonDeSerialize(const string& data);
+    void GetPhiOpsJsonDeSerialize(const string& data);
     mlir::Value ValueJsonDeSerialize(Json::Value valueJson);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */
     void JsonDeSerialize(const string& key, const string& data);
@@ -272,6 +275,7 @@ private:
     std::map<uint64_t, mlir::Block*> blockMaps;
     std::map<mlir::Block*, uint64_t> basicblockMaps;
     bool ProcessBlock(mlir::Block*, mlir::Region&, const Json::Value&);
+
 }; // class PluginServer
 
 void RunServer(int timeout, string& port);

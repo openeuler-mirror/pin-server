@@ -36,8 +36,6 @@ public:
     BasicPluginOpsAPI() = default;
     virtual ~BasicPluginOpsAPI() = default;
 
-    virtual uint64_t CreateBlock(mlir::Block*, uint64_t, uint64_t) = 0;
-
     virtual vector<FunctionOp> GetAllFunc() = 0;
     virtual vector<LocalDeclOp> GetDecls(uint64_t) = 0;
     virtual LoopOp AllocateNewLoop(uint64_t) = 0;
@@ -56,6 +54,7 @@ public:
     virtual uint64_t CreateCallOp(uint64_t, uint64_t, vector<uint64_t> &) = 0;
     virtual uint64_t CreateCondOp(uint64_t, IComparisonCode, uint64_t, uint64_t) = 0;
     virtual mlir::Value GetResultFromPhi(uint64_t) = 0;
+    virtual bool IsDomInfoAvailable() = 0;
     virtual uint64_t CreateAssignOp(uint64_t, IExprCode, vector<uint64_t> &) = 0;
     virtual bool AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) = 0;
     virtual PhiOp CreatePhiOp(uint64_t, uint64_t) = 0;

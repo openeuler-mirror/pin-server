@@ -45,6 +45,7 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
   let extraClassDeclaration = [{
     std::vector<LoopOp> GetAllLoops();
     LoopOp AllocateNewLoop();
+    bool IsDomInfoAvailable();
   }];
 }
 

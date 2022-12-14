@@ -107,6 +107,17 @@ LoopOp PluginServer::LoopOpResult()
     return retLoop;
 }
 
+void PluginServer::EraseBlock(mlir::Block* b)
+{
+    if (auto bbit = basicblockMaps.find(b); bbit != basicblockMaps.end()) {
+        uint64_t addr = bbit->second;
+        basicblockMaps.erase(bbit);
+        if (auto bit = blockMaps.find(addr); bit != blockMaps.end()) {
+            blockMaps.erase(bit);
+        }
+    }
+}
+
 mlir::Block* PluginServer::FindBlock(uint64_t id)
 {
     auto iter = this->blockMaps.find(id);
@@ -166,6 +177,17 @@ vector<uint64_t> PluginServer::GetIdsResult()
 mlir::Value PluginServer::GetValueResult()
 {
     return this->valueResult;
+}
+
+vector<mlir::Plugin::PhiOp> PluginServer::GetPhiOpsResult()
+{
+    vector<mlir::Plugin::PhiOp> retOps;
+    for (auto item : opData) {
+        PhiOp p = llvm::dyn_cast<mlir::Plugin::PhiOp>(item);
+        retOps.push_back(p);
+    }
+    opData.clear();
+    return retOps;
 }
 
 void PluginServer::JsonGetAttributes(Json::Value node, map<string, string>& attributes)
@@ -232,6 +254,8 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
         context.getOrLoadDialect<PluginDialect>();
         opBuilder = mlir::OpBuilder(&context);
         this->valueResult = ValueJsonDeSerialize(data.c_str());
+    } else if (key == "GetPhiOps") {
+        GetPhiOpsJsonDeSerialize(data);
     } else {
         cout << "not Json,key:" << key << ",value:" << data << endl;
     }
@@ -628,6 +652,24 @@ void PluginServer::AssignOpJsonDeSerialize(const string& data)
     AssignOp op = opBuilder.create<AssignOp>(opBuilder.getUnknownLoc(),
                                                 id, iCode, ops, retType);
     opData.push_back(op.getOperation());
+}
+
+void PluginServer::GetPhiOpsJsonDeSerialize(const string& data)
+{
+    opData.clear();
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+
+    Json::Value::Members operation = root.getMemberNames();
+    context.getOrLoadDialect<PluginDialect>();
+    mlir::OpBuilder builder(&context);
+    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
+        string operationKey = *iter;
+        node = root[operationKey];
+        PhiOpJsonDeSerialize(node.toStyledString());
+    }
 }
 
 /* 线程函数，执行用户注册函数，客户端返回数据后退出 */

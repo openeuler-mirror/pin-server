@@ -36,8 +36,6 @@ public:
     PluginServerAPI () = default;
     ~PluginServerAPI () = default;
 
-    uint64_t CreateBlock(mlir::Block*, uint64_t, uint64_t) override;
-
     vector<FunctionOp> GetAllFunc() override;
     vector<LocalDeclOp> GetDecls(uint64_t) override;
     PhiOp GetPhiOp(uint64_t) override;
@@ -63,6 +61,7 @@ public:
     /* Plugin API for CondOp. */
     uint64_t CreateCondOp(uint64_t, IComparisonCode, uint64_t, uint64_t) override;
     mlir::Value GetResultFromPhi(uint64_t) override;
+    bool IsDomInfoAvailable() override;
     /* Plugin API for AssignOp. */
     uint64_t CreateAssignOp(uint64_t, IExprCode, vector<uint64_t> &) override;
     /* Plugin API for PhiOp. */
@@ -80,6 +79,7 @@ private:
     mlir::Block* BlockResult(const string& funName, const string& params);
     vector<mlir::Block*> BlocksResult(const string& funName, const string& params);
     void WaitClientResult(const string& funName, const string& params);
+    bool GetDomInfoAvaiResult(const string& funName);
 }; // class PluginServerAPI
 } // namespace PluginAPI
 

@@ -91,6 +91,7 @@ add_custom_command(TARGET pin_user COMMAND sha256sum libpin_user.so > libpin_use
 # pin_server
 add_executable(pin_server 
   "lib/PluginServer/PluginServer.cpp"
+  "lib/PluginAPI/ControlFlowAPI.cpp"
   "lib/PluginServer/PluginLog.cpp"
   "lib/PluginServer/main.cpp")
 target_link_libraries(pin_server
