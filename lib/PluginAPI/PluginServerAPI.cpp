@@ -478,4 +478,24 @@ uint64_t PluginServerAPI::FindBasicBlock(mlir::Block* b)
     return server->FindBasicBlock(b);
 }
 
+bool PluginServerAPI::RedirectFallthroughTarget(FallThroughOp& fop,
+                                                uint64_t src, uint64_t dest)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["src"] = src;
+    root["dest"] = dest;
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+    //update server
+    PluginServer *server = PluginServer::GetInstance();
+    fop->setSuccessor(server->FindBlock(dest), 0);
+    return true;
+}
+
+mlir::Operation* PluginServerAPI::GetSSADefOperation(uint64_t addr)
+{
+    return PluginServer::GetInstance()->FindDefOperation(addr);
+}
+
 } // namespace Plugin_IR
