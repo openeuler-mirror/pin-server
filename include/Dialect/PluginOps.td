@@ -259,7 +259,7 @@ def ConstOp : Constant<"constant value"> {
                       "Attribute":$init, "Type":$retType)>
   ];
   let extraClassDeclaration = [{
-    Value CreateConst(OpBuilder &builder, Attribute value, Type retType);
+    static Value CreateConst(OpBuilder &builder, Attribute value, Type retType);
     Type getResultType() { return this->getOperation()->getResult(0).getType(); }
   }];
 }

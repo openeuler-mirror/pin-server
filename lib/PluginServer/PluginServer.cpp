@@ -727,7 +727,6 @@ mlir::Value PluginServer::SSAOpJsonDeSerialize(const string& data)
                                         id, IDefineCode::SSA, readOnly, nameVarId,
                                         ssaParmDecl, version,
                                         definingId, retType);
-    defOpMaps.insert({definingId, ret.getDefiningOp()});
     return ret;
 }
 
