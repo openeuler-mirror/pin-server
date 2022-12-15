@@ -248,6 +248,10 @@ mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
                     readOnly, initAttr, retType);
             break;
         }
+        case IDefineCode::SSA : {
+            opValue = SSAOpJsonDeSerialize(valueJson.toStyledString());
+            break;
+        }
         default: {
             opValue = opBuilder.create<PlaceholderOp>(
                     opBuilder.getUnknownLoc(), opId, defCode, readOnly, retType);
@@ -409,8 +413,6 @@ bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
             PhiOpJsonDeSerialize(opJson.toStyledString());
         } else if (opCode == CallOp::getOperationName().str()) {
             CallOpJsonDeSerialize(opJson.toStyledString());
-        } else if (opCode == SSAOp::getOperationName().str()) {
-            SSAOpJsonDeSerialize(opJson.toStyledString());
         } else if (opCode == AssignOp::getOperationName().str()) {
             AssignOpJsonDeSerialize(opJson.toStyledString());
         } else if (opCode == CondOp::getOperationName().str()) {
@@ -708,27 +710,25 @@ void PluginServer::PhiOpJsonDeSerialize(const string& data)
     opData.push_back(op.getOperation());
 }
 
-void PluginServer::SSAOpJsonDeSerialize(const string& data)
+mlir::Value PluginServer::SSAOpJsonDeSerialize(const string& data)
 {
     Json::Value node;
     Json::Reader reader;
     reader.parse(data, node);
-    Json::Value operandJson = node["operands"];
 
     uint64_t id = GetID(node["id"]);
-    uint64_t defCode = atoi(node["defCode"].asString().c_str());
     bool readOnly = (bool)atoi(node["readOnly"].asString().c_str());
     uint64_t nameVarId = atoi(node["nameVarId"].asString().c_str());
     uint64_t ssaParmDecl = atoi(node["ssaParmDecl"].asString().c_str());
     uint64_t version = atoi(node["version"].asString().c_str());
     uint64_t definingId = atoi(node["definingId"].asString().c_str());
     mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString().c_str());
-    SSAOp op = opBuilder.create<SSAOp>(opBuilder.getUnknownLoc(),
+    mlir::Value ret = opBuilder.create<SSAOp>(opBuilder.getUnknownLoc(),
                                         id, IDefineCode::SSA, readOnly, nameVarId,
                                         ssaParmDecl, version,
-                                        definingId,retType);
-    defOpMaps.insert({definingId, op.getOperation()});
-    opData.push_back(op.getOperation());
+                                        definingId, retType);
+    defOpMaps.insert({definingId, ret.getDefiningOp()});
+    return ret;
 }
 
 void PluginServer::AssignOpJsonDeSerialize(const string& data)

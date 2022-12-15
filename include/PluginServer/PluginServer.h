@@ -203,7 +203,7 @@ public:
     void CallOpJsonDeSerialize(const string& data);
     void CondOpJsonDeSerialize(const string& data);
     void RetOpJsonDeSerialize(const string& data);
-    void SSAOpJsonDeSerialize(const string& data);
+    mlir::Value SSAOpJsonDeSerialize(const string& data);
     void FallThroughOpJsonDeSerialize(const string& data);
     void PhiOpJsonDeSerialize(const string& data);
     void AssignOpJsonDeSerialize(const string& data);
