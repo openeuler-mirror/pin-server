@@ -164,12 +164,12 @@ LoopOp LoopOp::GetOuterLoop()
     return pluginAPI.GetLoopById(loopId);
 }
 
-// FIXME: 用Block替换uint64_t
-bool LoopOp::IsBlockInside(uint64_t b)
+bool LoopOp::IsBlockInside(mlir::Block* b)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
-    return pluginAPI.IsBlockInLoop(loopId, b);
+    uint64_t blockId = pluginAPI.FindBasicBlock(b);
+    return pluginAPI.IsBlockInLoop(loopId, blockId);
 }
 
 bool LoopOp::IsLoopFather(mlir::Block* b)
