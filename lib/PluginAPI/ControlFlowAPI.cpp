@@ -173,4 +173,14 @@ void ControlFlowAPI::CreateFallthroughOp(
     pluginAPI.WaitClientResult(funName, params);
 }
 
+void ControlFlowAPI::RemoveEdge(uint64_t src, uint64_t dest)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["src"] = std::to_string(src);
+    root["dest"] = std::to_string(dest);
+    string params = root.toStyledString();
+    pluginAPI.WaitClientResult(funName, params);
+}
+
 } // namespace PluginAPI
