@@ -162,20 +162,14 @@ mlir::Value ControlFlowAPI::CreateNewDef(mlir::Value oldValue,
 {
     Json::Value root;
     string funName = __func__;
-    printf("ControlFlowAPI::CreateNewDef");
     // FIXME: use baseOp.
     uint64_t opId = llvm::dyn_cast<PhiOp>(op).idAttr().getInt();
-    printf("dyn_cast<PhiOp>:%ld\n", opId);
     root["opId"] = std::to_string(opId);
-    printf("GetValueId  valueId\n");
     uint64_t valueId = GetValueId(oldValue);
     root["valueId"] = std::to_string(valueId);
-    printf("GetValueId  defValue\n");
     uint64_t defId = 0;
-    printf("GetValueId  END\n");
     root["defId"] = std::to_string(defId);
     string params = root.toStyledString();
-    printf("CreateNewDef:%s\n", params.c_str());
     pluginAPI.WaitClientResult(funName, params);
     return PluginServer::GetInstance()->GetValueResult();
 }
