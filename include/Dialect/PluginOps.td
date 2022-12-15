@@ -82,6 +82,8 @@ def LoopOp : Plugin_Op<"loop", [NoSideEffect]> {
   let extraClassDeclaration = [{
     mlir::Block* GetHeader();
     mlir::Block* GetLatch();
+	void SetHeader(mlir::Block*);
+	void SetLatch(mlir::Block*);
     std::pair<mlir::Block*, mlir::Block*> GetSingleExit();
     void Delete();
     LoopOp GetInnerLoop();
@@ -91,6 +93,7 @@ def LoopOp : Plugin_Op<"loop", [NoSideEffect]> {
     std::vector<std::pair<mlir::Block*, mlir::Block*> > GetExitEdges();
     std::vector<mlir::Block*> GetLoopBody(); 
     void AddLoop(uint64_t, uint64_t);
+    void AddBlock(mlir::Block*);
   }];
 }
 
@@ -183,10 +186,9 @@ class Pointer<string mnemonic> : Placeholder<mnemonic> {
 }
 
 class SSA<string mnemonic> : Placeholder<mnemonic> {
-  dag SSAArgs = (ins UI64Attr:$SSAName,
+  dag SSAArgs = (ins UI64Attr:$namVarId,
                      UI64Attr:$ssaParmDecl,
                      UI64Attr:$version,
-                     UI64Attr:$defStmtId,
                      UI64Attr:$definingId);
   let arguments = !con(commonArgs, SSAArgs);
 }
@@ -241,14 +243,15 @@ def SSAOp : SSA<"SSA"> {
   let description = [{TODO}];
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "IDefineCode":$defCode, "bool":$readOnly,
-                      "uint64_t":$SSAName, "uint64_t":$ssaParmDecl, "uint64_t":$version,
-                      "uint64_t":$defStmtId, "uint64_t":$defOpId, "Type":$retType)>
+                      "uint64_t":$nameVarId, "uint64_t":$ssaParmDecl, "uint64_t":$version,
+                      "uint64_t":$definingId, "Type":$retType)>
   ];
   let extraClassDeclaration = [{
     static Value MakeSSA(OpBuilder &builder, Type t);
     Value Copy();
     Value GetCurrentDef();
     bool SetCurrentDef(Value def);
+	Operation* GetSSADefOperation();
   }];
 }
 

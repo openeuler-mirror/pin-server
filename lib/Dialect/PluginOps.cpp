@@ -113,6 +113,22 @@ Block* LoopOp::GetLatch()
     return pluginAPI.GetLatch(loopId);
 }
 
+void LoopOp::SetHeader(mlir::Block* b)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t loopId = idAttr().getInt();
+    uint64_t blockId = pluginAPI.FindBasicBlock(b);
+    pluginAPI.SetHeader(loopId, blockId);
+}
+
+void LoopOp::SetLatch(mlir::Block* b)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t loopId = idAttr().getInt();
+    uint64_t blockId = pluginAPI.FindBasicBlock(b);
+    pluginAPI.SetLatch(loopId, blockId);
+}
+
 vector<mlir::Block*> LoopOp::GetLoopBody()
 {
     PluginAPI::PluginServerAPI pluginAPI;
@@ -180,6 +196,14 @@ void LoopOp::AddLoop(uint64_t outerId, uint64_t funcId)
     return pluginAPI.AddLoop(loopId, outerId, funcId);
 }
 
+void LoopOp::AddBlock(mlir::Block* block)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t blockId = pluginAPI.FindBasicBlock(block);
+    uint64_t loopId = idAttr().getInt();
+    pluginAPI.AddBlockToLoop(blockId, loopId);
+}
+
 //===----------------------------------------------------------------------===//
 // PlaceholderOp
 
@@ -213,19 +237,18 @@ void MemOp::build(OpBuilder &builder, OperationState &state,
 // SSAOp
 
 void SSAOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
-                  IDefineCode defCode, bool readOnly, uint64_t ssaName,
-                  uint64_t ssaParmDecl, uint64_t version, uint64_t defStmtId,
-                  uint64_t defOpId, Type retType)
+                  IDefineCode defCode, bool readOnly, uint64_t nameVarId,
+                  uint64_t ssaParmDecl, uint64_t version, uint64_t definingId,
+                  Type retType)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("defCode",
                        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
     state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
-    state.addAttribute("SSAName", builder.getI64IntegerAttr(ssaName));
+    state.addAttribute("nameVarId", builder.getI64IntegerAttr(nameVarId));
     state.addAttribute("ssaParmDecl", builder.getI64IntegerAttr(ssaParmDecl));
     state.addAttribute("version", builder.getI64IntegerAttr(version));
-    state.addAttribute("defStmtId", builder.getI64IntegerAttr(defStmtId));
-    state.addAttribute("definingId", builder.getI64IntegerAttr(defOpId));
+    state.addAttribute("definingId", builder.getI64IntegerAttr(definingId));
     state.addTypes(retType);
 }
 
@@ -262,6 +285,14 @@ bool SSAOp::SetCurrentDef(Value def)
     }
     return false;
 }
+
+Operation* SSAOp::GetSSADefOperation()
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t definingId = definingIdAttr().getInt();
+    return pluginAPI.GetSSADefOperation(definingId);
+}
+
 //===----------------------------------------------------------------------===//
 // ConstOp
 
