@@ -232,7 +232,7 @@ mlir::Value PluginServer::ValueJsonDeSerialize(Json::Value valueJson)
             atoi(valueJson["defCode"].asString().c_str()));
     mlir::Type retType = TypeJsonDeSerialize(
             valueJson["retType"].toStyledString());
-    bool readOnly = (bool)atoi(valueJson["readOnly"].asString().c_str());
+    bool readOnly = GetID(valueJson["readOnly"]);
     mlir::Value opValue;
     switch (defCode) {
         case IDefineCode::MemRef : {

@@ -606,4 +606,13 @@ mlir::Operation* PluginServerAPI::GetSSADefOperation(uint64_t addr)
     return PluginServer::GetInstance()->FindDefOperation(addr);
 }
 
+void PluginServerAPI::DebugValue(uint64_t valId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["valId"] = valId;
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+}
+
 } // namespace Plugin_IR

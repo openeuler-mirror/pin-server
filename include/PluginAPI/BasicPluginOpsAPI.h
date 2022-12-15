@@ -61,6 +61,7 @@ public:
     virtual mlir::Value CreateConstOp(mlir::Attribute, mlir::Type) = 0;
     virtual bool AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) = 0;
     virtual PhiOp CreatePhiOp(uint64_t, uint64_t) = 0;
+    virtual void DebugValue(uint64_t) = 0;
 
     virtual mlir::Value GetCurrentDefFromSSA(uint64_t) = 0;
     virtual bool SetCurrentDefInSSA(uint64_t, uint64_t) = 0;

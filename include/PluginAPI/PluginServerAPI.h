@@ -73,6 +73,7 @@ public:
     PhiOp CreatePhiOp(uint64_t, uint64_t) override;
     /* Plugin API for ConstOp. */
     mlir::Value CreateConstOp(mlir::Attribute, mlir::Type) override;
+	void DebugValue(uint64_t) override;
 
     mlir::Value GetCurrentDefFromSSA(uint64_t) override;
     bool SetCurrentDefInSSA(uint64_t, uint64_t) override;
