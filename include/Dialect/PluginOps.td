@@ -242,6 +242,7 @@ def SSAOp : SSA<"SSA"> {
                       "uint64_t":$definingId, "Type":$retType)>
   ];
   let extraClassDeclaration = [{
+    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
     static Value MakeSSA(OpBuilder &builder, Type t);
     Value Copy();
     Value GetCurrentDef();
@@ -259,6 +260,7 @@ def ConstOp : Constant<"constant value"> {
   ];
   let extraClassDeclaration = [{
     Value CreateConst(OpBuilder &builder, Attribute value, Type retType);
+    Type getResultType() { return this->getOperation()->getResult(0).getType(); }
   }];
 }
 
