@@ -455,12 +455,11 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
 
 void PhiOp::build(OpBuilder &builder, OperationState &state,
                    ArrayRef<Value> operands, uint64_t id,
-                   uint32_t capacity, uint32_t nArgs, uint64_t defStmtId)
+                   uint32_t capacity, uint32_t nArgs)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("capacity", builder.getI32IntegerAttr(capacity));
     state.addAttribute("nArgs", builder.getI32IntegerAttr(nArgs));
-    state.addAttribute("defStmtId", builder.getI64IntegerAttr(defStmtId));
     state.addOperands(operands);
 }
 
@@ -505,19 +504,16 @@ bool PhiOp::AddArg(Value arg, Block *pred, Block *succ)
 
 void AssignOp::build(OpBuilder &builder, OperationState &state,
                      ArrayRef<Value> operands,
-                     uint64_t id, IExprCode exprCode,
-                     uint64_t defStmtId)
+                     uint64_t id, IExprCode exprCode)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("exprCode",
         builder.getI32IntegerAttr(static_cast<int32_t>(exprCode)));
-    state.addAttribute("defStmtId", builder.getI64IntegerAttr(defStmtId));
     state.addOperands(operands);
 }
 
 void AssignOp::build(OpBuilder &builder, OperationState &state,
-                     ArrayRef<Value> operands, IExprCode exprCode,
-                     uint64_t defStmtId)
+                     ArrayRef<Value> operands, IExprCode exprCode)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     vector<uint64_t> argIds;
@@ -532,7 +528,6 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("exprCode",
         builder.getI32IntegerAttr(static_cast<int32_t>(exprCode)));
-    state.addAttribute("defStmtId", builder.getI64IntegerAttr(defStmtId));
     state.addOperands(operands);
 }
 
