@@ -181,7 +181,7 @@ class Pointer<string mnemonic> : Placeholder<mnemonic> {
 }
 
 class SSA<string mnemonic> : Placeholder<mnemonic> {
-  dag SSAArgs = (ins UI64Attr:$namVarId,
+  dag SSAArgs = (ins UI64Attr:$nameVarId,
                      UI64Attr:$ssaParmDecl,
                      UI64Attr:$version,
                      UI64Attr:$definingId);
