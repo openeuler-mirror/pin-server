@@ -400,9 +400,8 @@ bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
     // process each stmt
     opBuilder.setInsertionPointToStart(block);
     Json::Value::Members opMember = blockJson.getMemberNames();
-    for (Json::Value::Members::iterator opIdx = opMember.begin();
-            opIdx != opMember.end(); opIdx++) {
-        string baseOpKey = *opIdx;
+    for (size_t opIdx = 0; opIdx < opMember.size(); opIdx++) {
+        string baseOpKey = "Operation" + std::to_string(opIdx);
         Json::Value opJson = blockJson[baseOpKey];
         if (opJson.isNull()) continue;
         string opCode = opJson["OperationName"].asString();
@@ -440,9 +439,8 @@ void PluginServer::FuncOpJsonDeSerialize(const string& data)
 
     context.getOrLoadDialect<PluginDialect>();
     opBuilder = mlir::OpBuilder(&context);
-    for (Json::Value::Members::iterator iter = operation.begin();
-         iter != operation.end(); iter++) {
-        string operationKey = *iter;
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = "FunctionOp" + std::to_string(iter);
         node = root[operationKey];
         int64_t id = GetID(node["id"]);
         Json::Value attributes = node["attributes"];
@@ -457,18 +455,16 @@ void PluginServer::FuncOpJsonDeSerialize(const string& data)
         Json::Value regionJson = node["region"];
         Json::Value::Members bbMember = regionJson.getMemberNames();
         // We must create Blocks before process ops
-        for (Json::Value::Members::iterator bbIdx = bbMember.begin();
-             bbIdx != bbMember.end(); bbIdx++) {
-            string blockKey = *bbIdx;
+        for (size_t bbIdx = 0; bbIdx < bbMember.size(); bbIdx++) {
+            string blockKey = "block" + std::to_string(bbIdx);
             Json::Value blockJson = regionJson[blockKey];
             mlir::Block* block = opBuilder.createBlock(&bodyRegion);
             this->blockMaps.insert({GetID(blockJson["address"]), block});
             this->basicblockMaps.insert({block, GetID(blockJson["address"])});
         }
         
-        for (Json::Value::Members::iterator bbIdx = bbMember.begin();
-             bbIdx != bbMember.end(); bbIdx++) {
-            string blockKey = *bbIdx;
+        for (size_t bbIdx = 0; bbIdx < bbMember.size(); bbIdx++) {
+            string blockKey = "block" + std::to_string(bbIdx);
             Json::Value blockJson = regionJson[blockKey];
             uint64_t bbAddress = GetID(blockJson["address"]);
             ProcessBlock(this->blockMaps[bbAddress], bodyRegion, blockJson["ops"]);
@@ -489,8 +485,8 @@ void PluginServer::LocalDeclOpJsonDeSerialize(const string& data)
 
     context.getOrLoadDialect<PluginDialect>();
     opBuilder = mlir::OpBuilder(&context);
-    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
-        string operationKey = *iter;
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = "operation" + std::to_string(iter);
         node = root[operationKey];
         int64_t id = GetID(node["id"]);
         Json::Value attributes = node["attributes"];
@@ -514,8 +510,8 @@ void PluginServer::LoopOpsJsonDeSerialize(const string& data)
     Json::Value::Members operation = root.getMemberNames();
     context.getOrLoadDialect<PluginDialect>();
     mlir::OpBuilder builder(&context);
-    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
-        string operationKey = *iter;
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = "operation" + std::to_string(iter);
         node = root[operationKey];
         int64_t id = GetID(node["id"]);
         Json::Value attributes = node["attributes"];
@@ -560,23 +556,23 @@ void PluginServer::EdgesJsonDeSerialize(const string& data)
     Json::Value::Members operation = root.getMemberNames();
     context.getOrLoadDialect<PluginDialect>();
     mlir::OpBuilder builder(&context);
-    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
-        string operationKey = *iter;
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = "edge" + std::to_string(iter);
         node = root[operationKey];
         uint64_t src = atol(node["src"].asString().c_str());
         uint64_t dest = atol(node["dest"].asString().c_str());
         pair<mlir::Block*, mlir::Block*> e;
         auto iterSrc = this->blockMaps.find(src);
         if(iterSrc != blockMaps.end())
-            edge.first = iterSrc->second;
+            e.first = iterSrc->second;
         else
-            edge.first = nullptr;
+            e.first = nullptr;
 
         auto iterDest = this->blockMaps.find(dest);
         if(iterDest != blockMaps.end())
-            edge.second = iterDest->second;
+            e.second = iterDest->second;
         else
-            edge.second = nullptr;
+            e.second = nullptr;
 
         edges.push_back(e);
     }
@@ -612,8 +608,8 @@ void PluginServer::IdsJsonDeSerialize(const string& data)
     Json::Value::Members operation = root.getMemberNames();
     context.getOrLoadDialect<PluginDialect>();
     mlir::OpBuilder builder(&context);
-    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
-        string operationKey = *iter;
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = "block" + std::to_string(iter);
         node = root[operationKey];
         uint64_t id = atol(node["id"].asString().c_str());
         idsResult.push_back(id);
@@ -628,9 +624,8 @@ void PluginServer::CallOpJsonDeSerialize(const string& data)
     Json::Value operandJson = node["operands"];
     Json::Value::Members operandMember = operandJson.getMemberNames();
     llvm::SmallVector<mlir::Value, 4> ops;
-    for (Json::Value::Members::iterator opIter = operandMember.begin();
-            opIter != operandMember.end(); opIter++) {
-        string key = *opIter;
+    for (size_t opIter = 0; opIter < operandMember.size(); opIter++) {
+        string key = "input" + std::to_string(opIter);
         mlir::Value opValue = ValueJsonDeSerialize(operandJson[key.c_str()]);
         ops.push_back(opValue);
     }
@@ -698,9 +693,8 @@ void PluginServer::PhiOpJsonDeSerialize(const string& data)
     Json::Value operandJson = node["operands"];
     Json::Value::Members operandMember = operandJson.getMemberNames();
     llvm::SmallVector<mlir::Value, 4> ops;
-    for (Json::Value::Members::iterator opIter = operandMember.begin();
-            opIter != operandMember.end(); opIter++) {
-        string key = *opIter;
+    for (size_t opIter = 0; opIter < operandMember.size(); opIter++) {
+        string key = "input" + std::to_string(opIter);
         mlir::Value opValue = ValueJsonDeSerialize(operandJson[key.c_str()]);
         ops.push_back(opValue);
     }
@@ -721,7 +715,6 @@ void PluginServer::SSAOpJsonDeSerialize(const string& data)
     Json::Reader reader;
     reader.parse(data, node);
     Json::Value operandJson = node["operands"];
-    Json::Value::Members operandMember = operandJson.getMemberNames();
 
     uint64_t id = GetID(node["id"]);
     uint64_t defCode = atoi(node["defCode"].asString().c_str());
@@ -748,9 +741,8 @@ void PluginServer::AssignOpJsonDeSerialize(const string& data)
     Json::Value operandJson = node["operands"];
     Json::Value::Members operandMember = operandJson.getMemberNames();
     llvm::SmallVector<mlir::Value, 4> ops;
-    for (Json::Value::Members::iterator opIter = operandMember.begin();
-            opIter != operandMember.end(); opIter++) {
-        string key = *opIter;
+    for (size_t opIter = 0; opIter < operandMember.size(); opIter++) {
+        string key = "input" + std::to_string(opIter);
         mlir::Value opValue = ValueJsonDeSerialize(operandJson[key.c_str()]);
         ops.push_back(opValue);
     }
@@ -774,8 +766,8 @@ void PluginServer::GetPhiOpsJsonDeSerialize(const string& data)
     Json::Value::Members operation = root.getMemberNames();
     context.getOrLoadDialect<PluginDialect>();
     mlir::OpBuilder builder(&context);
-    for (Json::Value::Members::iterator iter = operation.begin(); iter != operation.end(); iter++) {
-        string operationKey = *iter;
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = "operation" + std::to_string(iter);
         node = root[operationKey];
         PhiOpJsonDeSerialize(node.toStyledString());
     }
