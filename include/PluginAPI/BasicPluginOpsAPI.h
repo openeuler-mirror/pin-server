@@ -43,6 +43,7 @@ public:
     virtual vector<LoopOp> GetLoopsFromFunc(uint64_t) = 0;
     virtual LoopOp GetLoopById(uint64_t) = 0;
     virtual void AddLoop(uint64_t, uint64_t, uint64_t) = 0;
+    virtual void AddBlockToLoop(uint64_t, uint64_t) = 0;
     virtual void DeleteLoop(uint64_t) = 0;
     virtual vector<mlir::Block*> GetLoopBody(uint64_t) = 0;
     virtual bool IsBlockInLoop(uint64_t, uint64_t) = 0;
@@ -65,8 +66,8 @@ public:
     virtual bool SetCurrentDefInSSA(uint64_t, uint64_t) = 0;
     virtual mlir::Value CopySSAOp(uint64_t) = 0;
     virtual mlir::Value CreateSSAOp(mlir::Type) = 0;
-	virtual mlir::Value ConfirmValue(mlir::Value) = 0;
-	virtual mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value) = 0;
+    virtual mlir::Value ConfirmValue(mlir::Value) = 0;
+    virtual mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value) = 0;
     virtual bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) = 0;
     virtual mlir::Operation* GetSSADefOperation(uint64_t) = 0;
 }; // class BasicPluginOpsAPI

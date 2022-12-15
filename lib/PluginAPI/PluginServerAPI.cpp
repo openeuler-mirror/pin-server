@@ -453,6 +453,16 @@ void PluginServerAPI::AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID
     WaitClientResult(funName, params);
 }
 
+void PluginServerAPI::AddBlockToLoop(uint64_t blockID, uint64_t loopID)
+{
+    Json::Value root;
+    string funName("AddBlockToLoop");
+    root["blockId"] = blockID;
+    root["loopId"] = loopID;
+    string params = root.toStyledString();
+    WaitClientResult(funName, params);
+}
+
 bool PluginServerAPI::IsBlockInLoop(uint64_t loopID, uint64_t blockID)
 {
     Json::Value root;
@@ -482,6 +492,28 @@ mlir::Block* PluginServerAPI::GetLatch(uint64_t loopID)
     string params = root.toStyledString();
 
     return BlockResult(funName, params);
+}
+
+void PluginServerAPI::SetHeader(uint64_t loopID, uint64_t blockID)
+{
+    Json::Value root;
+    string funName("SetHeader");
+    root["loopId"] = std::to_string(loopID);
+    root["blockId"] = std::to_string(blockID);
+    string params = root.toStyledString();
+
+    WaitClientResult(funName, params);
+}
+
+void PluginServerAPI::SetLatch(uint64_t loopID, uint64_t blockID)
+{
+    Json::Value root;
+    string funName("SetLatch");
+    root["loopId"] = std::to_string(loopID);
+    root["blockId"] = std::to_string(blockID);
+    string params = root.toStyledString();
+
+    WaitClientResult(funName, params);
 }
 
 pair<mlir::Block*, mlir::Block*> PluginServerAPI::LoopSingleExit(uint64_t loopID)
