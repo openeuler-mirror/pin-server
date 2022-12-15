@@ -88,7 +88,7 @@ def LoopOp : Plugin_Op<"loop", [NoSideEffect]> {
     void Delete();
     LoopOp GetInnerLoop();
     LoopOp GetOuterLoop();
-    bool IsBlockInside(uint64_t);
+    bool IsBlockInside(mlir::Block*);
     bool IsLoopFather(mlir::Block*);
     std::vector<std::pair<mlir::Block*, mlir::Block*> > GetExitEdges();
     std::vector<mlir::Block*> GetLoopBody(); 
