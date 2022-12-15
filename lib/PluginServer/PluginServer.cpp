@@ -701,11 +701,10 @@ void PluginServer::PhiOpJsonDeSerialize(const string& data)
     uint64_t id = GetID(node["id"]);
     uint32_t capacity = atoi(node["capacity"].asString().c_str());
     uint32_t nArgs = atoi(node["nArgs"].asString().c_str());
-    uint64_t defStmtId = atoi(node["defStmtId"].asString().c_str());
     PhiOp op = opBuilder.create<PhiOp>(opBuilder.getUnknownLoc(),
-                                       ops, id, capacity, nArgs, defStmtId);
+                                       ops, id, capacity, nArgs);
     
-    defOpMaps.insert({defStmtId, op.getOperation()});
+    defOpMaps.insert({id, op.getOperation()});
     opData.push_back(op.getOperation());
 }
 
@@ -747,10 +746,9 @@ void PluginServer::AssignOpJsonDeSerialize(const string& data)
     }
     uint64_t id = GetID(node["id"]);
     IExprCode iCode = IExprCode(atoi(node["exprCode"].asString().c_str()));
-    uint64_t defStmtId = atoi(node["defStmtId"].asString().c_str());
     AssignOp op = opBuilder.create<AssignOp>(opBuilder.getUnknownLoc(),
-                                             ops, id, iCode, defStmtId);
-    defOpMaps.insert({defStmtId, op.getOperation()});
+                                             ops, id, iCode);
+    defOpMaps.insert({id, op.getOperation()});
     opData.push_back(op.getOperation());
 }
 

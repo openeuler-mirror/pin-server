@@ -128,14 +128,12 @@ def PhiOp : Plugin_Op<"phi", [NoSideEffect]> {
   let arguments = (ins UI64Attr:$id,
                        UI32Attr:$capacity,
                        UI32Attr:$nArgs,
-                       UI64Attr:$defStmtId,
                        Variadic<AnyType>:$operands);
   let builders = [
     OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
                       "uint64_t":$id,
                       "uint32_t":$capacity,
-                      "uint32_t":$nArgs,
-                      "uint64_t":$defStmtId)>
+                      "uint32_t":$nArgs)>
   ];
   let extraClassDeclaration = [{
     Value GetArgDef(int i) { return getOperand(i); }
@@ -151,16 +149,13 @@ def AssignOp : Plugin_Op<"assign", [NoSideEffect]> {
   let description = [{TODO}];
   let arguments = (ins UI64Attr:$id,
                        IExprCodeAttr:$exprCode,
-                       UI64Attr:$defStmtId,
                        Variadic<AnyType>:$operands);
   let builders = [
     OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
-                      "uint64_t":$id, "IExprCode":$exprCode,
-                      "uint64_t":$defStmtId)>,
+                      "uint64_t":$id, "IExprCode":$exprCode)>,
     // Only for server.
     OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
-                      "IExprCode":$exprCode,
-                      "uint64_t":$defStmtId)>
+                      "IExprCode":$exprCode)>
   ];
   let extraClassDeclaration = [{
     Value GetLHS() { return getOperand(0); }
