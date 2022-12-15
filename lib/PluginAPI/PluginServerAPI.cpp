@@ -497,7 +497,7 @@ pair<mlir::Block*, mlir::Block*> PluginServerAPI::LoopSingleExit(uint64_t loopID
 vector<pair<mlir::Block*, mlir::Block*> > PluginServerAPI::GetLoopExitEdges(uint64_t loopID)
 {
     Json::Value root;
-    string funName("GetExitEdges");
+    string funName("GetLoopExits");
     root["loopId"] = std::to_string(loopID);
     string params = root.toStyledString();
 
