@@ -267,7 +267,7 @@ mlir::Value PluginServer::MemRefDeSerialize(const string& data)
     Json::Value root;
     Json::Reader reader;
     reader.parse(data, root);
-    uint64_t id = atol(root["id"].asString().c_str());
+    uint64_t id = GetID(root["id"]);
     bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
     mlir::Value base = ValueJsonDeSerialize(root["base"]);
     mlir::Value offset = ValueJsonDeSerialize(root["offset"]);
@@ -519,7 +519,7 @@ void PluginServer::LoopOpsJsonDeSerialize(const string& data)
         Json::Value attributes = node["attributes"];
         map<string, string> loopAttributes;
         JsonGetAttributes(attributes, loopAttributes);
-        uint32_t index = atoi(attributes["index"].asString().c_str());
+        uint32_t index = GetID(attributes["index"]);
         uint64_t innerId = atol(loopAttributes["innerLoopId"].c_str());
         uint64_t outerId = atol(loopAttributes["outerLoopId"].c_str());
         uint32_t numBlock = atoi(loopAttributes["numBlock"].c_str());
@@ -540,10 +540,10 @@ void PluginServer::LoopOpJsonDeSerialize(const string& data)
 
     uint64_t id = GetID(root["id"]);
     Json::Value attributes = root["attributes"];
-    uint32_t index = atoi(attributes["index"].asString().c_str());
-    uint64_t innerLoopId = atol(attributes["innerLoopId"].asString().c_str());
-    uint64_t outerLoopId = atol(attributes["outerLoopId"].asString().c_str());
-    uint32_t numBlock = atoi(attributes["numBlock"].asString().c_str());
+    uint32_t index = GetID(attributes["index"]);
+    uint64_t innerLoopId = GetID(attributes["innerLoopId"]);
+    uint64_t outerLoopId = GetID(attributes["outerLoopId"]);
+    uint32_t numBlock = GetID(attributes["numBlock"]);
     auto location = builder.getUnknownLoc();
     loop = builder.create<LoopOp>(location, id, index, innerLoopId, outerLoopId, numBlock);
 }
@@ -561,8 +561,8 @@ void PluginServer::EdgesJsonDeSerialize(const string& data)
     for (size_t iter = 0; iter < operation.size(); iter++) {
         string operationKey = "edge" + std::to_string(iter);
         node = root[operationKey];
-        uint64_t src = atol(node["src"].asString().c_str());
-        uint64_t dest = atol(node["dest"].asString().c_str());
+        uint64_t src = GetID(node["src"]);
+        uint64_t dest = GetID(node["dest"]);
         pair<mlir::Block*, mlir::Block*> e;
         auto iterSrc = this->blockMaps.find(src);
         if(iterSrc != blockMaps.end())
@@ -585,8 +585,8 @@ void PluginServer::EdgeJsonDeSerialize(const string& data)
     Json::Value root;
     Json::Reader reader;
     reader.parse(data, root);
-    uint64_t src = atol(root["src"].asString().c_str());
-    uint64_t dest = atol(root["dest"].asString().c_str());
+    uint64_t src = GetID(root["src"]);
+    uint64_t dest = GetID(root["dest"]);
     auto iterSrc = this->blockMaps.find(src);
     if(iterSrc != blockMaps.end())
         edge.first = iterSrc->second;
@@ -613,7 +613,7 @@ void PluginServer::IdsJsonDeSerialize(const string& data)
     for (size_t iter = 0; iter < operation.size(); iter++) {
         string operationKey = "block" + std::to_string(iter);
         node = root[operationKey];
-        uint64_t id = atol(node["id"].asString().c_str());
+        uint64_t id = GetID(node["id"]);
         idsResult.push_back(id);
     }
 }
@@ -701,8 +701,8 @@ void PluginServer::PhiOpJsonDeSerialize(const string& data)
         ops.push_back(opValue);
     }
     uint64_t id = GetID(node["id"]);
-    uint32_t capacity = atoi(node["capacity"].asString().c_str());
-    uint32_t nArgs = atoi(node["nArgs"].asString().c_str());
+    uint32_t capacity = GetID(node["capacity"]);
+    uint32_t nArgs = GetID(node["nArgs"]);
     PhiOp op = opBuilder.create<PhiOp>(opBuilder.getUnknownLoc(),
                                        ops, id, capacity, nArgs);
     
@@ -718,10 +718,10 @@ mlir::Value PluginServer::SSAOpJsonDeSerialize(const string& data)
 
     uint64_t id = GetID(node["id"]);
     bool readOnly = (bool)atoi(node["readOnly"].asString().c_str());
-    uint64_t nameVarId = atoi(node["nameVarId"].asString().c_str());
-    uint64_t ssaParmDecl = atoi(node["ssaParmDecl"].asString().c_str());
-    uint64_t version = atoi(node["version"].asString().c_str());
-    uint64_t definingId = atoi(node["definingId"].asString().c_str());
+    uint64_t nameVarId = GetID(node["nameVarId"]);
+    uint64_t ssaParmDecl = GetID(node["ssaParmDecl"]);
+    uint64_t version = GetID(node["version"]);
+    uint64_t definingId = GetID(node["definingId"]);
     mlir::Type retType = TypeJsonDeSerialize(node["retType"].toStyledString().c_str());
     mlir::Value ret = opBuilder.create<SSAOp>(opBuilder.getUnknownLoc(),
                                         id, IDefineCode::SSA, readOnly, nameVarId,
