@@ -35,6 +35,21 @@ using namespace mlir::Plugin;
 using std::vector;
 using std::pair;
 
+static uint64_t GetValueId(Value v)
+{
+    Operation *op = v.getDefiningOp();
+    if (auto mOp = dyn_cast<MemOp>(op)) {
+        return mOp.id();
+    } else if (auto ssaOp = dyn_cast<SSAOp>(op)) {
+        return ssaOp.id();
+    } else if (auto cstOp = dyn_cast<ConstOp>(op)) {
+        return cstOp.id();
+    } else if (auto phOp = dyn_cast<PlaceholderOp>(op)) {
+        return phOp.id();
+    }
+    return 0;
+}
+
 static uint64_t getBlockAddress(mlir::Block* b)
 {
     if (mlir::Plugin::CondOp oops = dyn_cast<mlir::Plugin::CondOp>(b->back())) {
@@ -277,8 +292,7 @@ Value SSAOp::GetCurrentDef()
 
 bool SSAOp::SetCurrentDef(Value def)
 {
-    PlaceholderOp phOp = def.getDefiningOp<PlaceholderOp>();
-    uint64_t defId = phOp.idAttr().getInt();
+    uint64_t defId = GetValueId(def);
     PluginAPI::PluginServerAPI pluginAPI;
     if (pluginAPI.SetCurrentDefInSSA(this->idAttr().getInt(), defId)) {
         return true;
@@ -355,8 +369,7 @@ Operation::operand_range CallOp::getArgOperands() { return inputs(); }
 
 bool CallOp::SetLHS(Value lhs)
 {
-    PlaceholderOp phOp = lhs.getDefiningOp<PlaceholderOp>();
-    uint64_t lhsId = phOp.idAttr().getInt();
+    uint64_t lhsId = GetValueId(lhs);
     PluginAPI::PluginServerAPI pluginAPI;
     if (pluginAPI.SetLhsInCallOp(this->idAttr().getInt(), lhsId)) {
         (*this)->setOperand(0, lhs);
@@ -373,8 +386,7 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
     uint64_t funcId = funcOp.idAttr().getInt();
     vector<uint64_t> argIds;
     for (auto v : arguments) {
-        PlaceholderOp argOp = v.getDefiningOp<PlaceholderOp>();
-        uint64_t argId = argOp.idAttr().getInt();
+        uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
     Block *buildBlock = builder.getBlock();
@@ -392,8 +404,7 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
     PluginAPI::PluginServerAPI pluginAPI;
     vector<uint64_t> argIds;
     for (auto v : arguments) {
-        PlaceholderOp argOp = v.getDefiningOp<PlaceholderOp>();
-        uint64_t argId = argOp.idAttr().getInt();
+        uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
     Block *buildBlock = builder.getBlock();
@@ -430,10 +441,8 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
                    Block* fb)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    PlaceholderOp lhsOp = lhs.getDefiningOp<PlaceholderOp>();
-    uint64_t lhsId = lhsOp.idAttr().getInt();
-    PlaceholderOp rhsOp = rhs.getDefiningOp<PlaceholderOp>();
-    uint64_t rhsId = rhsOp.idAttr().getInt();
+    uint64_t lhsId = GetValueId(lhs);
+    uint64_t rhsId = GetValueId(rhs);
     Block *buildBlock = builder.getBlock();
     uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
     uint64_t tbaddr = getBlockAddress(tb);
@@ -475,8 +484,7 @@ PhiOp PhiOp::CreatePhi(Value arg, Block *block)
 {
     uint64_t argId = 0;
     if (arg != nullptr) {
-        PlaceholderOp phOp = arg.getDefiningOp<PlaceholderOp>();
-        argId = phOp.idAttr().getInt();
+        argId = GetValueId(arg);
     }
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t blockId = pluginAPI.FindBasicBlock(block);
@@ -485,8 +493,7 @@ PhiOp PhiOp::CreatePhi(Value arg, Block *block)
 
 bool PhiOp::AddArg(Value arg, Block *pred, Block *succ)
 {
-    PlaceholderOp phOp = arg.getDefiningOp<PlaceholderOp>();
-    uint64_t argId = phOp.idAttr().getInt();
+    uint64_t argId = GetValueId(arg);
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t predId = pluginAPI.FindBasicBlock(pred);
     uint64_t succId = pluginAPI.FindBasicBlock(succ);
@@ -518,8 +525,7 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
     PluginAPI::PluginServerAPI pluginAPI;
     vector<uint64_t> argIds;
     for (auto v : operands) {
-        PlaceholderOp argOp = v.getDefiningOp<PlaceholderOp>();
-        uint64_t argId = argOp.idAttr().getInt();
+        uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
     Block *buildBlock = builder.getBlock();
