@@ -21,6 +21,20 @@ namespace PluginAPI {
 using namespace PinServer;
 using namespace mlir::Plugin;
 
+static uint64_t GetValueId(mlir::Value v)
+{
+    mlir::Operation *op = v.getDefiningOp();
+    if (auto mOp = llvm::dyn_cast<MemOp>(op)) {
+        return mOp.id();
+    } else if (auto ssaOp = llvm::dyn_cast<SSAOp>(op)) {
+        return ssaOp.id();
+    } else if (auto cstOp = llvm::dyn_cast<ConstOp>(op)) {
+        return cstOp.id();
+    } else if (auto phOp = llvm::dyn_cast<PlaceholderOp>(op)) {
+        return phOp.id();
+    }
+    return 0;
+}
 
 static uint64_t getBlockAddress(mlir::Block* b)
 {
@@ -151,11 +165,9 @@ mlir::Value ControlFlowAPI::CreateNewDef(mlir::Value oldValue,
     // FIXME: use baseOp.
     uint64_t opId = llvm::dyn_cast<PhiOp>(op).idAttr().getInt();
     root["opId"] = std::to_string(opId);
-    PlaceholderOp oldOp = oldValue.getDefiningOp<PlaceholderOp>();
-    uint64_t valueId = oldOp.idAttr().getInt();
+    uint64_t valueId = GetValueId(oldValue);
     root["valueId"] = std::to_string(valueId);
-    PlaceholderOp defOp = defValue.getDefiningOp<PlaceholderOp>();
-    uint64_t defId = defOp.idAttr().getInt();
+    uint64_t defId = GetValueId(defValue);
     root["defId"] = std::to_string(defId);
     string params = root.toStyledString();
     pluginAPI.WaitClientResult(funName, params);

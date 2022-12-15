@@ -38,6 +38,21 @@ int CheckID(uintptr_t id)
     return 0;
 }
 
+static uint64_t GetValueId(mlir::Value v)
+{
+    mlir::Operation *op = v.getDefiningOp();
+    if (auto mOp = llvm::dyn_cast<MemOp>(op)) {
+        return mOp.id();
+    } else if (auto ssaOp = llvm::dyn_cast<SSAOp>(op)) {
+        return ssaOp.id();
+    } else if (auto cstOp = llvm::dyn_cast<ConstOp>(op)) {
+        return cstOp.id();
+    } else if (auto phOp = llvm::dyn_cast<PlaceholderOp>(op)) {
+        return phOp.id();
+    }
+    return 0;
+}
+
 void PluginServerAPI::WaitClientResult(const string& funName, const string& params)
 {
     PluginServer *server = PluginServer::GetInstance();
@@ -257,8 +272,7 @@ mlir::Value PluginServerAPI::ConfirmValue(mlir::Value v)
 {
     Json::Value root;
     string funName = "ConfirmValue";
-    PlaceholderOp placeholder = v.getDefiningOp<PlaceholderOp>();
-    uint64_t valId = placeholder.idAttr().getInt();
+    uint64_t valId = GetValueId(v);
     root["valId"] = std::to_string(valId);
     string params = root.toStyledString();
     WaitClientResult(funName, params);
@@ -270,10 +284,8 @@ mlir::Value PluginServerAPI::BuildMemRef(PluginIR::PluginTypeBase type,
 {
     Json::Value root;
     string funName = "BuildMemRef";
-    PlaceholderOp phBase = base.getDefiningOp<PlaceholderOp>();
-    uint64_t baseId = phBase.idAttr().getInt();
-    PlaceholderOp phOffset = offset.getDefiningOp<PlaceholderOp>();
-    uint64_t offsetId = phOffset.idAttr().getInt();
+    uint64_t baseId = GetValueId(base);
+    uint64_t offsetId = GetValueId(offset);
     root["baseId"] = baseId;
     root["offsetId"] = offsetId;
     root["type"] = (PluginServer::GetInstance()->TypeJsonSerialize(type).toStyledString());
