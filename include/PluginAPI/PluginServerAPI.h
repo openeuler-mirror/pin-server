@@ -69,12 +69,12 @@ public:
     /* Plugin API for AssignOp. */
     uint64_t CreateAssignOp(uint64_t, IExprCode, vector<uint64_t> &) override;
     /* Plugin API for PhiOp. */
-    bool AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) override;
+    uint32_t AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) override;
     PhiOp CreatePhiOp(uint64_t, uint64_t) override;
     /* Plugin API for ConstOp. */
     mlir::Value CreateConstOp(mlir::Attribute, mlir::Type) override;
 	void DebugValue(uint64_t) override;
-
+    
     mlir::Value GetCurrentDefFromSSA(uint64_t) override;
     bool SetCurrentDefInSSA(uint64_t, uint64_t) override;
     mlir::Value CopySSAOp(uint64_t) override;
@@ -83,7 +83,7 @@ public:
     mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value);
     bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) override;
     mlir::Operation* GetSSADefOperation(uint64_t) override;
-
+    void InsertCreatedBlock(uint64_t id, mlir::Block* block);
     void WaitClientResult(const string& funName, const string& params);
 
 private:

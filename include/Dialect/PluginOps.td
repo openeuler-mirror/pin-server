@@ -114,8 +114,8 @@ def CallOp : Plugin_Op<"call", [
                       "ArrayRef<Value>":$arguments)>,
     // Only for server.
     OpBuilderDAG<(ins "Value":$func,
-                      "ArrayRef<Value>":$arguments)>,
-    OpBuilderDAG<(ins "ArrayRef<Value>":$arguments)>
+                      "ArrayRef<Value>":$arguments, "Block *":$block)>,
+    OpBuilderDAG<(ins "ArrayRef<Value>":$arguments, "Block *":$block)>
   ];
   let extraClassDeclaration = [{
     bool SetLHS(Value lhs);
@@ -136,7 +136,7 @@ def PhiOp : Plugin_Op<"phi", [NoSideEffect]> {
                       "uint32_t":$nArgs)>
   ];
   let extraClassDeclaration = [{
-    Value GetArgDef(int i) { return getOperand(i); }
+    Value GetArgDef(int i);
     // Only for server.
     Value GetResult();
     bool AddArg(Value arg, Block *pred, Block *succ);
@@ -155,7 +155,7 @@ def AssignOp : Plugin_Op<"assign", [NoSideEffect]> {
                       "uint64_t":$id, "IExprCode":$exprCode)>,
     // Only for server.
     OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
-                      "IExprCode":$exprCode)>
+                      "IExprCode":$exprCode, "Block *":$block)>
   ];
   let extraClassDeclaration = [{
     Value GetLHS() { return getOperand(0); }
@@ -312,7 +312,7 @@ def CondOp : Plugin_TerminatorOp<"condition", [NoSideEffect]> {
                       "Value":$falseLabel)>,
     // Only for server.
     OpBuilderDAG<(ins "IComparisonCode":$condCode, "Value":$lhs, "Value":$rhs, 
-                      "Block*":$tb, "Block*":$fb)>
+                      "Block*":$tb, "Block*":$fb, "Block *":$block)>
   ];
   let extraClassDeclaration = [{
     Value GetLHS() { return getOperand(0); }

@@ -46,7 +46,7 @@ public:
     void SetImmediateDominator(uint64_t, uint64_t, uint64_t);
     uint64_t GetImmediateDominator(uint64_t, uint64_t);
     uint64_t RecomputeDominator(uint64_t, uint64_t);
-    mlir::Value CreateNewDef(mlir::Value, mlir::Operation *, mlir::Value);
+    mlir::Value CreateNewDef(mlir::Value, mlir::Operation *);
 
     void CreateFallthroughOp(uint64_t, uint64_t);
     void RemoveEdge(uint64_t, uint64_t);

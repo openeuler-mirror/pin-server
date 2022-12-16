@@ -113,7 +113,7 @@ void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr,
     string params = root.toStyledString();
     pluginAPI.WaitClientResult(funName, params);;
     PluginServer::GetInstance()->EraseBlock(b);
-    b->erase();
+    // b->erase();
 }
 
 /* dir: 1 or 2 */
@@ -122,10 +122,11 @@ void ControlFlowAPI::SetImmediateDominator(uint64_t dir, uint64_t bbAddr,
 {
     Json::Value root;
     string funName = __func__;
+    if (!bbAddr || !domiAddr) return;
     assert(dir && bbAddr && domiAddr);
     root["dir"] = std::to_string(dir);
     root["bbaddr"] = std::to_string(bbAddr);
-    root["domiAddr"] = std::to_string(domiAddr);
+    root["domiaddr"] = std::to_string(domiAddr);
     string params = root.toStyledString();
     pluginAPI.WaitClientResult(funName, params);;
 }
@@ -157,19 +158,24 @@ uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
 }
 
 mlir::Value ControlFlowAPI::CreateNewDef(mlir::Value oldValue,
-                                         mlir::Operation *op,
-                                         mlir::Value defValue)
+                                         mlir::Operation *op)
 {
     Json::Value root;
     string funName = __func__;
+    printf("ControlFlowAPI::CreateNewDef");
     // FIXME: use baseOp.
     uint64_t opId = llvm::dyn_cast<PhiOp>(op).idAttr().getInt();
+    printf("dyn_cast<PhiOp>:%ld\n", opId);
     root["opId"] = std::to_string(opId);
+    printf("GetValueId  valueId\n");
     uint64_t valueId = GetValueId(oldValue);
     root["valueId"] = std::to_string(valueId);
-    uint64_t defId = GetValueId(defValue);
+    printf("GetValueId  defValue\n");
+    uint64_t defId = 0;
+    printf("GetValueId  END\n");
     root["defId"] = std::to_string(defId);
     string params = root.toStyledString();
+    printf("CreateNewDef:%s\n", params.c_str());
     pluginAPI.WaitClientResult(funName, params);
     return PluginServer::GetInstance()->GetValueResult();
 }

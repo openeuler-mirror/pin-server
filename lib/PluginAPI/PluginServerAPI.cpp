@@ -160,7 +160,7 @@ bool PluginServerAPI::SetLhsInCallOp(uint64_t callId, uint64_t lhsId)
     return PluginServer::GetInstance()->GetBoolResult();
 }
 
-bool PluginServerAPI::AddArgInPhiOp(uint64_t phiId,
+uint32_t PluginServerAPI::AddArgInPhiOp(uint64_t phiId,
                                     uint64_t argId,
                                     uint64_t predId,
                                     uint64_t succId)
@@ -173,7 +173,7 @@ bool PluginServerAPI::AddArgInPhiOp(uint64_t phiId,
     root["succId"] = std::to_string(succId);
     string params = root.toStyledString();
     WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetBoolResult();
+    return PluginServer::GetInstance()->GetIdResult();
 }
 
 uint64_t PluginServerAPI::CreateCondOp(uint64_t blockId, IComparisonCode iCode,
@@ -288,7 +288,7 @@ mlir::Value PluginServerAPI::BuildMemRef(PluginIR::PluginTypeBase type,
     uint64_t offsetId = GetValueId(offset);
     root["baseId"] = baseId;
     root["offsetId"] = offsetId;
-    root["type"] = (PluginServer::GetInstance()->TypeJsonSerialize(type).toStyledString());
+    root["type"] = PluginServer::GetInstance()->TypeJsonSerialize(type);
     string params = root.toStyledString();
     WaitClientResult(funName, params);
     return PluginServer::GetInstance()->GetValueResult();
@@ -604,6 +604,11 @@ bool PluginServerAPI::RedirectFallthroughTarget(FallThroughOp& fop,
 mlir::Operation* PluginServerAPI::GetSSADefOperation(uint64_t addr)
 {
     return PluginServer::GetInstance()->FindDefOperation(addr);
+}
+
+void PluginServerAPI::InsertCreatedBlock(uint64_t id, mlir::Block* block)
+{
+    PluginServer::GetInstance()->InsertCreatedBlock(id, block);
 }
 
 void PluginServerAPI::DebugValue(uint64_t valId)
