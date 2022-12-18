@@ -84,6 +84,7 @@ vector<mlir::Plugin::FunctionOp> PluginServer::GetFunctionOpResult(void)
 {
     vector<mlir::Plugin::FunctionOp> retOps = funcOpData;
     funcOpData.clear();
+    opData.clear();
     return retOps;
 }
 
@@ -111,7 +112,8 @@ void PluginServer::EraseBlock(mlir::Block* b)
 {
     if (auto bbit = basicblockMaps.find(b); bbit != basicblockMaps.end()) {
         uint64_t addr = bbit->second;
-        basicblockMaps.erase(bbit);
+        basicblockMaps[b] = 0;
+        // basicblockMaps.erase(bbit);
         if (auto bit = blockMaps.find(addr); bit != blockMaps.end()) {
             blockMaps.erase(bit);
         }
@@ -132,6 +134,10 @@ mlir::Operation* PluginServer::FindDefOperation(uint64_t id)
     return iter->second;
 }
 
+void PluginServer::InsertCreatedBlock(uint64_t id, mlir::Block* block)
+{
+    this->blockMaps.insert({id, block});
+}
 uint64_t PluginServer::GetBlockResult(mlir::Block* b)
 {
     uint64_t newAddr = GetIdResult();
@@ -299,6 +305,8 @@ void PluginServer::JsonDeSerialize(const string& key, const string& data)
         IdsJsonDeSerialize(data);
     } else if (key == "IdResult") {
         this->idResult = atol(data.c_str());
+    } else if (key == "OpsResult") {
+        OpJsonDeSerialize(data.c_str());
     } else if (key == "ValueResult") {
         Json::Value node;
         Json::Reader reader;
@@ -428,6 +436,31 @@ bool PluginServer::ProcessBlock(mlir::Block* block, mlir::Region& rg,
     }
     // fprintf(stderr, "[bb] op:%ld, succ: %d\n", block->getOperations().size(), block->getNumSuccessors());
     return true;
+}
+
+void PluginServer::OpJsonDeSerialize(const string& data)
+{
+    Json::Value opJson;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, opJson);
+    string opCode = opJson["OperationName"].asString();
+    if (opCode == PhiOp::getOperationName().str()) {
+        PhiOpJsonDeSerialize(opJson.toStyledString());
+    } else if (opCode == CallOp::getOperationName().str()) {
+        CallOpJsonDeSerialize(opJson.toStyledString());
+    } else if (opCode == AssignOp::getOperationName().str()) {
+        AssignOpJsonDeSerialize(opJson.toStyledString());
+    } else if (opCode == CondOp::getOperationName().str()) {
+        CondOpJsonDeSerialize(opJson.toStyledString());
+    } else if (opCode == RetOp::getOperationName().str()) {
+        RetOpJsonDeSerialize(opJson.toStyledString());
+    } else if (opCode == FallThroughOp::getOperationName().str()) {
+        FallThroughOpJsonDeSerialize(opJson.toStyledString());
+    } else if (opCode == BaseOp::getOperationName().str()) {
+        uint64_t opID = GetID(opJson["id"]);
+        opBuilder.create<BaseOp>(opBuilder.getUnknownLoc(), opID, opCode);
+    }
 }
 
 void PluginServer::FuncOpJsonDeSerialize(const string& data)

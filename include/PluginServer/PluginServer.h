@@ -148,6 +148,7 @@ public:
     uint64_t FindBasicBlock(mlir::Block*);
     bool InsertValue(uint64_t, mlir::Value);
     mlir::Operation* FindDefOperation(uint64_t);
+    void InsertCreatedBlock(uint64_t, mlir::Block*);
     /* 回调函数接口，用于向server注册用户需要执行的函数 */
     int RegisterUserFunc(InjectPoint inject, UserFunc func);
     int RegisterPassManagerSetup(InjectPoint inject, const ManagerSetupData& passData, UserFunc func);
@@ -208,6 +209,7 @@ public:
     void PhiOpJsonDeSerialize(const string& data);
     void AssignOpJsonDeSerialize(const string& data);
     void GetPhiOpsJsonDeSerialize(const string& data);
+    void OpJsonDeSerialize(const string& data);
     mlir::Value ValueJsonDeSerialize(Json::Value valueJson);
     mlir::Value MemRefDeSerialize(const string& data);
     /* json反序列化，根据key值分别调用Operation/Decl/Type反序列化接口函数 */

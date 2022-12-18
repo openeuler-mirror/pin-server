@@ -379,7 +379,7 @@ bool CallOp::SetLHS(Value lhs)
 }
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
-                   Value func, ArrayRef<Value> arguments)
+                   Value func, ArrayRef<Value> arguments, Block * block)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     PlaceholderOp funcOp = func.getDefiningOp<PlaceholderOp>();
@@ -389,8 +389,7 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
         uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
-    Block *buildBlock = builder.getBlock();
-    uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
+    uint64_t blockId = pluginAPI.FindBasicBlock(block);
     uint64_t id = pluginAPI.CreateCallOp(blockId, funcId, argIds);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands(arguments);
@@ -399,7 +398,7 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
 }
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
-                   ArrayRef<Value> arguments)
+                   ArrayRef<Value> arguments, Block * block)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     vector<uint64_t> argIds;
@@ -407,8 +406,7 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
         uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
-    Block *buildBlock = builder.getBlock();
-    uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
+    uint64_t blockId = pluginAPI.FindBasicBlock(block);
     uint64_t funcId = 0;
     uint64_t id = pluginAPI.CreateCallOp(blockId, funcId, argIds);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
@@ -438,15 +436,14 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
 
 void CondOp::build(OpBuilder &builder, OperationState &state,
                    IComparisonCode condCode, Value lhs, Value rhs, Block* tb,
-                   Block* fb)
+                   Block* fb, Block * block)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t lhsId = GetValueId(lhs);
     uint64_t rhsId = GetValueId(rhs);
-    Block *buildBlock = builder.getBlock();
-    uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
-    uint64_t tbaddr = getBlockAddress(tb);
-    uint64_t fbaddr = getBlockAddress(fb);
+    uint64_t blockId = pluginAPI.FindBasicBlock(block);
+    uint64_t tbaddr = pluginAPI.FindBasicBlock(tb);
+    uint64_t fbaddr = pluginAPI.FindBasicBlock(fb);
     uint64_t id = pluginAPI.CreateCondOp(blockId, condCode, lhsId, rhsId,
                                          tbaddr, fbaddr);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
@@ -497,15 +494,19 @@ bool PhiOp::AddArg(Value arg, Block *pred, Block *succ)
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t predId = pluginAPI.FindBasicBlock(pred);
     uint64_t succId = pluginAPI.FindBasicBlock(succ);
-    if (pluginAPI.AddArgInPhiOp(this->idAttr().getInt(), argId, predId, succId)) {
-        uint32_t nArg = this->nArgsAttr().getInt() + 1;
-        OpBuilder builder(this->getOperation());
-        (*this)->setAttr("nArgs", builder.getI32IntegerAttr(nArg));
-        return true;
-    }
-    return false;
+    uint32_t nArg = pluginAPI.AddArgInPhiOp(this->idAttr().getInt(), argId, predId, succId);
+    OpBuilder builder(this->getOperation());
+    (*this)->insertOperands((*this)->getNumOperands(), {arg});
+    (*this)->setAttr("nArgs", builder.getI32IntegerAttr(nArg));
+    return true;
 }
-
+Value PhiOp::GetArgDef(int i)
+{
+    if (i >= (*this)->getNumOperands()) {
+        return nullptr;
+    }
+    return getOperand(i);
+}
 //===----------------------------------------------------------------------===//
 // AssignOp
 
@@ -520,7 +521,8 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
 }
 
 void AssignOp::build(OpBuilder &builder, OperationState &state,
-                     ArrayRef<Value> operands, IExprCode exprCode)
+                     ArrayRef<Value> operands, IExprCode exprCode,
+                     Block * block)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     vector<uint64_t> argIds;
@@ -528,8 +530,7 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
         uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
-    Block *buildBlock = builder.getBlock();
-    uint64_t blockId = pluginAPI.FindBasicBlock(buildBlock);
+    uint64_t blockId = pluginAPI.FindBasicBlock(block);
     uint64_t id = pluginAPI.CreateAssignOp(blockId, exprCode, argIds);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("exprCode",
