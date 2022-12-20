@@ -872,6 +872,7 @@ void PluginServer::ExecFunc(const string& value)
                 UserFunc func = funcSet.GetFunc();
                 func(); // 执行用户注册函数
                 SetUserFunState(STATE_END);
+                ClearMaps();
                 SemPost();
             }
         }
