@@ -1569,11 +1569,11 @@ ProcessArrayWiden(void)
 
 void RegisterCallbacks(void)
 {
-    // PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, UserOptimizeFunc);
-    // PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, LocalVarSummery);
-    ManagerSetupData setupData;
-    setupData.refPassName = PASS_PHIOPT;
-    setupData.passNum = 1;
-    setupData.passPosition = PASS_INSERT_AFTER;
-    PluginServer::GetInstance()->RegisterPassManagerSetup(HANDLE_MANAGER_SETUP, setupData, ProcessArrayWiden);
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, UserOptimizeFunc);
+    PluginServer::GetInstance()->RegisterUserFunc(HANDLE_BEFORE_IPA, LocalVarSummery);
+    // ManagerSetupData setupData;
+    // setupData.refPassName = PASS_PHIOPT;
+    // setupData.passNum = 1;
+    // setupData.passPosition = PASS_INSERT_AFTER;
+    // PluginServer::GetInstance()->RegisterPassManagerSetup(HANDLE_MANAGER_SETUP, setupData, ProcessArrayWiden);
 }

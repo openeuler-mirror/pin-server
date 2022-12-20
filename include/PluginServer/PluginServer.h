@@ -252,6 +252,20 @@ public:
     }
 
     void SetOpBuilder(mlir::OpBuilder builder) { this->opBuilder = builder; }
+    void ClearMaps()
+    {
+        valueMaps.clear();
+        blockMaps.clear();
+        basicblockMaps.clear();
+        defOpMaps.clear();
+        idsResult.clear();
+        opData.clear();
+        edges.clear();
+        loops.clear();
+        decls.clear();
+        funcOpData.clear();
+        opBuilder = mlir::OpBuilder(&context);
+    }
 
 private:
     bool shutdown; // 是否关闭server
