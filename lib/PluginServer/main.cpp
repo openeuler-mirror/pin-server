@@ -19,15 +19,20 @@
 */
 
 #include "PluginServer/PluginServer.h"
-#include "PluginServer/PluginLog.h"
+
+using namespace PinServer;
 
 int main(int argc, char** argv)
 {
-    int timeout = atoi(argv[0]);
-    std::string port = argv[1];
-    PinServer::LogPriority priority = (PinServer::LogPriority)atoi(argv[2]);
-    PinServer::SetLogPriority(priority);
-    PinServer::RunServer(timeout, port);
-    PinServer::CloseLog();
+    const int argcNum = 2; // 参数只有2个，argv[0]：port argv[1]：log级别
+    if (argc != argcNum) {
+        printf("param num:%d, should be:%d\n", argc, argcNum);
+        return -1;
+    }
+    printf("main arg: %s, %s\n", argv[0], argv[1]);
+    std::string port = argv[0];
+    LogPriority priority = (LogPriority)atoi(argv[1]);
+    PluginServer server(priority, port);
+    server.RunServer();
     return 0;
 }

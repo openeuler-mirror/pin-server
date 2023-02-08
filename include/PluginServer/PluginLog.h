@@ -16,13 +16,18 @@
    Create: 2022-08-18
    Description:
     This file contains the declaration of the Plugin_Log class.
+    主要完成功能：提供LOGE、LOGW、LOGI、LOGD四个log保存接口，并提供SetLogPriority接口
+    设置log级别
 */
 
 #ifndef PLUGIN_LOG_H
 #define PLUGIN_LOG_H
 
-namespace PinServer {
-#define LOG_FILE_SIZE   (10 * 1024 * 1024)
+#include <string>
+#include <memory>
+
+namespace PinLog {
+using std::string;
 
 enum LogPriority : uint8_t {
     PRIORITY_ERROR = 0,
@@ -30,14 +35,38 @@ enum LogPriority : uint8_t {
     PRIORITY_INFO,
     PRIORITY_DEBUG
 };
-void LogPrint(LogPriority priority, const char *tag, const char *fmt, ...);
-void CloseLog(void);
-bool SetLogPriority(LogPriority priority);
 
-#define LOGE(...) LogPrint(PRIORITY_ERROR, "ERROR:", __VA_ARGS__)
-#define LOGW(...) LogPrint(PRIORITY_WARN, "WARN:", __VA_ARGS__)
-#define LOGI(...) LogPrint(PRIORITY_INFO, "", __VA_ARGS__)
-#define LOGD(...) LogPrint(PRIORITY_DEBUG, "DEBUG:", __VA_ARGS__)
-} // namespace PinServer
+constexpr int LOG_BUF_SIZE = 102400;
+constexpr int BASE_DATE = 1900;
+class PluginLog {
+public:
+    PluginLog();
+    ~PluginLog()
+    {
+        CloseLog();
+    }
+    void CloseLog();
+    bool SetPriority(LogPriority pri);
+    void SetFileSize(unsigned int size)
+    {
+        logFileSize = size;
+    }
+    void LOGE(const char *fmt, ...);
+    void LOGW(const char *fmt, ...);
+    void LOGI(const char *fmt, ...);
+    void LOGD(const char *fmt, ...);
+    static PluginLog *GetInstance();
+
+private:
+    void LogPrint(LogPriority priority, const char *tag, const char *fmt);
+    void LogWrite(const char *tag, const char *msg);
+    void LogWriteFile(const string& data);
+    void GetLogFileName(string& fileName);
+    LogPriority priority;
+    unsigned int logFileSize;
+    std::shared_ptr<std::fstream> logFs;
+    char logBuf[LOG_BUF_SIZE];
+};
+} // namespace PinLog
 
 #endif
