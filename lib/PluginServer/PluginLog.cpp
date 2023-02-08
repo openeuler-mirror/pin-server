@@ -18,108 +18,160 @@
     This file contains the implementation of the Plugin_Log class.
 */
 
+#include <cstring>
 #include <cstdarg>
 #include <iostream>
 #include <ctime>
 #include <fstream>
-#include <memory>
 #include <mutex>
 #include <csignal>
 #include "PluginServer/PluginLog.h"
 
-namespace PinServer {
-using namespace std;
-using std::string;
-constexpr int LOG_BUF_SIZE = 102400;
-constexpr int BASE_DATE = 1900;
-static LogPriority g_priority = PRIORITY_WARN; // log打印的级别控制
+namespace PinLog {
 static std::mutex g_mutex; // 线程锁
-static char g_buf[LOG_BUF_SIZE];
+PluginLog g_pluginLog;
+const int LOG_DEFAULT_SIZE = 10 * 1024 * 1024;
 
-shared_ptr<fstream> g_fs;
-static void LogWriteInit(const string& data);
-static void (*g_writeToLog)(const string& data) = LogWriteInit;
+PluginLog::PluginLog()
+{
+    priority = PRIORITY_WARN;
+    logFileSize = LOG_DEFAULT_SIZE;
+}
 
-static void GetLogFileName(string& fileName)
+PluginLog *PluginLog::GetInstance()
+{
+    return &g_pluginLog;
+}
+
+void PluginLog::GetLogFileName(string& fileName)
 {
     time_t nowTime = time(nullptr);
+    if (nowTime == -1) {
+        printf("%s fail\n", __func__);
+    }
     struct tm *t = localtime(&nowTime);
     char buf[100];
-    sprintf(buf, "/tmp/pin_server%d_%4d%02d%02d_%02d_%02d_%02d.log", getppid(),
+    int ret = sprintf(buf, "/tmp/pin_server%d_%4d%02d%02d_%02d_%02d_%02d.log", getppid(),
         t->tm_year + BASE_DATE, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+    if (ret < 0) {
+        printf("%s sprintf fail\n", __func__);
+    }
     fileName = buf;
 }
 
-static void LogWriteFile(const string& data)
+void PluginLog::LogWriteFile(const string& data)
 {
-    if (g_fs->tellg() > LOG_FILE_SIZE) {
-        g_fs->close();
-        string fileName;
+    string fileName;
+    if (logFs == nullptr) {
+        logFs = std::make_shared<std::fstream>();
         GetLogFileName(fileName);
-        g_fs->open(fileName.c_str(), ios::app);
+        logFs->open(fileName.c_str(), std::ios::app);
     }
 
-    g_fs->write(data.c_str(), data.size());
-}
-
-static void LogWriteInit(const string& data)
-{
-    if (g_writeToLog == LogWriteInit) {
-        g_fs = std::make_shared<fstream>();
-        string fileName;
+    if (logFs->tellg() > logFileSize) {
+        logFs->close();
         GetLogFileName(fileName);
-        g_fs->open(fileName.c_str(), ios::app);
-        g_writeToLog = LogWriteFile;
+        logFs->open(fileName.c_str(), std::ios::app);
     }
-    g_writeToLog(data);
+
+    logFs->write(data.c_str(), data.size());
 }
 
-void CloseLog(void)
+void PluginLog::CloseLog()
 {
-    if (g_fs) {
-        if (g_fs->is_open()) {
-            g_fs->close();
+    if (logFs) {
+        if (logFs->is_open()) {
+            logFs->close();
+            logFs = nullptr;
         }
     }
 }
 
-static void LogWrite(const char *tag, const char *msg)
+void PluginLog::LogWrite(const char *tag, const char *msg)
 {
     time_t nowTime = time(nullptr);
+    if (nowTime == -1) {
+        printf("%s fail\n", __func__);
+    }
     struct tm *t = localtime(&nowTime);
     char buf[30];
-    sprintf(buf, "%4d-%02d-%02d %02d:%02d:%02d ", t->tm_year + BASE_DATE, t->tm_mon + 1, t->tm_mday,
+    int ret = sprintf(buf, "%4d-%02d-%02d %02d:%02d:%02d ", t->tm_year + BASE_DATE, t->tm_mon + 1, t->tm_mday,
         t->tm_hour, t->tm_min, t->tm_sec);
-
+    if (ret < 0) {
+        printf("%s sprintf fail\n", __func__);
+    }
     string stag = tag;
     string smsg = msg;
     string data = buf + stag + smsg;
-    g_writeToLog(data);
+    LogWriteFile(data);
 }
 
-void LogPrint(LogPriority priority, const char *tag, const char *fmt, ...)
+void PluginLog::LogPrint(LogPriority pri, const char *tag, const char *buf)
 {
-    va_list ap;
-
-    va_start(ap, fmt);
-    vsnprintf(g_buf, LOG_BUF_SIZE, fmt, ap);
-    va_end(ap);
-
-    if (priority <= g_priority) {
-        printf("%s%s", tag, g_buf);
+    if (pri <= priority) {
+        printf("%s%s", tag, buf);
     }
 
     g_mutex.lock();
-    LogWrite(tag, g_buf);
+    LogWrite(tag, buf);
     g_mutex.unlock();
 }
 
-bool SetLogPriority(LogPriority priority)
+void PluginLog::LOGE(const char *fmt, ...)
 {
-    if (priority > PRIORITY_DEBUG) {
+    va_list ap;
+    va_start(ap, fmt);
+    int ret = vsnprintf(logBuf, LOG_BUF_SIZE, fmt, ap);
+    if (ret < 0) {
+        printf("%s vsnprintf fail\n", __func__);
+    }
+    va_end(ap);
+    
+    LogPrint(PRIORITY_ERROR, "ERROR:", logBuf);
+}
+
+void PluginLog::LOGW(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int ret = vsnprintf(logBuf, LOG_BUF_SIZE, fmt, ap);
+    if (ret < 0) {
+        printf("%s vsnprintf fail\n", __func__);
+    }
+    va_end(ap);
+    LogPrint(PRIORITY_WARN, "WARN:", logBuf);
+}
+
+void PluginLog::LOGI(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int ret = vsnprintf(logBuf, LOG_BUF_SIZE, fmt, ap);
+    if (ret < 0) {
+        printf("%s vsnprintf fail\n", __func__);
+    }
+    va_end(ap);
+    LogPrint(PRIORITY_INFO, "INFO:", logBuf);
+}
+
+void PluginLog::LOGD(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int ret = vsnprintf(logBuf, LOG_BUF_SIZE, fmt, ap);
+    if (ret < 0) {
+        printf("%s vsnprintf fail\n", __func__);
+    }
+    va_end(ap);
+    LogPrint(PRIORITY_DEBUG, "DEBUG:", logBuf);
+}
+
+bool PluginLog::SetPriority(LogPriority pri)
+{
+    if (pri > PRIORITY_DEBUG) {
         return false;
     }
-    g_priority = priority;
+    priority = pri;
     return true;
 }
-} // namespace PinServer
+} // namespace PinLog
