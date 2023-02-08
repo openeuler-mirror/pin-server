@@ -37,6 +37,14 @@ public:
     BasicPluginOpsAPI() = default;
     virtual ~BasicPluginOpsAPI() = default;
 
+    virtual int64_t GetInjectDataAddress() = 0;
+    virtual string GetDeclSourceFile(int64_t) = 0;
+    virtual string VariableName(int64_t) = 0;
+    virtual string FuncName(int64_t) = 0;
+    virtual string GetIncludeFile() = 0;
+    virtual int GetDeclSourceLine(int64_t) = 0;
+    virtual int GetDeclSourceColumn(int64_t) = 0;
+
     virtual vector<FunctionOp> GetAllFunc() = 0;
     virtual vector<LocalDeclOp> GetDecls(uint64_t) = 0;
     virtual LoopOp AllocateNewLoop(uint64_t) = 0;

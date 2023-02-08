@@ -18,24 +18,27 @@
 */
 
 #include "PluginAPI/PluginServerAPI.h"
-#include "PluginServer/PluginLog.h"
+#include "PluginServer/PluginJson.h"
 
 namespace PluginAPI {
 using namespace PinServer;
 using namespace mlir::Plugin;
 
-int CheckAttribute(string &attribute)
+static bool CheckAttribute(string &attribute)
 {
-    /* if (attribute == "") {
+    if (attribute == "NULL") {
         printf("param attribute is NULL,check fail!\n");
-        return -1;
-    } */
-    return 0;
+        return false;
+    }
+    return true;
 }
 
-int CheckID(uintptr_t id)
+static bool CheckID(uintptr_t id)
 {
-    return 0;
+    if (id == 0) {
+        return false;
+    }
+    return true;
 }
 
 static uint64_t GetValueId(mlir::Value v)
@@ -52,21 +55,60 @@ static uint64_t GetValueId(mlir::Value v)
     }
     return 0;
 }
-
-void PluginServerAPI::WaitClientResult(const string& funName, const string& params)
+int64_t PluginServerAPI::GetInjectDataAddress()
 {
-    PluginServer *server = PluginServer::GetInstance();
-    server->SetApiFuncName(funName);
-    server->SetApiFuncParams(params);
-    server->SetUserFunState(STATE_BEGIN);
-    server->SemPost();
-    while (1) {
-        server->ClientReturnSemWait();
-        if (server->GetUserFunState() == STATE_RETURN) { // wait client result
-            server->SetUserFunState(STATE_WAIT_BEGIN);
-            break;
-        }
-    }
+    string funName = __func__;
+    string params = "";
+
+    return PluginServer::GetInstance()->GetIntegerDataResult(funName, params);
+}
+
+string PluginServerAPI::GetDeclSourceFile(int64_t clientDataAddr)
+{
+    string funName = __func__;
+    string params = std::to_string(clientDataAddr);
+
+    return PluginServer::GetInstance()->GetStringDataResult(funName, params);
+}
+
+string PluginServerAPI::VariableName(int64_t clientDataAddr)
+{
+    string funName = __func__;
+    string params = std::to_string(clientDataAddr);
+
+    return PluginServer::GetInstance()->GetStringDataResult(funName, params);
+}
+
+string PluginServerAPI::FuncName(int64_t clientDataAddr)
+{
+    string funName = __func__;
+    string params = std::to_string(clientDataAddr);
+
+    return PluginServer::GetInstance()->GetStringDataResult(funName, params);
+}
+
+string PluginServerAPI::GetIncludeFile()
+{
+    string funName = __func__;
+    string params = "";
+
+    return PluginServer::GetInstance()->GetStringDataResult(funName, params);
+}
+
+int PluginServerAPI::GetDeclSourceLine(int64_t clientDataAddr)
+{
+    string funName = __func__;
+    string params = std::to_string(clientDataAddr);
+
+    return PluginServer::GetInstance()->GetIntegerDataResult(funName, params);
+}
+
+int PluginServerAPI::GetDeclSourceColumn(int64_t clientDataAddr)
+{
+    string funName = __func__;
+    string params = std::to_string(clientDataAddr);
+
+    return PluginServer::GetInstance()->GetIntegerDataResult(funName, params);
 }
 
 bool PluginServerAPI::SetCurrentDefInSSA(uint64_t varId, uint64_t defId)
@@ -76,8 +118,7 @@ bool PluginServerAPI::SetCurrentDefInSSA(uint64_t varId, uint64_t defId)
     root["varId"] = std::to_string(varId);
     root["defId"] = std::to_string(defId);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetBoolResult();
+    return PluginServer::GetInstance()->GetBoolResult(funName, params);
 }
 
 mlir::Value PluginServerAPI::GetCurrentDefFromSSA(uint64_t varId)
@@ -86,8 +127,7 @@ mlir::Value PluginServerAPI::GetCurrentDefFromSSA(uint64_t varId)
     string funName = __func__;
     root["varId"] = std::to_string(varId);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 mlir::Value PluginServerAPI::CopySSAOp(uint64_t id)
@@ -96,8 +136,7 @@ mlir::Value PluginServerAPI::CopySSAOp(uint64_t id)
     string funName = __func__;
     root["id"] = std::to_string(id);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 mlir::Value PluginServerAPI::CreateSSAOp(mlir::Type t)
@@ -105,17 +144,10 @@ mlir::Value PluginServerAPI::CreateSSAOp(mlir::Type t)
     Json::Value root;
     string funName = __func__;
     auto baseTy = t.dyn_cast<PluginIR::PluginTypeBase>();
-    root = PluginServer::GetInstance()->TypeJsonSerialize(baseTy);
+    PinJson::PluginJson json;
+    root = json.TypeJsonSerialize(baseTy);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
-}
-
-vector<FunctionOp> PluginServerAPI::GetFunctionOpResult(const string& funName, const string& params)
-{
-    WaitClientResult(funName, params);
-    vector<FunctionOp> retOps = PluginServer::GetInstance()->GetFunctionOpResult();
-    return retOps;
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 vector<FunctionOp> PluginServerAPI::GetAllFunc()
@@ -124,7 +156,7 @@ vector<FunctionOp> PluginServerAPI::GetAllFunc()
     string funName = __func__;
     string params = root.toStyledString();
 
-    return GetFunctionOpResult(funName, params);
+    return PluginServer::GetInstance()->GetFunctionOpResult(funName, params);
 }
 
 PhiOp PluginServerAPI::GetPhiOp(uint64_t id)
@@ -133,8 +165,7 @@ PhiOp PluginServerAPI::GetPhiOp(uint64_t id)
     string funName = __func__;
     root["id"] = std::to_string(id);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult();
+    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult(funName, params);
     return llvm::dyn_cast<PhiOp>(opRet[0]);
 }
 
@@ -144,8 +175,7 @@ CallOp PluginServerAPI::GetCallOp(uint64_t id)
     string funName = __func__;
     root["id"] = std::to_string(id);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult();
+    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult(funName, params);
     return llvm::dyn_cast<CallOp>(opRet[0]);
 }
 
@@ -156,14 +186,10 @@ bool PluginServerAPI::SetLhsInCallOp(uint64_t callId, uint64_t lhsId)
     root["callId"] = std::to_string(callId);
     root["lhsId"] = std::to_string(lhsId);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetBoolResult();
+    return PluginServer::GetInstance()->GetBoolResult(funName, params);
 }
 
-uint32_t PluginServerAPI::AddArgInPhiOp(uint64_t phiId,
-                                    uint64_t argId,
-                                    uint64_t predId,
-                                    uint64_t succId)
+uint32_t PluginServerAPI::AddArgInPhiOp(uint64_t phiId, uint64_t argId, uint64_t predId, uint64_t succId)
 {
     Json::Value root;
     string funName = __func__;
@@ -172,8 +198,7 @@ uint32_t PluginServerAPI::AddArgInPhiOp(uint64_t phiId,
     root["predId"] = std::to_string(predId);
     root["succId"] = std::to_string(succId);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetIdResult();
+    return PluginServer::GetInstance()->GetIdResult(funName, params);
 }
 
 uint64_t PluginServerAPI::CreateCondOp(uint64_t blockId, IComparisonCode iCode,
@@ -189,8 +214,7 @@ uint64_t PluginServerAPI::CreateCondOp(uint64_t blockId, IComparisonCode iCode,
     root["tbaddr"] = std::to_string(tbaddr);
     root["fbaddr"] = std::to_string(fbaddr);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetIdResult();
+    return PluginServer::GetInstance()->GetIdResult(funName, params);
 }
 
 uint64_t PluginServerAPI::CreateAssignOp(uint64_t blockId, IExprCode iCode, vector<uint64_t> &argIds)
@@ -207,8 +231,7 @@ uint64_t PluginServerAPI::CreateAssignOp(uint64_t blockId, IExprCode iCode, vect
     }
     root["argIds"] = item;
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetIdResult();
+    return PluginServer::GetInstance()->GetIdResult(funName, params);
 }
 
 uint64_t PluginServerAPI::CreateCallOp(uint64_t blockId, uint64_t funcId,
@@ -226,8 +249,7 @@ uint64_t PluginServerAPI::CreateCallOp(uint64_t blockId, uint64_t funcId,
     }
     root["argIds"] = item;
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetIdResult();
+    return PluginServer::GetInstance()->GetIdResult(funName, params);
 }
 
 mlir::Value PluginServerAPI::CreateConstOp(mlir::Attribute attr, mlir::Type type)
@@ -235,15 +257,15 @@ mlir::Value PluginServerAPI::CreateConstOp(mlir::Attribute attr, mlir::Type type
     Json::Value root;
     string funName = __func__;
     auto baseTy = type.dyn_cast<PluginIR::PluginTypeBase>();
-    root = PluginServer::GetInstance()->TypeJsonSerialize(baseTy);
+    PinJson::PluginJson json;
+    root = json.TypeJsonSerialize(baseTy);
     string valueStr;
     if (type.isa<PluginIR::PluginIntegerType>()) {
         valueStr = std::to_string(attr.cast<mlir::IntegerAttr>().getInt());
     }
     root["value"] = valueStr;
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 mlir::Value PluginServerAPI::GetResultFromPhi(uint64_t phiId)
@@ -252,8 +274,7 @@ mlir::Value PluginServerAPI::GetResultFromPhi(uint64_t phiId)
     string funName = __func__;
     root["id"] = std::to_string(phiId);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 PhiOp PluginServerAPI::CreatePhiOp(uint64_t argId, uint64_t blockId)
@@ -263,8 +284,7 @@ PhiOp PluginServerAPI::CreatePhiOp(uint64_t argId, uint64_t blockId)
     root["blockId"] = std::to_string(blockId);
     root["argId"] = std::to_string(argId);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult();
+    vector<mlir::Operation*> opRet = PluginServer::GetInstance()->GetOpResult(funName, params);
     return llvm::dyn_cast<PhiOp>(opRet[0]);
 }
 
@@ -275,8 +295,7 @@ mlir::Value PluginServerAPI::ConfirmValue(mlir::Value v)
     uint64_t valId = GetValueId(v);
     root["valId"] = std::to_string(valId);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 mlir::Value PluginServerAPI::BuildMemRef(PluginIR::PluginTypeBase type,
@@ -288,53 +307,45 @@ mlir::Value PluginServerAPI::BuildMemRef(PluginIR::PluginTypeBase type,
     uint64_t offsetId = GetValueId(offset);
     root["baseId"] = baseId;
     root["offsetId"] = offsetId;
-    root["type"] = PluginServer::GetInstance()->TypeJsonSerialize(type);
+    PinJson::PluginJson json;
+    root["type"] = json.TypeJsonSerialize(type);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)
 {
     if (type == "VoidTy") {
         return PluginIR::PluginTypeID::VoidTyID;
-    }else if (type == "UIntegerTy1") {
+    } else if (type == "UIntegerTy1") {
         return PluginIR::PluginTypeID::UIntegerTy1ID;
-    }else if (type == "UIntegerTy8") {
+    } else if (type == "UIntegerTy8") {
         return PluginIR::PluginTypeID::UIntegerTy8ID;
-    }else if (type == "UIntegerTy16") {
+    } else if (type == "UIntegerTy16") {
         return PluginIR::PluginTypeID::UIntegerTy16ID;
-    }else if (type == "UIntegerTy32") {
+    } else if (type == "UIntegerTy32") {
         return PluginIR::PluginTypeID::UIntegerTy32ID;
-    }else if (type == "UIntegerTy64") {
+    } else if (type == "UIntegerTy64") {
         return PluginIR::PluginTypeID::UIntegerTy64ID;
-    }else if (type == "IntegerTy1") {
+    } else if (type == "IntegerTy1") {
         return PluginIR::PluginTypeID::IntegerTy1ID;
-    }else if (type == "IntegerTy8") {
+    } else if (type == "IntegerTy8") {
         return PluginIR::PluginTypeID::IntegerTy8ID;
-    }else if (type == "IntegerTy16") {
+    } else if (type == "IntegerTy16") {
         return PluginIR::PluginTypeID::IntegerTy16ID;
-    }else if (type == "IntegerTy32") {
+    } else if (type == "IntegerTy32") {
         return PluginIR::PluginTypeID::IntegerTy32ID;
-    }else if (type == "IntegerTy64") {
+    } else if (type == "IntegerTy64") {
         return PluginIR::PluginTypeID::IntegerTy64ID;
-    }else if (type == "BooleanTy") {
+    } else if (type == "BooleanTy") {
         return PluginIR::PluginTypeID::BooleanTyID;
-    }else if (type == "FloatTy") {
+    } else if (type == "FloatTy") {
         return PluginIR::PluginTypeID::FloatTyID;
-    }else if (type == "DoubleTy") {
+    } else if (type == "DoubleTy") {
         return PluginIR::PluginTypeID::DoubleTyID;
     }
     
     return PluginIR::PluginTypeID::UndefTyID;
-}
-
-vector<LocalDeclOp> PluginServerAPI::GetDeclOperationResult(const string&funName,
-                                                            const string& params)
-{
-    WaitClientResult(funName, params);
-    vector<LocalDeclOp> retDecls = PluginServer::GetInstance()->GetLocalDeclResult();
-    return retDecls;
 }
 
 vector<LocalDeclOp> PluginServerAPI::GetDecls(uint64_t funcID)
@@ -344,48 +355,12 @@ vector<LocalDeclOp> PluginServerAPI::GetDecls(uint64_t funcID)
     root["funcId"] = std::to_string(funcID);
     string params = root.toStyledString();
 
-    return GetDeclOperationResult(funName, params);
-}
-
-vector<LoopOp> PluginServerAPI::GetLoopsResult(const string& funName,
-                                               const string& params)
-{
-    WaitClientResult(funName, params);
-    vector<LoopOp> loops = PluginServer::GetInstance()->LoopOpsResult();
-    return loops;
-}
-
-LoopOp PluginServerAPI::GetLoopResult(const string& funName, const string& params)
-{
-    WaitClientResult(funName, params);
-    LoopOp loop = PluginServer::GetInstance()->LoopOpResult();
-    return loop;
-}
-
-bool PluginServerAPI::GetBoolResult(const string& funName, const string& params)
-{
-    WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetBoolResult();
-}
-
-pair<mlir::Block*, mlir::Block*> PluginServerAPI::EdgeResult(const string& funName, const string& params)
-{
-    WaitClientResult(funName, params);
-    pair<mlir::Block*, mlir::Block*> e = PluginServer::GetInstance()->EdgeResult();
-    return e;
-}
-
-vector<pair<mlir::Block*, mlir::Block*> > PluginServerAPI::EdgesResult(const string& funName, const string& params)
-{
-    WaitClientResult(funName, params);
-    vector<pair<mlir::Block*, mlir::Block*> > retEdges = PluginServer::GetInstance()->EdgesResult();
-    return retEdges;
+    return PluginServer::GetInstance()->GetLocalDeclResult(funName, params);
 }
 
 mlir::Block* PluginServerAPI::BlockResult(const string& funName, const string& params)
 {
-    WaitClientResult(funName, params);
-    uint64_t blockId =  PluginServer::GetInstance()->GetIdResult();
+    uint64_t blockId =  PluginServer::GetInstance()->GetIdResult(funName, params);
     return PluginServer::GetInstance()->FindBlock(blockId);
 }
 
@@ -393,9 +368,8 @@ vector<mlir::Block*> PluginServerAPI::BlocksResult(const string& funName, const 
 {
     vector<mlir::Block*> res;
     PluginServer *server = PluginServer::GetInstance();
-    WaitClientResult(funName, params);
-    vector<uint64_t> blockIds = server->GetIdsResult();
-    for(auto b : blockIds) {
+    vector<uint64_t> blockIds = server->GetIdsResult(funName, params);
+    for (auto b : blockIds) {
         res.push_back(server->FindBlock(b));
     }
     return res;
@@ -408,7 +382,7 @@ vector<LoopOp> PluginServerAPI::GetLoopsFromFunc(uint64_t funcID)
     root["funcId"] = std::to_string(funcID);
     string params = root.toStyledString();
 
-    return GetLoopsResult(funName, params);
+    return PluginServer::GetInstance()->LoopOpsResult(funName, params);
 }
 
 bool PluginServerAPI::IsDomInfoAvailable()
@@ -421,8 +395,7 @@ bool PluginServerAPI::IsDomInfoAvailable()
 bool PluginServerAPI::GetDomInfoAvaiResult(const string& funName)
 {
     Json::Value root;
-    WaitClientResult(funName, root.toStyledString());
-    return PluginServer::GetInstance()->GetBoolResult();
+    return PluginServer::GetInstance()->GetBoolResult(funName, root.toStyledString());
 }
 
 LoopOp PluginServerAPI::AllocateNewLoop(uint64_t funcID)
@@ -432,7 +405,7 @@ LoopOp PluginServerAPI::AllocateNewLoop(uint64_t funcID)
     root["funcId"] = std::to_string(funcID);
     string params = root.toStyledString();
 
-    return GetLoopResult(funName, params);
+    return PluginServer::GetInstance()->LoopOpResult(funName, params);
 }
 
 LoopOp PluginServerAPI::GetLoopById(uint64_t loopID)
@@ -442,7 +415,7 @@ LoopOp PluginServerAPI::GetLoopById(uint64_t loopID)
     root["loopId"] = std::to_string(loopID);
     string params = root.toStyledString();
 
-    return GetLoopResult(funName, params);
+    return PluginServer::GetInstance()->LoopOpResult(funName, params);
 }
 
 void PluginServerAPI::DeleteLoop(uint64_t loopID)
@@ -451,7 +424,7 @@ void PluginServerAPI::DeleteLoop(uint64_t loopID)
     string funName("DeleteLoop");
     root["loopId"] = std::to_string(loopID);
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 void PluginServerAPI::AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID)
@@ -462,7 +435,7 @@ void PluginServerAPI::AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID
     root["outerId"] = outerID;
     root["funcId"] = funcID;
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 void PluginServerAPI::AddBlockToLoop(uint64_t blockID, uint64_t loopID)
@@ -472,7 +445,7 @@ void PluginServerAPI::AddBlockToLoop(uint64_t blockID, uint64_t loopID)
     root["blockId"] = blockID;
     root["loopId"] = loopID;
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 bool PluginServerAPI::IsBlockInLoop(uint64_t loopID, uint64_t blockID)
@@ -483,7 +456,7 @@ bool PluginServerAPI::IsBlockInLoop(uint64_t loopID, uint64_t blockID)
     root["blockId"] = std::to_string(blockID);
     string params = root.toStyledString();
 
-    return GetBoolResult(funName, params);
+    return PluginServer::GetInstance()->GetBoolResult(funName, params);
 }
 
 mlir::Block* PluginServerAPI::GetHeader(uint64_t loopID)
@@ -513,8 +486,7 @@ void PluginServerAPI::SetHeader(uint64_t loopID, uint64_t blockID)
     root["loopId"] = std::to_string(loopID);
     root["blockId"] = std::to_string(blockID);
     string params = root.toStyledString();
-
-    WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 void PluginServerAPI::SetLatch(uint64_t loopID, uint64_t blockID)
@@ -524,8 +496,7 @@ void PluginServerAPI::SetLatch(uint64_t loopID, uint64_t blockID)
     root["loopId"] = std::to_string(loopID);
     root["blockId"] = std::to_string(blockID);
     string params = root.toStyledString();
-
-    WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 pair<mlir::Block*, mlir::Block*> PluginServerAPI::LoopSingleExit(uint64_t loopID)
@@ -534,8 +505,7 @@ pair<mlir::Block*, mlir::Block*> PluginServerAPI::LoopSingleExit(uint64_t loopID
     string funName("GetLoopSingleExit");
     root["loopId"] = std::to_string(loopID);
     string params = root.toStyledString();
-
-    return EdgeResult(funName, params);
+    return PluginServer::GetInstance()->EdgeResult(funName, params);
 }
 
 vector<pair<mlir::Block*, mlir::Block*> > PluginServerAPI::GetLoopExitEdges(uint64_t loopID)
@@ -544,8 +514,7 @@ vector<pair<mlir::Block*, mlir::Block*> > PluginServerAPI::GetLoopExitEdges(uint
     string funName("GetLoopExits");
     root["loopId"] = std::to_string(loopID);
     string params = root.toStyledString();
-
-    return EdgesResult(funName, params);
+    return PluginServer::GetInstance()->EdgesResult(funName, params);
 }
 
 vector<mlir::Block*> PluginServerAPI::GetLoopBody(uint64_t loopID)
@@ -554,7 +523,6 @@ vector<mlir::Block*> PluginServerAPI::GetLoopBody(uint64_t loopID)
     string funName("GetBlocksInLoop");
     root["loopId"] = std::to_string(loopID);
     string params = root.toStyledString();
-
     return BlocksResult(funName, params);
 }
 
@@ -564,8 +532,7 @@ LoopOp PluginServerAPI::GetBlockLoopFather(uint64_t blockID)
     string funName("GetBlockLoopFather");
     root["blockId"] = std::to_string(blockID);
     string params = root.toStyledString();
-
-    return GetLoopResult(funName, params);
+    return PluginServer::GetInstance()->LoopOpResult(funName, params);
 }
 
 mlir::Block* PluginServerAPI::FindBlock(uint64_t b)
@@ -594,8 +561,8 @@ bool PluginServerAPI::RedirectFallthroughTarget(FallThroughOp& fop,
     root["src"] = src;
     root["dest"] = dest;
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
-    //update server
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+    // update server
     PluginServer *server = PluginServer::GetInstance();
     fop->setSuccessor(server->FindBlock(dest), 0);
     return true;
@@ -617,7 +584,7 @@ void PluginServerAPI::DebugValue(uint64_t valId)
     string funName = __func__;
     root["valId"] = valId;
     string params = root.toStyledString();
-    WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 } // namespace Plugin_IR

@@ -52,8 +52,8 @@ public:
     vector<pair<mlir::Block*, mlir::Block*> > GetLoopExitEdges(uint64_t loopID);
     mlir::Block* GetHeader(uint64_t loopID);
     mlir::Block* GetLatch(uint64_t loopID);
-	void SetHeader(uint64_t loopID, uint64_t blockID);
-	void SetLatch(uint64_t loopID, uint64_t blockID);
+    void SetHeader(uint64_t loopID, uint64_t blockID);
+    void SetLatch(uint64_t loopID, uint64_t blockID);
     vector<mlir::Block*> GetLoopBody(uint64_t loopID);
     LoopOp GetBlockLoopFather(uint64_t blockID);
     mlir::Block* FindBlock(uint64_t);
@@ -73,7 +73,7 @@ public:
     PhiOp CreatePhiOp(uint64_t, uint64_t) override;
     /* Plugin API for ConstOp. */
     mlir::Value CreateConstOp(mlir::Attribute, mlir::Type) override;
-	void DebugValue(uint64_t) override;
+    void DebugValue(uint64_t) override;
     
     mlir::Value GetCurrentDefFromSSA(uint64_t) override;
     bool SetCurrentDefInSSA(uint64_t, uint64_t) override;
@@ -84,16 +84,15 @@ public:
     bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) override;
     mlir::Operation* GetSSADefOperation(uint64_t) override;
     void InsertCreatedBlock(uint64_t id, mlir::Block* block);
-    void WaitClientResult(const string& funName, const string& params);
 
+    int64_t GetInjectDataAddress() override; // 获取注入点返回数据的地址
+    string GetDeclSourceFile(int64_t) override;
+    string VariableName(int64_t) override;
+    string FuncName(int64_t) override;
+    string GetIncludeFile() override;
+    int GetDeclSourceLine(int64_t) override;
+    int GetDeclSourceColumn(int64_t) override;
 private:
-    vector<FunctionOp> GetFunctionOpResult(const string& funName, const string& params);
-    vector<LocalDeclOp> GetDeclOperationResult(const string& funName, const string& params);
-    LoopOp GetLoopResult(const string&funName, const string& params);
-    vector<LoopOp> GetLoopsResult(const string& funName, const string& params);
-    bool GetBoolResult(const string& funName, const string& params);
-    pair<mlir::Block*, mlir::Block*> EdgeResult(const string& funName, const string& params);
-    vector<pair<mlir::Block*, mlir::Block*> > EdgesResult(const string& funName, const string& params);
     mlir::Block* BlockResult(const string& funName, const string& params);
     vector<mlir::Block*> BlocksResult(const string& funName, const string& params);
     bool GetDomInfoAvaiResult(const string& funName);

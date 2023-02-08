@@ -15,7 +15,6 @@
 */
 
 #include "PluginAPI/ControlFlowAPI.h"
-#include "PluginServer/PluginLog.h"
 
 namespace PluginAPI {
 using namespace PinServer;
@@ -60,20 +59,18 @@ bool ControlFlowAPI::UpdateSSA(void)
 bool ControlFlowAPI::GetUpdateOperationResult(const string &funName)
 {
     Json::Value root;
-    pluginAPI.WaitClientResult(funName, root.toStyledString());
-    return PluginServer::GetInstance()->GetBoolResult();
+    return PluginServer::GetInstance()->GetBoolResult(funName, root.toStyledString());
 }
 
 vector<PhiOp> ControlFlowAPI::GetPhiOperationResult(const string &funName, const string& params)
 {
-    pluginAPI.WaitClientResult(funName, params);;
-    vector<PhiOp> retOps = PluginServer::GetInstance()->GetPhiOpsResult();
+    vector<PhiOp> retOps = PluginServer::GetInstance()->GetPhiOpsResult(funName, params);
     return retOps;
 }
 
 void ControlFlowAPI::GetDominatorSetOperationResult(const string &funName, const string& params)
 {
-    pluginAPI.WaitClientResult(funName, params);;
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
     return;
 }
 
@@ -97,12 +94,11 @@ uint64_t ControlFlowAPI::CreateBlock(mlir::Block* b, uint64_t funcAddr, uint64_t
     root["funcaddr"] = std::to_string(funcAddr);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);;
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
     return PluginServer::GetInstance()->GetBlockResult(b);
 }
 
-void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr,
-                                  uint64_t bbAddr)
+void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr, uint64_t bbAddr)
 {
     Json::Value root;
     string funName = __func__;
@@ -111,14 +107,12 @@ void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr,
     root["funcaddr"] = std::to_string(funcAddr);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);;
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
     PluginServer::GetInstance()->EraseBlock(b);
-    // b->erase();
 }
 
 /* dir: 1 or 2 */
-void ControlFlowAPI::SetImmediateDominator(uint64_t dir, uint64_t bbAddr,
-                                            uint64_t domiAddr)
+void ControlFlowAPI::SetImmediateDominator(uint64_t dir, uint64_t bbAddr, uint64_t domiAddr)
 {
     Json::Value root;
     string funName = __func__;
@@ -128,7 +122,7 @@ void ControlFlowAPI::SetImmediateDominator(uint64_t dir, uint64_t bbAddr,
     root["bbaddr"] = std::to_string(bbAddr);
     root["domiaddr"] = std::to_string(domiAddr);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);;
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 /* dir: 1 or 2 */
@@ -140,8 +134,7 @@ uint64_t ControlFlowAPI::GetImmediateDominator(uint64_t dir, uint64_t bbAddr)
     root["dir"] = std::to_string(dir);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);;
-    return PluginServer::GetInstance()->GetIdResult();
+    return PluginServer::GetInstance()->GetIdResult(funName, params);
 }
 
 /* dir: 1 or 2 */
@@ -153,8 +146,7 @@ uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
     root["dir"] = std::to_string(dir);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);;
-    return PluginServer::GetInstance()->GetIdResult();
+    return PluginServer::GetInstance()->GetIdResult(funName, params);
 }
 
 mlir::Value ControlFlowAPI::CreateNewDef(mlir::Value oldValue,
@@ -170,8 +162,7 @@ mlir::Value ControlFlowAPI::CreateNewDef(mlir::Value oldValue,
     uint64_t defId = 0;
     root["defId"] = std::to_string(defId);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);
-    return PluginServer::GetInstance()->GetValueResult();
+    return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
 void ControlFlowAPI::CreateFallthroughOp(
@@ -182,7 +173,7 @@ void ControlFlowAPI::CreateFallthroughOp(
     root["address"] = std::to_string(address);
     root["destaddr"] = std::to_string(destaddr);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 void ControlFlowAPI::RemoveEdge(uint64_t src, uint64_t dest)
@@ -192,7 +183,7 @@ void ControlFlowAPI::RemoveEdge(uint64_t src, uint64_t dest)
     root["src"] = std::to_string(src);
     root["dest"] = std::to_string(dest);
     string params = root.toStyledString();
-    pluginAPI.WaitClientResult(funName, params);
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 } // namespace PluginAPI

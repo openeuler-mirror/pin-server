@@ -14,11 +14,11 @@
 
 
 */
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 //
 // This file defines operations in the Plugin dialect.
 //
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 
 #include "PluginAPI/PluginServerAPI.h"
 #include "PluginAPI/ControlFlowAPI.h"
@@ -105,7 +105,8 @@ void LocalDeclOp::build(OpBuilder &builder, OperationState &state,
 
 void LoopOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
                    uint64_t id, uint32_t index, uint64_t innerLoopId,
-                   uint64_t outerLoopId, uint32_t numBlock) {
+                   uint64_t outerLoopId, uint32_t numBlock)
+{
     LoopOp::build(builder, state,
         builder.getI64IntegerAttr(id),
         builder.getI32IntegerAttr(index),
@@ -219,7 +220,7 @@ void LoopOp::AddBlock(mlir::Block* block)
     pluginAPI.AddBlockToLoop(blockId, loopId);
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // PlaceholderOp
 
 void PlaceholderOp::build(OpBuilder &builder, OperationState &state,
@@ -233,7 +234,7 @@ void PlaceholderOp::build(OpBuilder &builder, OperationState &state,
     state.addTypes(retType);
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // MemOp
 
 void MemOp::build(OpBuilder &builder, OperationState &state,
@@ -248,7 +249,7 @@ void MemOp::build(OpBuilder &builder, OperationState &state,
     if (retType) state.addTypes(retType);
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // SSAOp
 
 void SSAOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
@@ -270,23 +271,23 @@ void SSAOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
 Value SSAOp::MakeSSA(OpBuilder &builder, Type t)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    PinServer::PluginServer::GetInstance()->SetOpBuilder(builder);
+    PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
     return pluginAPI.CreateSSAOp(t);
 }
 
 Value SSAOp::Copy()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    OpBuilder builder(this->getOperation());
-    PinServer::PluginServer::GetInstance()->SetOpBuilder(builder);
+    static OpBuilder builder(this->getOperation());
+    PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
     return pluginAPI.CopySSAOp(this->idAttr().getInt());
 }
 
 Value SSAOp::GetCurrentDef()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    OpBuilder builder(this->getOperation());
-    PinServer::PluginServer::GetInstance()->SetOpBuilder(builder);
+    static OpBuilder builder(this->getOperation());
+    PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
     return pluginAPI.GetCurrentDefFromSSA(this->idAttr().getInt());
 }
 
@@ -307,7 +308,7 @@ Operation* SSAOp::GetSSADefOperation()
     return pluginAPI.GetSSADefOperation(definingId);
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // ConstOp
 
 void ConstOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
@@ -325,11 +326,11 @@ void ConstOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
 Value ConstOp::CreateConst(OpBuilder &builder, Attribute value, Type retType)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    PinServer::PluginServer::GetInstance()->SetOpBuilder(builder);
+    PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
     return pluginAPI.CreateConstOp(value, retType);
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // PointerOp
 
 void PointerOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
@@ -344,7 +345,7 @@ void PointerOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
     state.addAttribute("pointeeReadOnly", builder.getBoolAttr(pointeeReadOnly));
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // CallOp
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
@@ -414,13 +415,14 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("callee", builder.getSymbolRefAttr("ctzll"));
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // CondOp
 
 void CondOp::build(OpBuilder &builder, OperationState &state,
                    uint64_t id, uint64_t address, IComparisonCode condCode,
                    Value lhs, Value rhs, Block* tb, Block* fb, uint64_t tbaddr,
-                   uint64_t fbaddr, Value trueLabel, Value falseLabel) {
+                   uint64_t fbaddr, Value trueLabel, Value falseLabel)
+{
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("address", builder.getI64IntegerAttr(address));
     state.addAttribute("tbaddr", builder.getI64IntegerAttr(tbaddr));
@@ -449,19 +451,18 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands({lhs, rhs});
     state.addAttribute("condCode",
-            builder.getI32IntegerAttr(static_cast<int32_t>(condCode)));
+        builder.getI32IntegerAttr(static_cast<int32_t>(condCode)));
     state.addSuccessors(tb);
     state.addSuccessors(fb);
     state.addAttribute("tbaddr", builder.getI64IntegerAttr(tbaddr));
     state.addAttribute("fbaddr", builder.getI64IntegerAttr(fbaddr));
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // PhiOp
 
 void PhiOp::build(OpBuilder &builder, OperationState &state,
-                   ArrayRef<Value> operands, uint64_t id,
-                   uint32_t capacity, uint32_t nArgs)
+    ArrayRef<Value> operands, uint64_t id, uint32_t capacity, uint32_t nArgs)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("capacity", builder.getI32IntegerAttr(capacity));
@@ -472,8 +473,8 @@ void PhiOp::build(OpBuilder &builder, OperationState &state,
 Value PhiOp::GetResult()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    OpBuilder builder(this->getOperation());
-    PinServer::PluginServer::GetInstance()->SetOpBuilder(builder);
+    static OpBuilder builder(this->getOperation());
+    PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
     return pluginAPI.GetResultFromPhi(this->idAttr().getInt());
 }
 
@@ -507,7 +508,7 @@ Value PhiOp::GetArgDef(int i)
     }
     return getOperand(i);
 }
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // AssignOp
 
 void AssignOp::build(OpBuilder &builder, OperationState &state,
@@ -538,7 +539,7 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
     state.addOperands(operands);
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // BaseOp
 
 void BaseOp::build(OpBuilder &builder, OperationState &state,
@@ -548,7 +549,7 @@ void BaseOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("opCode", builder.getStringAttr(opCode));
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // FallThroughOp
 
 void FallThroughOp::build(OpBuilder &builder, OperationState &state,
@@ -572,7 +573,7 @@ void FallThroughOp::build(OpBuilder &builder, OperationState &state,
     state.addSuccessors(dest);
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // RetOp
 
 void RetOp::build(OpBuilder &builder, OperationState &state, uint64_t address)
@@ -580,9 +581,9 @@ void RetOp::build(OpBuilder &builder, OperationState &state, uint64_t address)
     state.addAttribute("address", builder.getI64IntegerAttr(address));
 }
 
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 // TableGen'd op method definitions
-//===----------------------------------------------------------------------===//
+// ===----------------------------------------------------------------------===//
 
 #define GET_OP_CLASSES
 #include "Dialect/PluginOps.cpp.inc"
