@@ -12,19 +12,16 @@
    License for the specific language governing permissions and limitations
    under the License.
 
+   Author: Mingchuan Wu and Yancheng Li
+   Create: 2022-08-18
+   Description:
+    This file contains the declaration of the User Init.
 */
-// ===----------------------------------------------------------------------===//
-//
-// This is the header file for the Plugin dialect.
-//
-// ===----------------------------------------------------------------------===//
 
-#ifndef PLUGIN_DIALECT_H
-#define PLUGIN_DIALECT_H
+#ifndef PLUGIN_USER_H
+#define PLUGIN_USER_H
 
-#include "mlir/IR/Dialect.h"
+/* 将注册点及用户函数注册给server, server初始化时调用 */
+void RegisterCallbacks(void);
 
-/// Include the patterns defined in the Declarative Rewrite framework.
-#include "Dialect/PluginOpsDialect.h.inc"
-
-#endif // PLUGIN_DIALECT_H
+#endif

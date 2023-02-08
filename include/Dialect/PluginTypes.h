@@ -131,25 +131,19 @@ public:
 class PluginVoidType : public Type::TypeBase<PluginVoidType, PluginTypeBase, TypeStorage> {
 public:
     using Base::Base;
-
     PluginTypeID getPluginTypeID ();
-
 }; // class PluginVoidType
 
 class PluginUndefType : public Type::TypeBase<PluginUndefType, PluginTypeBase, TypeStorage> {
 public:
     using Base::Base;
-
     PluginTypeID getPluginTypeID ();
-
 }; // class PluginUndefType
 
 class PluginBooleanType : public Type::TypeBase<PluginBooleanType, PluginTypeBase, TypeStorage> {
 public:
     using Base::Base;
-
     PluginTypeID getPluginTypeID ();
-
 }; // class PluginBooleanType
 
 } // namespace PluginIR
