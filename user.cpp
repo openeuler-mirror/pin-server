@@ -318,7 +318,7 @@ struct originLoopInfo {
     Value *limitptr;
     Value arr1;     /* Array 1 in the old loop.  */
     Value *arr1ptr;
-    Value arr2;	    /* Array 2 in the old loop.  */
+    Value arr2;        /* Array 2 in the old loop.  */
     Value *arr2ptr;
     edge entryEdge; /* The edge into the old loop.  */
     edgePtr entryEdgePtr;
@@ -646,7 +646,7 @@ static bool getIvBase(CondOp cond)
    original loop; When prolog_assign is present, make sure loop header is in
    simple form; And the interpretation of prolog_assign is as follows:
    eg: while (++len != limit)
-	......
+    ......
    For such a loop, ++len will be processed before entering header_bb, and the
    assign is regarded as the prolog_assign of the loop.  */
 static bool recordOriginLoopHeader(LoopOp loop)
@@ -664,6 +664,9 @@ static bool recordOriginLoopHeader(LoopOp loop)
         if (isa<PhiOp, SSAOp, PlaceholderOp, ConstOp>(op)) {
             continue;
         }
+
+        if (auto debugOp = dyn_cast<DebugOp>(op))
+            continue;
 
         if (auto cond = dyn_cast<CondOp>(op)) {
             if (!getIvUpperBound(cond)) {

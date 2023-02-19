@@ -82,8 +82,8 @@ def LoopOp : Plugin_Op<"loop", [NoSideEffect]> {
   let extraClassDeclaration = [{
     mlir::Block* GetHeader();
     mlir::Block* GetLatch();
-	void SetHeader(mlir::Block*);
-	void SetLatch(mlir::Block*);
+    void SetHeader(mlir::Block*);
+    void SetLatch(mlir::Block*);
     std::pair<mlir::Block*, mlir::Block*> GetSingleExit();
     void Delete();
     LoopOp GetInnerLoop();
@@ -247,7 +247,7 @@ def SSAOp : SSA<"SSA"> {
     Value Copy();
     Value GetCurrentDef();
     bool SetCurrentDef(Value def);
-	Operation* GetSSADefOperation();
+    Operation* GetSSADefOperation();
   }];
 }
 
@@ -271,6 +271,16 @@ def BaseOp : Plugin_Op<"statement_base", [NoSideEffect]> {
   let results = (outs AnyType);
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$opCode)>
+  ];
+}
+
+def DebugOp : Plugin_Op<"debug", [NoSideEffect]> {
+  let summary = "DebugOp.";
+  let description = [{TODO}];
+  let arguments = (ins UI64Attr:$id);
+  let results = (outs AnyType);
+  let builders = [
+    OpBuilderDAG<(ins "uint64_t":$id)>
   ];
 }
 

@@ -196,6 +196,9 @@ bool PluginJson::ProcessBlock(mlir::Block* block, mlir::Region& rg, const Json::
             RetOpJsonDeSerialize(opJson.toStyledString());
         } else if (opCode == FallThroughOp::getOperationName().str()) {
             FallThroughOpJsonDeSerialize(opJson.toStyledString());
+        } else if (opCode == DebugOp::getOperationName().str()) {
+            uint64_t opID = GetID(opJson["id"]);
+            opBuilder->create<DebugOp>(opBuilder->getUnknownLoc(), opID);
         } else if (opCode == BaseOp::getOperationName().str()) {
             uint64_t opID = GetID(opJson["id"]);
             opBuilder->create<BaseOp>(opBuilder->getUnknownLoc(), opID, opCode);
@@ -603,6 +606,10 @@ void PluginJson::OpJsonDeSerialize(
         opData.push_back(RetOpJsonDeSerialize(opJson.toStyledString()));
     } else if (opCode == FallThroughOp::getOperationName().str()) {
         opData.push_back(FallThroughOpJsonDeSerialize(opJson.toStyledString()));
+    } else if (opCode == DebugOp::getOperationName().str()) {
+        uint64_t opID = GetID(opJson["id"]);
+        mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
+        opBuilder->create<DebugOp>(opBuilder->getUnknownLoc(), opID);
     } else if (opCode == BaseOp::getOperationName().str()) {
         uint64_t opID = GetID(opJson["id"]);
         mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
