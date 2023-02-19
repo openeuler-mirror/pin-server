@@ -74,6 +74,8 @@ public:
     /* Plugin API for ConstOp. */
     mlir::Value CreateConstOp(mlir::Attribute, mlir::Type) override;
     void DebugValue(uint64_t) override;
+    bool IsLtoOptimize() override;
+    bool IsWholeProgram() override;
     
     mlir::Value GetCurrentDefFromSSA(uint64_t) override;
     bool SetCurrentDefInSSA(uint64_t, uint64_t) override;
