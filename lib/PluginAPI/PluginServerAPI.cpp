@@ -587,4 +587,20 @@ void PluginServerAPI::DebugValue(uint64_t valId)
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
+bool PluginServerAPI::IsLtoOptimize()
+{
+    Json::Value root;
+    string funName = __func__;
+    string params = root.toStyledString();
+    return PluginServer::GetInstance()->GetBoolResult(funName, params);
+}
+
+bool PluginServerAPI::IsWholeProgram()
+{
+    Json::Value root;
+    string funName = __func__;
+    string params = root.toStyledString();
+    return PluginServer::GetInstance()->GetBoolResult(funName, params);
+}
+
 } // namespace Plugin_IR
