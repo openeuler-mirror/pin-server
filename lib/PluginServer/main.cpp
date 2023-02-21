@@ -29,7 +29,6 @@ int main(int argc, char** argv)
         printf("param num:%d, should be:%d\n", argc, argcNum);
         return -1;
     }
-    printf("main arg: %s, %s\n", argv[0], argv[1]);
     std::string port = argv[0];
     LogPriority priority = (LogPriority)atoi(argv[1]);
     PluginServer server(priority, port);

@@ -50,7 +50,7 @@ bool PluginServer::RegisterOpt(std::shared_ptr<PluginOptBase> optBase)
     string name = "funcname" + std::to_string((uintptr_t)optBase.get());
     userOpts[inject].push_back(RecordedOpt(name, optBase));
     this->context = optBase->GetContext();
-    mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
+    static mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
     opBuilder = &opBuilder_temp;
     return true;
 }
@@ -305,7 +305,7 @@ void PluginServer::RunServer()
     ServerSemPost(port);
 
     RegisterCallbacks();
-    printf("RunServer: RegisterCallbacks Done.\n");
+    log->LOGI("RunServer: RegisterCallbacks Done.\n");
     pluginCom.Run();
 }
 } // namespace PinServer
