@@ -15,19 +15,30 @@
    Author: Mingchuan Wu and Yancheng Li
    Create: 2022-08-18
    Description:
-    This file contains the implementation of the User Init.
+    This file contains the implementation of the inlineFunctionPass class.
 */
 
 #include "PluginAPI/PluginServerAPI.h"
-#include "user/ArrayWidenPass.h"
 #include "user/InlineFunctionPass.h"
-#include "user/LocalVarSummeryPass.h"
 
-void RegisterCallbacks(void)
+namespace PluginOpt {
+using namespace PluginAPI;
+
+static void UserOptimizeFunc(void)
 {
-    PinServer::PluginServer *pluginServer = PinServer::PluginServer::GetInstance();
-    pluginServer->RegisterOpt(std::make_shared<PluginOpt::InlineFunctionPass>(PluginOpt::HANDLE_BEFORE_IPA));
-    pluginServer->RegisterOpt(std::make_shared<PluginOpt::LocalVarSummeryPass>(PluginOpt::HANDLE_BEFORE_IPA));
-    // PluginOpt::ManagerSetup setupData(PluginOpt::PASS_PHIOPT, 1, PluginOpt::PASS_INSERT_AFTER);
-    // pluginServer->RegisterPassManagerOpt(setupData, std::make_shared<PluginOpt::ArrayWidenPass>());
+    PluginServerAPI pluginAPI;
+    vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
+    int count = 0;
+    for (size_t i = 0; i < allFunction.size(); i++) {
+        if (allFunction[i].declaredInlineAttr().getValue())
+            count++;
+    }
+    printf("declaredInline have %d functions were declared.\n", count);
+}
+
+int InlineFunctionPass::DoOptimize()
+{
+    UserOptimizeFunc();
+    return 0;
+}
 }
