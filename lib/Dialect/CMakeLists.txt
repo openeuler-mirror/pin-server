@@ -1,4 +1,4 @@
-add_mlir_dialect_library(MLIRPlugin
+add_mlir_dialect_library(MLIRPluginServer
   PluginTypes.cpp
   PluginDialect.cpp
   PluginOps.cpp

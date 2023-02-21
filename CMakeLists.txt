@@ -82,7 +82,7 @@ target_link_libraries(plg_grpc_proto
 
 add_subdirectory(include)
 add_subdirectory(lib)
-add_library(pin_user SHARED "user.cpp")
+add_library(pin_user SHARED "user/ArrayWidenPass.cpp")
 target_link_libraries(pin_user
   MLIRServerAPI
 )

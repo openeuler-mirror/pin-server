@@ -5,9 +5,9 @@ add_mlir_library(MLIRServerAPI
 
   DEPENDS
   MLIRPluginOpsIncGen
-  MLIRPlugin
+  MLIRPluginServer
 
   LINK_LIBS PUBLIC
   MLIRIR
-  MLIRPlugin
+  MLIRPluginServer
 )
