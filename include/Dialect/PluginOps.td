@@ -30,7 +30,8 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
 
   let arguments = (ins UI64Attr:$id,
                        StrAttr:$funcName,
-                       OptionalAttr<BoolAttr>:$declaredInline);
+                       OptionalAttr<BoolAttr>:$declaredInline,
+                       TypeAttr:$type);
   let regions = (region AnyRegion:$bodyRegion);
 
   // Add custom build methods for the operation. These method populates
@@ -39,13 +40,15 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$id,
                       "StringRef":$funcName,
-                      "bool":$declaredInline)>
+                      "bool":$declaredInline,
+                      "Type":$type)>
   ];
 
   let extraClassDeclaration = [{
     std::vector<LoopOp> GetAllLoops();
     LoopOp AllocateNewLoop();
     bool IsDomInfoAvailable();
+    Type getResultType();
   }];
 }
 

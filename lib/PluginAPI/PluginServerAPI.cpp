@@ -343,6 +343,14 @@ PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)
         return PluginIR::PluginTypeID::FloatTyID;
     } else if (type == "DoubleTy") {
         return PluginIR::PluginTypeID::DoubleTyID;
+    } else if (type == "PointerTy") {
+        return PluginIR::PluginTypeID::PointerTyID;
+    } else if (type == "ArrayTy") {
+        return PluginIR::PluginTypeID::ArrayTyID;
+    } else if (type == "FunctionTy") {
+        return PluginIR::PluginTypeID::FunctionTyID;
+    } else if (type == "StructTy") {
+        return PluginIR::PluginTypeID::StructTyID;
     }
     
     return PluginIR::PluginTypeID::UndefTyID;

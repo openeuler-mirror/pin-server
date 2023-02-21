@@ -23,6 +23,10 @@
 #include "user/LocalVarSummeryPass.h"
 
 namespace PluginOpt {
+using std::string;
+using std::vector;
+using std::cout;
+using namespace mlir;
 using namespace PluginAPI;
 
 static void LocalVarSummery(void)
@@ -37,6 +41,32 @@ static void LocalVarSummery(void)
         int64_t typeFilter = -1u;
         if (args.find("type_code") != args.end()) {
             typeFilter = (int64_t)pluginAPI.GetTypeCodeFromString(args["type_code"]);
+        }
+        mlir::Plugin::FunctionOp funcOp = allFunction[i];
+        printf("func name is :%s\n", funcOp.funcNameAttr().getValue().str().c_str());
+        mlir::Type dgyty = funcOp.type();
+        if (auto ty = dgyty.dyn_cast<PluginIR::PluginFunctionType>()) {
+            if(auto stTy = ty.getReturnType().dyn_cast<PluginIR::PluginStructType>()) {
+                printf("func return type is PluginStructType\n");
+                std::string tyName = stTy.getName();
+                printf("    struct name is : %s\n", tyName.c_str());
+                
+                llvm::ArrayRef<mlir::Type> paramsType = stTy.getBody();
+                for (auto tty :paramsType) {
+                    printf("\n    struct arg id : %d\n", tty.dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
+                }
+                llvm::ArrayRef<std::string> paramsNames = stTy.getElementNames();
+                for (auto name :paramsNames) {
+                    std::string pName = name;
+                    printf("\n    struct argname is : %s\n", pName.c_str());
+                }
+            }
+            size_t paramIndex = 0;
+            llvm::ArrayRef<mlir::Type> paramsType = ty.getParams();
+            for (auto ty : ty.getParams()) {
+                printf("\n    Param index : %d\n", paramIndex++);
+                printf("\n    Param type id : %d\n", ty.dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
+            }
         }
         for (size_t j = 0; j < decls.size(); j++) {
             auto decl = decls[j];
