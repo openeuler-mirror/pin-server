@@ -15,23 +15,26 @@
    Author: Mingchuan Wu and Yancheng Li
    Create: 2022-08-18
    Description:
-    This file contains the implementation of the main.
+    This file contains the declaration of the LocalVarSummeryPass pass.
 */
 
-#include "PluginServer/PluginServer.h"
+#ifndef LOCALVAR_SUMMERY_H
+#define LOCALVAR_SUMMERY_H
 
-using namespace PinServer;
+#include "PluginServer/PluginOptBase.h"
 
-int main(int argc, char** argv)
-{
-    const int argcNum = 2; // 参数只有2个，argv[0]：port argv[1]：log级别
-    if (argc != argcNum) {
-        printf("param num:%d, should be:%d\n", argc, argcNum);
-        return -1;
+namespace PluginOpt {
+class LocalVarSummeryPass : public PluginOptBase {
+public:
+    LocalVarSummeryPass(InjectPoint inject) : PluginOptBase(inject)
+    {
     }
-    std::string port = argv[0];
-    LogPriority priority = (LogPriority)atoi(argv[1]);
-    PluginServer server(priority, port);
-    server.RunServer();
-    return 0;
+    bool Gate()
+    {
+        return true;
+    }
+    int DoOptimize();
+};
 }
+
+#endif

@@ -15,7 +15,7 @@
    Author: Mingchuan Wu and Yancheng Li
    Create: 2022-08-18
    Description:
-    This file contains the implementation of the User Init.
+    This file contains the implementation of the ArrayWidenPass class.
 */
 
 #include <iostream>
@@ -27,7 +27,7 @@
 #include "PluginAPI/PluginServerAPI.h"
 #include "PluginServer/PluginLog.h"
 #include "PluginAPI/ControlFlowAPI.h"
-#include "PluginServer/PluginOptBase.h"
+#include "user/ArrayWidenPass.h"
 
 namespace PluginOpt {
 using std::string;
@@ -318,7 +318,7 @@ struct originLoopInfo {
     Value *limitptr;
     Value arr1;     /* Array 1 in the old loop.  */
     Value *arr1ptr;
-    Value arr2;        /* Array 2 in the old loop.  */
+    Value arr2;	    /* Array 2 in the old loop.  */
     Value *arr2ptr;
     edge entryEdge; /* The edge into the old loop.  */
     edgePtr entryEdgePtr;
@@ -438,7 +438,7 @@ static bool checkCondOp(Operation *op)
 
 /* Record the exit information in the original loop including exit edge,
    exit bb block, exit condition stmt,
-   eg: exitEX originLoop.exitBBX condOpX.  */
+   eg: exit_eX origin_exit_bbX cond_stmtX.  */
 
 static bool recordOriginLoopExitInfo(LoopOp loop)
 {
@@ -510,7 +510,7 @@ static edge getLoopPreheaderEdge(LoopOp loop)
     return e;
 }
 
-/* Returns true if t is SSAOp and user variable exists.  */
+/* Returns true if t is SSA_NAME and user variable exists.  */
 
 static bool isSSANameVar(Value v)
 {
@@ -525,7 +525,7 @@ static bool isSSANameVar(Value v)
     return false;
 }
 
-/* Returns true if t1 and t2 are SSAOp and belong to the same variable.  */
+/* Returns true if t1 and t2 are SSA_NAME and belong to the same variable.  */
 
 static bool isSameSSANameVar(Value v1, Value v2)
 {
@@ -565,9 +565,9 @@ static bool getIvUpperBound(CondOp cond)
     return false;
 }
 
-/* Returns true only when the expression on the rhs code of stmt is PLUS,
-   rhs1 is SSAOp with the same var as originLoop base, and rhs2 is
-   ConstOp.  */
+/* Returns true only when the expression on the rhs code of stmt is PLUS_EXPR,
+   rhs1 is SSA_NAME with the same var as originLoop base, and rhs2 is
+   INTEGER_CST.  */
 static bool checkUpdateStmt(Operation *op)
 {
     if (!op || !isa<AssignOp>(op)) {
@@ -646,7 +646,7 @@ static bool getIvBase(CondOp cond)
    original loop; When prolog_assign is present, make sure loop header is in
    simple form; And the interpretation of prolog_assign is as follows:
    eg: while (++len != limit)
-    ......
+	......
    For such a loop, ++len will be processed before entering header_bb, and the
    assign is regarded as the prolog_assign of the loop.  */
 static bool recordOriginLoopHeader(LoopOp loop)
@@ -664,9 +664,6 @@ static bool recordOriginLoopHeader(LoopOp loop)
         if (isa<PhiOp, SSAOp, PlaceholderOp, ConstOp>(op)) {
             continue;
         }
-
-        if (auto debugOp = dyn_cast<DebugOp>(op))
-            continue;
 
         if (auto cond = dyn_cast<CondOp>(op)) {
             if (!getIvUpperBound(cond)) {
@@ -711,8 +708,8 @@ static bool recordOriginLoopLatch(LoopOp loop)
     return false;
 }
 
-/* Returns true when the define STMT corresponding to arg0 of the MemOp
-   satisfies the PtrPlus type.  */
+/* Returns true when the DEF_STMT corresponding to arg0 of the mem_ref tree
+   satisfies the POINTER_PLUS_EXPR type.  */
 static bool checkBodyMemRef(Value memRef)
 {
     if (getValueDefCode(memRef) != IDefineCode::MemRef) {
@@ -771,7 +768,7 @@ static bool checkBodyPointerPlus(Operation *op, Value &tmpIndex)
 }
 
 /* Record the array comparison information in the original loop, while ensuring
-   that there are only statements related to cont stmt in the loop body.  */
+   that there are only statements related to cont_stmt in the loop body.  */
 static bool recordOriginLoopBody(LoopOp loop)
 {
     Block *body = originLoop.condOp2->getBlock();
@@ -1559,33 +1556,9 @@ static void ProcessArrayWiden(void)
     }
 }
 
-class ArrayWidenPass : public PluginOptBase {
-public:
-    ArrayWidenPass() : PluginOptBase(HANDLE_MANAGER_SETUP)
-    {
-    }
-    bool Gate()
-    {
-        return true;
-    }
-    int DoOptimize()
-    {
-        uint64_t *fun = (uint64_t *)GetFuncAddr();
-        return DoOptimize(fun);
-    }
-    int DoOptimize(uint64_t *fun);
-};
-
 int ArrayWidenPass::DoOptimize(uint64_t *fun)
 {
     ProcessArrayWiden();
     return 0;
 }
-}
-
-void RegisterCallbacks(void)
-{
-    PinServer::PluginServer *pluginServer = PinServer::PluginServer::GetInstance();
-    PluginOpt::ManagerSetup setupData(PluginOpt::PASS_PHIOPT, 1, PluginOpt::PASS_INSERT_AFTER);
-    pluginServer->RegisterPassManagerOpt(setupData, std::make_shared<PluginOpt::ArrayWidenPass>());
 }

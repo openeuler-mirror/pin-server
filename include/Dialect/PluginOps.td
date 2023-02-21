@@ -107,10 +107,12 @@ def CallOp : Plugin_Op<"call", [
     The arguments list must match the arguments expected by the callee.
   }];
   let arguments = (ins UI64Attr:$id,
-                       FlatSymbolRefAttr:$callee,
+                       OptionalAttr<FlatSymbolRefAttr>:$callee,
                        Variadic<AnyType>:$inputs);
   let builders = [
     OpBuilderDAG<(ins "int64_t":$id, "StringRef":$callee,
+                      "ArrayRef<Value>":$arguments)>,
+    OpBuilderDAG<(ins "int64_t":$id,
                       "ArrayRef<Value>":$arguments)>,
     // Only for server.
     OpBuilderDAG<(ins "Value":$func,

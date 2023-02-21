@@ -15,23 +15,30 @@
    Author: Mingchuan Wu and Yancheng Li
    Create: 2022-08-18
    Description:
-    This file contains the implementation of the main.
+    This file contains the implementation of the inlineFunctionPass class.
 */
 
-#include "PluginServer/PluginServer.h"
+#include "PluginAPI/PluginServerAPI.h"
+#include "user/InlineFunctionPass.h"
 
-using namespace PinServer;
+namespace PluginOpt {
+using namespace PluginAPI;
 
-int main(int argc, char** argv)
+static void UserOptimizeFunc(void)
 {
-    const int argcNum = 2; // 参数只有2个，argv[0]：port argv[1]：log级别
-    if (argc != argcNum) {
-        printf("param num:%d, should be:%d\n", argc, argcNum);
-        return -1;
+    PluginServerAPI pluginAPI;
+    vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
+    int count = 0;
+    for (size_t i = 0; i < allFunction.size(); i++) {
+        if (allFunction[i].declaredInlineAttr().getValue())
+            count++;
     }
-    std::string port = argv[0];
-    LogPriority priority = (LogPriority)atoi(argv[1]);
-    PluginServer server(priority, port);
-    server.RunServer();
+    printf("declaredInline have %d functions were declared.\n", count);
+}
+
+int InlineFunctionPass::DoOptimize()
+{
+    UserOptimizeFunc();
     return 0;
+}
 }

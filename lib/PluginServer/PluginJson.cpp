@@ -467,10 +467,16 @@ mlir::Operation *PluginJson::CallOpJsonDeSerialize(const string& data)
         ops.push_back(opValue);
     }
     int64_t id = GetID(node["id"]);
-    mlir::StringRef callName(node["callee"].asString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
-    CallOp op = opBuilder->create<CallOp>(opBuilder->getUnknownLoc(),
-                                         id, callName, ops);
+    Json::Value calleeJson = node["callee"];
+    CallOp op;
+    if (calleeJson.isNull()) {
+        op = opBuilder->create<CallOp>(opBuilder->getUnknownLoc(), id, ops);
+    } else {
+        mlir::StringRef callName(calleeJson.asString());
+        op = opBuilder->create<CallOp>(opBuilder->getUnknownLoc(),
+                                       id, callName, ops);
+    }
     return op.getOperation();
 }
 

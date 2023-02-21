@@ -357,6 +357,13 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("callee", builder.getSymbolRefAttr(callee));
 }
 
+void CallOp::build(OpBuilder &builder, OperationState &state,
+                   int64_t id, ArrayRef<Value> arguments)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addOperands(arguments);
+}
+
 /// Return the callee of the generic call operation, this is required by the
 /// call interface.
 CallInterfaceCallable CallOp::getCallableForCallee()

@@ -15,23 +15,26 @@
    Author: Mingchuan Wu and Yancheng Li
    Create: 2022-08-18
    Description:
-    This file contains the implementation of the main.
+    This file contains the declaration of the InlineFunctionPass class.
 */
 
-#include "PluginServer/PluginServer.h"
+#ifndef INLINEFUNCTION_PASS_H
+#define INLINEFUNCTION_PASS_H
 
-using namespace PinServer;
+#include "PluginServer/PluginOptBase.h"
 
-int main(int argc, char** argv)
-{
-    const int argcNum = 2; // 参数只有2个，argv[0]：port argv[1]：log级别
-    if (argc != argcNum) {
-        printf("param num:%d, should be:%d\n", argc, argcNum);
-        return -1;
+namespace PluginOpt {
+class InlineFunctionPass : public PluginOptBase {
+public:
+    InlineFunctionPass(InjectPoint inject) : PluginOptBase(inject)
+    {
     }
-    std::string port = argv[0];
-    LogPriority priority = (LogPriority)atoi(argv[1]);
-    PluginServer server(priority, port);
-    server.RunServer();
-    return 0;
+    bool Gate()
+    {
+        return true;
+    }
+    int DoOptimize();
+};
 }
+
+#endif
