@@ -63,8 +63,13 @@ static uint64_t getBlockAddress(mlir::Block* b)
         return oops.addressAttr().getInt();
     } else if (mlir::Plugin::RetOp oops = llvm::dyn_cast<mlir::Plugin::RetOp>(b->back())) {
         return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::GotoOp oops = llvm::dyn_cast<mlir::Plugin::GotoOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::TransactionOp oops = llvm::dyn_cast<mlir::Plugin::TransactionOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else {
+        abort();
     }
-    abort();
 }
 
 bool ControlFlowAPI::UpdateSSA(void)
