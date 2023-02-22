@@ -50,6 +50,16 @@ public:
     void GetPhiOpsJsonDeSerialize(const string&, vector<mlir::Operation *>&);
     mlir::Value SSAOpJsonDeSerialize(const string& data);
     mlir::Plugin::LoopOp LoopOpJsonDeSerialize(const string& data);
+    mlir::Value ListOpDeSerialize(const string& data);
+    mlir::Value StrOpJsonDeSerialize(const string& data);
+    mlir::Value ArrayOpJsonDeSerialize(const string& data);
+    mlir::Value DeclBaseOpJsonDeSerialize(const string& data);
+    mlir::Value FieldDeclOpJsonDeSerialize(const string& data);
+    mlir::Value AddressOpJsonDeSerialize(const string& data);
+    mlir::Value ConstructorOpJsonDeSerialize(const string& data);
+    mlir::Value VecOpJsonDeSerialize(const string& data);
+    mlir::Value BlockOpJsonDeSerialize(const string& data);
+    mlir::Value ComponentOpJsonDeSerialize(const string& data);
     PluginIR::PluginTypeBase TypeJsonDeSerialize(const string& data);
     void OpJsonDeSerialize(const string&, vector<mlir::Operation *>&);
     /* 将整形数据反序列化 */
