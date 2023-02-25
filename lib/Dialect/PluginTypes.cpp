@@ -199,6 +199,9 @@ PluginTypeID PluginTypeBase::getPluginTypeID ()
     if (auto Ty = dyn_cast<PluginIR::PluginArrayType>()) {
         return Ty.getPluginTypeID ();
     }
+    if (auto Ty = dyn_cast<PluginIR::PluginVectorType>()) {
+        return Ty.getPluginTypeID ();
+    }
     if (auto Ty = dyn_cast<PluginIR::PluginFunctionType>()) {
         return Ty.getPluginTypeID ();
     }
@@ -402,6 +405,35 @@ Type PluginArrayType::getElementType()
 }
 
 unsigned PluginArrayType::getNumElements()
+{
+    return getImpl()->numElements;
+}
+
+// ===----------------------------------------------------------------------===//
+// Plugin Vector Type
+// ===----------------------------------------------------------------------===//
+
+PluginTypeID PluginVectorType::getPluginTypeID()
+{
+    return PluginTypeID::ArrayTyID;
+}
+
+bool PluginVectorType::isValidElementType(Type type)
+{
+    return type.isa<PluginIntegerType, PluginFloatType>();
+}
+
+PluginVectorType PluginVectorType::get(MLIRContext *context, Type elementType, unsigned numElements)
+{
+    return Base::get(context, elementType, numElements);
+}
+
+Type PluginVectorType::getElementType()
+{ 
+    return getImpl()->elementType;
+}
+
+unsigned PluginVectorType::getNumElements()
 {
     return getImpl()->numElements;
 }

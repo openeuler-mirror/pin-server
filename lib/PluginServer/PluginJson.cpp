@@ -343,6 +343,10 @@ PluginIR::PluginTypeBase PluginJson::TypeJsonDeSerialize(const string& data)
         mlir::Type elemTy = TypeJsonDeSerialize(type["elementType"].toStyledString());
         uint64_t elemNum = GetID(type["arraysize"]);
         baseType = PluginIR::PluginArrayType::get(PluginServer::GetInstance()->GetContext(), elemTy, elemNum);
+    } else if (id == static_cast<uint64_t>(PluginIR::VectorTyID)) {
+        mlir::Type elemTy = TypeJsonDeSerialize(type["elementType"].toStyledString());
+        uint64_t elemNum = GetID(type["vectorelemnum"]);
+        baseType = PluginIR::PluginVectorType::get(PluginServer::GetInstance()->GetContext(), elemTy, elemNum);
     } else if (id == static_cast<uint64_t>(PluginIR::FunctionTyID)) {
         mlir::Type returnTy = TypeJsonDeSerialize(type["fnreturntype"].toStyledString());
         llvm::SmallVector<Type> typelist;

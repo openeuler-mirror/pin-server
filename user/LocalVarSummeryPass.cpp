@@ -61,6 +61,11 @@ static void LocalVarSummery(void)
                     printf("\n    struct argname is : %s\n", pName.c_str());
                 }
             }
+            if(auto stTy = ty.getReturnType().dyn_cast<PluginIR::PluginVectorType>()) {
+                printf("func return type is PluginVectorType\n");
+                printf("    vector elem num : %d\n", stTy.getNumElements());
+                printf("    vector elem type id : %d\n", stTy.getElementType().dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
+            }
             size_t paramIndex = 0;
             llvm::ArrayRef<mlir::Type> paramsType = ty.getParams();
             for (auto ty : ty.getParams()) {

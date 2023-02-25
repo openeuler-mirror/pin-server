@@ -55,8 +55,7 @@ enum PluginTypeID {
     PointerTyID,       ///< Pointers
     StructTyID,        ///< Structures
     ArrayTyID,         ///< Arrays
-    FixedVectorTyID,   ///< Fixed width SIMD vector type
-    ScalableVectorTyID ///< Scalable SIMD vector type
+    VectorTyID,         ///< Arrays
 };
 
 class PluginTypeBase : public Type {
@@ -145,6 +144,21 @@ public:
 
     unsigned getNumElements();
 }; // class PluginArrayType
+
+class PluginVectorType : public Type::TypeBase<PluginVectorType, PluginTypeBase, detail::PluginTypeAndSizeStorage> {
+public:
+    using Base::Base;
+
+    PluginTypeID getPluginTypeID ();
+
+    static bool isValidElementType(Type type);
+
+    static PluginVectorType get(MLIRContext *context, Type elementType, unsigned numElements);
+
+    Type getElementType();
+
+    unsigned getNumElements();
+}; // class PluginVectorType
 
 class PluginFunctionType : public Type::TypeBase<PluginFunctionType, PluginTypeBase, detail::PluginFunctionTypeStorage> {
 public:
