@@ -1533,32 +1533,31 @@ static void convertToNewLoop(LoopOp* loop, FunctionOp* funcOp)
     return;
 }
 
-static void ProcessArrayWiden(void)
+static void ProcessArrayWiden(uint64_t *fun)
 {
     std::cout << "Running first pass, awiden\n";
 
     PluginServerAPI pluginAPI;
-    vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
+    
+    FunctionOp funcOp = pluginAPI.GetFunctionOpById((uint64_t)fun);
 
-    for (auto &funcOp : allFunction) {
-        context = funcOp.getOperation()->getContext();
-        mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
-        opBuilder = &opBuilder_temp;
-        string name = funcOp.funcNameAttr().getValue().str();
-        printf("Now process func : %s \n", name.c_str());
-        vector<LoopOp> allLoop = funcOp.GetAllLoops();
-        for (auto &loop : allLoop) {
-            if (determineLoopForm(loop)) {
-                printf("The loop form is success matched, and the loop can be optimized.\n");
-                convertToNewLoop(&loop, &funcOp);
-            }
+    context = funcOp.getOperation()->getContext();
+    mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
+    opBuilder = &opBuilder_temp;
+    string name = funcOp.funcNameAttr().getValue().str();
+    printf("Now process func : %s \n", name.c_str());
+    vector<LoopOp> allLoop = funcOp.GetAllLoops();
+    for (auto &loop : allLoop) {
+        if (determineLoopForm(loop)) {
+            printf("The loop form is success matched, and the loop can be optimized.\n");
+            convertToNewLoop(&loop, &funcOp);
         }
     }
 }
 
 int ArrayWidenPass::DoOptimize(uint64_t *fun)
 {
-    ProcessArrayWiden();
+    ProcessArrayWiden(fun);
     return 0;
 }
 }

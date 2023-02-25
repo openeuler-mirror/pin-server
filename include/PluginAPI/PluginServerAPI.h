@@ -37,6 +37,7 @@ public:
     ~PluginServerAPI () = default;
 
     vector<FunctionOp> GetAllFunc() override;
+    FunctionOp GetFunctionOpById(uint64_t);
     vector<LocalDeclOp> GetDecls(uint64_t) override;
     PhiOp GetPhiOp(uint64_t) override;
     CallOp GetCallOp(uint64_t) override;

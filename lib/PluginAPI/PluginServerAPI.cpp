@@ -179,6 +179,21 @@ vector<FunctionOp> PluginServerAPI::GetAllFunc()
     return PluginServer::GetInstance()->GetFunctionOpResult(funName, params);
 }
 
+FunctionOp PluginServerAPI::GetFunctionOpById(uint64_t id)
+{
+    vector<FunctionOp> allFunction = GetAllFunc();
+    FunctionOp funOp = nullptr;
+
+    for (auto &funcOp : allFunction) {
+        if (funcOp.id() == id) {
+            funOp = funcOp;
+            break;
+        }
+    }
+    assert(funOp != nullptr);
+    return funOp;
+}
+
 PhiOp PluginServerAPI::GetPhiOp(uint64_t id)
 {
     Json::Value root;
