@@ -44,6 +44,26 @@ static uint64_t GetValueId(Value v)
         return ssaOp.id();
     } else if (auto cstOp = dyn_cast<ConstOp>(op)) {
         return cstOp.id();
+    } else if (auto treelistop = dyn_cast<ListOp>(op)) {
+        return treelistop.id();
+    } else if (auto strop = dyn_cast<StrOp>(op)) {
+        return strop.id();
+    } else if (auto arrayop = dyn_cast<ArrayOp>(op)) {
+        return arrayop.id();
+    } else if (auto declop = dyn_cast<DeclBaseOp>(op)) {
+        return declop.id();
+    } else if (auto fieldop = dyn_cast<FieldDeclOp>(op)) {
+        return fieldop.id();
+    } else if (auto addressop = dyn_cast<AddressOp>(op)) {
+        return addressop.id();
+    } else if (auto constructorop = dyn_cast<ConstructorOp>(op)) {
+        return constructorop.id();
+    } else if (auto vecop = dyn_cast<VecOp>(op)) {
+        return vecop.id();
+    } else if (auto blockop = dyn_cast<BlockOp>(op)) {
+        return blockop.id();
+    } else if (auto compOp = dyn_cast<ComponentOp>(op)) {
+        return compOp.id();
     } else if (auto phOp = dyn_cast<PlaceholderOp>(op)) {
         return phOp.id();
     }
@@ -57,6 +77,10 @@ static uint64_t getBlockAddress(mlir::Block* b)
     } else if (mlir::Plugin::FallThroughOp oops = dyn_cast<mlir::Plugin::FallThroughOp>(b->back())) {
         return oops.addressAttr().getInt();
     } else if (mlir::Plugin::RetOp oops = dyn_cast<mlir::Plugin::RetOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::GotoOp oops = dyn_cast<mlir::Plugin::GotoOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::TransactionOp oops = dyn_cast<mlir::Plugin::TransactionOp>(b->back())) {
         return oops.addressAttr().getInt();
     } else {
         assert(false);
@@ -256,7 +280,143 @@ void MemOp::build(OpBuilder &builder, OperationState &state,
     if (retType) state.addTypes(retType);
 }
 
-// ===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+// DeclBaseOp
+
+void DeclBaseOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                      IDefineCode defCode, bool readOnly, bool addressable, bool used, int32_t uid, Value initial,
+                      Value name, Optional<uint64_t> chain, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("addressable", builder.getBoolAttr(addressable));
+    state.addAttribute("used", builder.getBoolAttr(used));
+    state.addAttribute("uid", builder.getI32IntegerAttr(uid));
+    state.addOperands(initial);
+    if(chain) {
+        state.addAttribute("chain", builder.getI64IntegerAttr(chain.getValue()));
+    }
+    state.addOperands(name);
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// BlockOp
+
+void BlockOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                      IDefineCode defCode, bool readOnly, Optional<Value> vars, Optional<uint64_t> supercontext,
+                      Optional<Value> subblocks, Optional<Value> abstract_origin, Optional<Value> chain, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    if(vars) {
+        state.addOperands(vars.getValue());
+    }
+    if(supercontext) {
+        state.addAttribute("supercontext", builder.getI64IntegerAttr(supercontext.getValue()));
+    }
+    if(subblocks) {
+        state.addOperands(subblocks.getValue());
+    }
+    if(abstract_origin) {
+        state.addOperands(abstract_origin.getValue());
+    }
+    if(chain) {
+        state.addOperands(chain.getValue());
+    }
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// ComponentOp
+
+void ComponentOp::build(OpBuilder &builder, OperationState &state,
+                  uint64_t id, IDefineCode defCode, bool readOnly,
+                  Value component, Value field, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("defCode",
+                       builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+
+    state.addOperands({component, field});
+    if (retType) state.addTypes(retType);
+}
+//===----------------------------------------------------------------------===//
+// VecOp
+
+void VecOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                      IDefineCode defCode, bool readOnly, int32_t len, ArrayRef<Value> elements, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("len", builder.getI32IntegerAttr(len));
+    state.addOperands(elements);
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// ConstructorOp
+
+void ConstructorOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                      IDefineCode defCode, bool readOnly, int32_t len, ArrayRef<Value> idx,
+                      ArrayRef<Value> val, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("len", builder.getI32IntegerAttr(len));
+    state.addOperands(idx);
+    state.addOperands(val);
+
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// FieldDeclOp
+
+void FieldDeclOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                      IDefineCode defCode, bool readOnly, bool addressable, bool used, int32_t uid, Value initial,
+                      Value name, uint64_t chain, Value fieldOffset, Value fieldBitOffset, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("addressable", builder.getBoolAttr(addressable));
+    state.addAttribute("used", builder.getBoolAttr(used));
+    state.addAttribute("uid", builder.getI32IntegerAttr(uid));
+    state.addOperands(initial);
+    if(chain) {
+        state.addAttribute("chain", builder.getI64IntegerAttr(chain));
+    }
+    state.addOperands(name);
+    state.addOperands({fieldOffset, fieldBitOffset});
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// AddressOp
+
+void AddressOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                      IDefineCode defCode, bool readOnly, Value operand, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+        builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addOperands(operand);
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
 // SSAOp
 
 void SSAOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
@@ -352,8 +512,49 @@ void PointerOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
     state.addAttribute("pointeeReadOnly", builder.getBoolAttr(pointeeReadOnly));
 }
 
-// ===----------------------------------------------------------------------===//
-// CallOp
+//===----------------------------------------------------------------------===//
+// ListOp
+
+void ListOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                  IDefineCode defCode, bool readOnly, bool hasPurpose,
+                ArrayRef<Value> operands, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+                       builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addAttribute("hasPurpose", builder.getBoolAttr(hasPurpose));
+    state.addOperands(operands);
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// StrOp
+void StrOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                  IDefineCode defCode, bool readOnly, StringRef str, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("defCode",
+                       builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    state.addAttribute("str", builder.getStringAttr(str));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addTypes(retType);
+}
+
+//===----------------------------------------------------------------------===//
+// ArrayOp
+
+void ArrayOp::build(OpBuilder &builder, OperationState &state,
+                  uint64_t id, IDefineCode defCode, bool readOnly,
+                  Value addr, Value offset, Type retType)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
+    state.addOperands({addr, offset});
+    state.addAttribute("defCode",
+                       builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
+    if (retType) state.addTypes(retType);
+}
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
                    int64_t id, StringRef callee,
@@ -553,7 +754,31 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
     state.addOperands(operands);
 }
 
-// ===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+// NopOp
+void NopOp::build(OpBuilder &builder, OperationState &state, uint64_t id)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+}
+
+//===----------------------------------------------------------------------===//
+// EHElseOp
+void EHElseOp::build(OpBuilder &builder, OperationState &state, uint64_t id, ArrayRef<uint64_t> nBody,
+                    ArrayRef<uint64_t> eBody)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    llvm::SmallVector<mlir::Attribute, 4> nbodyattrs, ebodyattrs;
+    for (auto item : nBody) {
+        nbodyattrs.push_back(builder.getI64IntegerAttr(item));
+    }
+    for (auto item : eBody) {
+        ebodyattrs.push_back(builder.getI64IntegerAttr(item));
+    }
+    state.addAttribute("nBody", builder.getArrayAttr(nbodyattrs));
+    state.addAttribute("eBody", builder.getArrayAttr(ebodyattrs));
+}
+
+//===----------------------------------------------------------------------===//
 // BaseOp
 
 void BaseOp::build(OpBuilder &builder, OperationState &state,
@@ -573,6 +798,39 @@ void DebugOp::build(OpBuilder &builder, OperationState &state,
 }
 
 // ===----------------------------------------------------------------------===//
+// AsmOp
+void AsmOp::build(OpBuilder &builder, OperationState &state,
+                   uint64_t id, StringRef statement, uint32_t nInputs, uint32_t nOutputs,
+                   uint32_t nClobbers, ArrayRef<Value> operands)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("statement", builder.getSymbolRefAttr(statement));
+    state.addAttribute("nInputs", builder.getI32IntegerAttr(nInputs));
+    state.addAttribute("nOutputs", builder.getI32IntegerAttr(nOutputs));
+    state.addAttribute("nClobbers", builder.getI32IntegerAttr(nClobbers));
+    state.addOperands(operands);
+}
+
+//===----------------------------------------------------------------------===//
+// SwitchOp
+void SwitchOp::build(OpBuilder &builder, OperationState &state,
+                   uint64_t id, Value index, uint64_t address, Value defaultLabel, ArrayRef<Value> operands,
+                   Block* defaultDest, uint64_t defaultaddr, ArrayRef<Block*> caseDest, ArrayRef<uint64_t> caseaddr)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("address", builder.getI64IntegerAttr(address));
+    state.addAttribute("defaultaddr", builder.getI64IntegerAttr(defaultaddr));
+    llvm::SmallVector<mlir::Attribute, 4> attributes;
+    for (int i = 0; i < caseaddr.size(); ++i) {
+        attributes.push_back(builder.getI64IntegerAttr(caseaddr[i]));
+    }
+    state.addAttribute("caseaddrs", builder.getArrayAttr(attributes));
+    state.addOperands(index);
+    state.addOperands(defaultLabel);
+    state.addOperands(operands);
+    state.addSuccessors(defaultDest);
+    state.addSuccessors(caseDest);
+}
 // FallThroughOp
 
 void FallThroughOp::build(OpBuilder &builder, OperationState &state,
@@ -604,7 +862,130 @@ void RetOp::build(OpBuilder &builder, OperationState &state, uint64_t address)
     state.addAttribute("address", builder.getI64IntegerAttr(address));
 }
 
-// ===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+// GotoOp
+
+void GotoOp::build(OpBuilder &builder, OperationState &state, uint64_t id, uint64_t address,
+Value dest, Block* success, uint64_t successaddr)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("address", builder.getI64IntegerAttr(address));
+    state.addAttribute("successaddr", builder.getI64IntegerAttr(successaddr));
+    state.addOperands(dest);
+    state.addSuccessors(success);
+}
+
+//===----------------------------------------------------------------------===//
+// LabelOp
+void LabelOp::build(OpBuilder &builder, OperationState &state, uint64_t id, Value label)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addOperands(label);
+}
+
+//==-----------------------------------------------------------------------===//
+// TransactionOp
+void TransactionOp::build(OpBuilder &builder, OperationState &state, uint64_t id, uint64_t address,
+                        ArrayRef<uint64_t> stmtaddr, Value labelNorm, Value labelUninst, Value labelOver, Block* fallthrough,
+                        uint64_t fallthroughaddr, Block* abort, uint64_t abortaddr)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("address", builder.getI64IntegerAttr(address));
+    llvm::SmallVector<mlir::Attribute, 4> attributes;
+    for (int i = 0; i < stmtaddr.size(); ++i) {
+        attributes.push_back(builder.getI64IntegerAttr(stmtaddr[i]));
+    }
+    state.addAttribute("stmtaddr", builder.getArrayAttr(attributes));
+    state.addOperands({labelNorm, labelUninst, labelOver});
+    state.addSuccessors(fallthrough);
+    state.addAttribute("fallthroughaddr", builder.getI64IntegerAttr(fallthroughaddr));
+    state.addSuccessors(abort);
+    state.addAttribute("abortaddr", builder.getI64IntegerAttr(abortaddr));
+}
+
+//===----------------------------------------------------------------------===//
+// ResxOp
+
+void ResxOp::build(OpBuilder &builder, OperationState &state, uint64_t id, uint64_t address, uint64_t region)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("address", builder.getI64IntegerAttr(address));
+    state.addAttribute("region", builder.getI64IntegerAttr(region));
+}
+
+//===----------------------------------------------------------------------===//
+// EHMntOp
+void EHMntOp::build(OpBuilder &builder, OperationState &state, uint64_t id, Value decl)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addOperands(decl);
+}
+
+//===----------------------------------------------------------------------===//
+// EHDispatchOp
+
+void EHDispatchOp::build(OpBuilder &builder, OperationState &state, uint64_t id, uint64_t address, uint64_t region,
+                        ArrayRef<Block*> ehHandlers, ArrayRef<uint64_t> ehHandlersaddrs)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("address", builder.getI64IntegerAttr(address));
+    state.addAttribute("region", builder.getI64IntegerAttr(region));
+    state.addSuccessors(ehHandlers);
+    llvm::SmallVector<mlir::Attribute, 4> attributes;
+    for (int i = 0; i < ehHandlersaddrs.size(); ++i) {
+        attributes.push_back(builder.getI64IntegerAttr(ehHandlersaddrs[i]));
+    }
+    state.addAttribute("ehHandlersaddrs", builder.getArrayAttr(attributes));
+}
+//===----------------------------------------------------------------------===//
+// BindOp
+
+void BindOp::build(OpBuilder &builder, OperationState &state, uint64_t id, Value vars, ArrayRef<uint64_t> body,
+                    Value block)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addOperands({vars, block});
+    llvm::SmallVector<mlir::Attribute, 4> attributes;
+    for (int i = 0; i < body.size(); ++i) {
+        attributes.push_back(builder.getI64IntegerAttr(body[i]));
+    }
+    state.addAttribute("body", builder.getArrayAttr(attributes));
+}
+
+//===----------------------------------------------------------------------===//
+// TryOp
+
+void TryOp::build(OpBuilder &builder, OperationState &state, uint64_t id, ArrayRef<uint64_t> eval,
+                ArrayRef<uint64_t> cleanup, uint64_t kind)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    llvm::SmallVector<mlir::Attribute, 4> attributes;
+    for (int i = 0; i < eval.size(); ++i) {
+        attributes.push_back(builder.getI64IntegerAttr(eval[i]));
+    }
+    state.addAttribute("eval", builder.getArrayAttr(attributes));
+    attributes.clear();
+    for (int i = 0; i < cleanup.size(); ++i) {
+        attributes.push_back(builder.getI64IntegerAttr(cleanup[i]));
+    }
+    state.addAttribute("cleanup", builder.getArrayAttr(attributes));
+    state.addAttribute("kind", builder.getI64IntegerAttr(kind));
+}
+
+//===----------------------------------------------------------------------===//
+// CatchOp
+
+void CatchOp::build(OpBuilder &builder, OperationState &state, uint64_t id, Value types, ArrayRef<uint64_t> handler)
+{
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addOperands(types);
+    llvm::SmallVector<mlir::Attribute, 4> attributes;
+    for (int i = 0; i < handler.size(); ++i) {
+        attributes.push_back(builder.getI64IntegerAttr(handler[i]));
+    }
+    state.addAttribute("handler", builder.getArrayAttr(attributes));
+}
+//===----------------------------------------------------------------------===//
 // TableGen'd op method definitions
 // ===----------------------------------------------------------------------===//
 

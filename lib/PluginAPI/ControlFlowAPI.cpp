@@ -29,6 +29,26 @@ static uint64_t GetValueId(mlir::Value v)
         return ssaOp.id();
     } else if (auto cstOp = llvm::dyn_cast<ConstOp>(op)) {
         return cstOp.id();
+    } else if (auto treelistop = llvm::dyn_cast<ListOp>(op)) {
+        return treelistop.id();
+    } else if (auto strop = llvm::dyn_cast<StrOp>(op)) {
+        return strop.id();
+    } else if (auto arrayop = llvm::dyn_cast<ArrayOp>(op)) {
+        return arrayop.id();
+    } else if (auto declop = llvm::dyn_cast<DeclBaseOp>(op)) {
+        return declop.id();
+    } else if (auto fieldop = llvm::dyn_cast<FieldDeclOp>(op)) {
+        return fieldop.id();
+    } else if (auto addressop = llvm::dyn_cast<AddressOp>(op)) {
+        return addressop.id();
+    } else if (auto constructorop = llvm::dyn_cast<ConstructorOp>(op)) {
+        return constructorop.id();
+    } else if (auto vecop = llvm::dyn_cast<VecOp>(op)) {
+        return vecop.id();
+    } else if (auto blockop = llvm::dyn_cast<BlockOp>(op)) {
+        return blockop.id();
+    } else if (auto compop = llvm::dyn_cast<ComponentOp>(op)) {
+        return compop.id();
     } else if (auto phOp = llvm::dyn_cast<PlaceholderOp>(op)) {
         return phOp.id();
     }
@@ -43,8 +63,13 @@ static uint64_t getBlockAddress(mlir::Block* b)
         return oops.addressAttr().getInt();
     } else if (mlir::Plugin::RetOp oops = llvm::dyn_cast<mlir::Plugin::RetOp>(b->back())) {
         return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::GotoOp oops = llvm::dyn_cast<mlir::Plugin::GotoOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else if (mlir::Plugin::TransactionOp oops = llvm::dyn_cast<mlir::Plugin::TransactionOp>(b->back())) {
+        return oops.addressAttr().getInt();
+    } else {
+        abort();
     }
-    abort();
 }
 
 bool ControlFlowAPI::UpdateSSA(void)
