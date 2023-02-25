@@ -38,6 +38,7 @@ void PluginDialect::initialize()
         PluginIR::PluginFloatType,
         PluginIR::PluginPointerType,
         PluginIR::PluginArrayType,
+        PluginIR::PluginVectorType,
         PluginIR::PluginFunctionType,
         PluginIR::PluginStructType,
         PluginIR::PluginBooleanType,

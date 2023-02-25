@@ -367,6 +367,8 @@ PluginIR::PluginTypeID PluginServerAPI::GetTypeCodeFromString(string type)
         return PluginIR::PluginTypeID::PointerTyID;
     } else if (type == "ArrayTy") {
         return PluginIR::PluginTypeID::ArrayTyID;
+    } else if (type == "VectorTy") {
+        return PluginIR::PluginTypeID::VectorTyID;
     } else if (type == "FunctionTy") {
         return PluginIR::PluginTypeID::FunctionTyID;
     } else if (type == "StructTy") {
