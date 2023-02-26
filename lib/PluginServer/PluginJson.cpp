@@ -145,7 +145,7 @@ mlir::Value PluginJson::ValueJsonDeSerialize(Json::Value valueJson)
             opValue = SSAOpJsonDeSerialize(valueJson.toStyledString());
             break;
         }
-        case IDefineCode::TREELIST : {
+        case IDefineCode::LIST : {
             opValue = ListOpDeSerialize(valueJson.toStyledString());
             break;
         }
