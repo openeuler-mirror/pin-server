@@ -44,42 +44,6 @@ mlir::OpBuilder* opBuilder = nullptr;
 std::map<Block*, Value> defs_map;
 std::map<uint64_t, std::string> opNameMap;
 
-static void UserOptimizeFunc(void)
-{
-    PluginServerAPI pluginAPI;
-    vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
-    int count = 0;
-    for (size_t i = 0; i < allFunction.size(); i++) {
-        if (allFunction[i].declaredInlineAttr().getValue())
-            count++;
-    }
-    printf("declaredInline have %d functions were declared.\n", count);
-}
-
-static void LocalVarSummery(void)
-{
-    PluginServerAPI pluginAPI;
-    vector<mlir::Plugin::FunctionOp> allFunction = pluginAPI.GetAllFunc();
-    map<string, string> args = PluginServer::GetInstance()->GetArgs();
-    for (size_t i = 0; i < allFunction.size(); i++) {
-        uint64_t funcID = allFunction[i].idAttr().getValue().getZExtValue();
-        printf("In the %ldth function:\n", i);
-        vector<mlir::Plugin::LocalDeclOp> decls = pluginAPI.GetDecls(funcID);
-        int64_t typeFilter = -1u;
-        if (args.find("type_code") != args.end()) {
-            typeFilter = (int64_t)pluginAPI.GetTypeCodeFromString(args["type_code"]);
-        }
-        for (size_t j = 0; j < decls.size(); j++) {
-            auto decl = decls[j];
-            string name = decl.symNameAttr().getValue().str();
-            int64_t declTypeID = decl.typeIDAttr().getValue().getZExtValue();
-            if (declTypeID == typeFilter) {
-                printf("\tFind %ldth target type %s\n", j, name.c_str());
-            }
-        }
-    }
-}
-
 static void PassManagerSetupFunc(void)
 {
     printf("PassManagerSetupFunc in\n");
@@ -1385,7 +1349,7 @@ static void create_epilogue_loop_body_bb(Block *epilogue_loop_body_bb, Block* af
 
     Value res = g.GetLHS();
     cond_stmt = opBuilder->create<CondOp>(opBuilder->getUnknownLoc(),
-        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(), res, originLoop.limit, tb, fb, (epilogue_loop_body_bb));
+        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(), lhs2, res, tb, fb, (epilogue_loop_body_bb));
 
     defs_map.emplace(epilogue_loop_body_bb, baseSsa.GetCurrentDef());
 }
@@ -1540,6 +1504,7 @@ static void ProcessArrayWiden(uint64_t *fun)
     PluginServerAPI pluginAPI;
     
     FunctionOp funcOp = pluginAPI.GetFunctionOpById((uint64_t)fun);
+    if (funcOp == nullptr) return;
 
     context = funcOp.getOperation()->getContext();
     mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);

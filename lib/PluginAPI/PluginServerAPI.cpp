@@ -75,6 +75,7 @@ static uint64_t GetValueId(mlir::Value v)
     }
     return 0;
 }
+
 int64_t PluginServerAPI::GetInjectDataAddress()
 {
     string funName = __func__;
@@ -173,24 +174,26 @@ mlir::Value PluginServerAPI::CreateSSAOp(mlir::Type t)
 vector<FunctionOp> PluginServerAPI::GetAllFunc()
 {
     Json::Value root;
-    string funName = __func__;
+    string funName = "GetFunctionIDs";
     string params = root.toStyledString();
-
-    return PluginServer::GetInstance()->GetFunctionOpResult(funName, params);
+    vector<FunctionOp> res;
+    vector<uint64_t> ids = PluginServer::GetInstance()->GetIdsResult(funName, params);
+    for (auto id : ids) {
+        res.push_back(GetFunctionOpById(id));
+    }
+    return res;
 }
 
 FunctionOp PluginServerAPI::GetFunctionOpById(uint64_t id)
 {
-    vector<FunctionOp> allFunction = GetAllFunc();
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();
+    vector<FunctionOp> funcOps = PluginServer::GetInstance()->GetFunctionOpResult(funName, params);
     FunctionOp funOp = nullptr;
-
-    for (auto &funcOp : allFunction) {
-        if (funcOp.id() == id) {
-            funOp = funcOp;
-            break;
-        }
-    }
-    assert(funOp != nullptr);
+    if (funcOps.size())
+        funOp = funcOps[0];
     return funOp;
 }
 

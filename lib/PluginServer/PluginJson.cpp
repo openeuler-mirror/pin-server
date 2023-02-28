@@ -587,7 +587,7 @@ void PluginJson::IdsJsonDeSerialize(
     reader.parse(data, root);
     Json::Value::Members operation = root.getMemberNames();
     for (size_t iter = 0; iter < operation.size(); iter++) {
-        string operationKey = "block" + std::to_string(iter);
+        string operationKey = "ID" + std::to_string(iter);
         node = root[operationKey];
         uint64_t id = GetID(node["id"]);
         idsResult.push_back(id);

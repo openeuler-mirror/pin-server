@@ -46,6 +46,10 @@ bool PluginServer::RegisterOpt(std::shared_ptr<PluginOptBase> optBase)
     if ((inject >= HANDLE_MAX) || (optBase == nullptr)) {
         return false;
     }
+    if (inject == HANDLE_MANAGER_SETUP) {
+        log->LOGE("inject HANDLE_MANAGER_SETUP should use interface RegisterPassManagerOpt!\n");
+        return false;
+    }
 
     string name = "funcname" + std::to_string((uintptr_t)optBase.get());
     userOpts[inject].push_back(RecordedOpt(name, optBase));
