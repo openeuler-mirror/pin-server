@@ -83,7 +83,8 @@ target_link_libraries(plg_grpc_proto
 add_subdirectory(include)
 add_subdirectory(lib)
 add_library(pin_user SHARED
-  "user/ArrayWidenPass.cpp"
+  # "user/ArrayWidenPass.cpp"
+  "user/StructReorder.cpp"
   "user/InlineFunctionPass.cpp"
   "user/LocalVarSummeryPass.cpp"
   "user/user.cpp")
