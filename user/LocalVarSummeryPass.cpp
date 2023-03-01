@@ -69,7 +69,7 @@ static void LocalVarSummery(void)
             size_t paramIndex = 0;
             llvm::ArrayRef<mlir::Type> paramsType = ty.getParams();
             for (auto ty : ty.getParams()) {
-                printf("\n    Param index : %d\n", paramIndex++);
+                printf("\n    Param index : %ld\n", paramIndex++);
                 printf("\n    Param type id : %d\n", ty.dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
             }
         }

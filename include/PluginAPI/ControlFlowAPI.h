@@ -41,15 +41,16 @@ public:
     bool UpdateSSA(void);
     vector<PhiOp> GetAllPhiOpInsideBlock(mlir::Block *b);
 
-    uint64_t CreateBlock(mlir::Block*, uint64_t, uint64_t);
-    void DeleteBlock(mlir::Block*, uint64_t, uint64_t);
-    void SetImmediateDominator(uint64_t, uint64_t, uint64_t);
+    mlir::Block* CreateBlock(mlir::Block*, FunctionOp*);
+    void DeleteBlock(mlir::Block*, FunctionOp*);
+    void SetImmediateDominator(uint64_t, mlir::Block*, uint64_t);
+    void SetImmediateDominator(uint64_t, mlir::Block*, mlir::Block*);
     uint64_t GetImmediateDominator(uint64_t, uint64_t);
-    uint64_t RecomputeDominator(uint64_t, uint64_t);
+    uint64_t RecomputeDominator(uint64_t, mlir::Block*);
     mlir::Value CreateNewDef(mlir::Value, mlir::Operation *);
 
     void CreateFallthroughOp(uint64_t, uint64_t);
-    void RemoveEdge(uint64_t, uint64_t);
+    void RemoveEdge(mlir::Block*, mlir::Block*);
 private:
     bool GetUpdateOperationResult(const string &funName);
     vector<PhiOp> GetPhiOperationResult(const string &funName, const string& params);

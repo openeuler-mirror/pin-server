@@ -486,12 +486,12 @@ void PluginServerAPI::AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
-void PluginServerAPI::AddBlockToLoop(uint64_t blockID, uint64_t loopID)
+void PluginServerAPI::AddBlockToLoop(mlir::Block* b, LoopOp *loop)
 {
     Json::Value root;
     string funName("AddBlockToLoop");
-    root["blockId"] = blockID;
-    root["loopId"] = loopID;
+    root["blockId"] = PluginServer::GetInstance()->FindBasicBlock(b);
+    root["loopId"] = loop->idAttr().getInt();
     string params = root.toStyledString();
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
@@ -527,22 +527,24 @@ mlir::Block* PluginServerAPI::GetLatch(uint64_t loopID)
     return BlockResult(funName, params);
 }
 
-void PluginServerAPI::SetHeader(uint64_t loopID, uint64_t blockID)
+void PluginServerAPI::SetHeader(LoopOp * loop, mlir::Block* b)
 {
     Json::Value root;
     string funName("SetHeader");
-    root["loopId"] = std::to_string(loopID);
-    root["blockId"] = std::to_string(blockID);
+    root["loopId"] = std::to_string(loop->idAttr().getInt());
+    root["blockId"] = std::to_string(
+        PluginServer::GetInstance()->FindBasicBlock(b));
     string params = root.toStyledString();
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
-void PluginServerAPI::SetLatch(uint64_t loopID, uint64_t blockID)
+void PluginServerAPI::SetLatch(LoopOp * loop, mlir::Block* b)
 {
     Json::Value root;
     string funName("SetLatch");
-    root["loopId"] = std::to_string(loopID);
-    root["blockId"] = std::to_string(blockID);
+    root["loopId"] = std::to_string(loop->idAttr().getInt());
+    root["blockId"] = std::to_string(
+        PluginServer::GetInstance()->FindBasicBlock(b));
     string params = root.toStyledString();
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
@@ -574,11 +576,12 @@ vector<mlir::Block*> PluginServerAPI::GetLoopBody(uint64_t loopID)
     return BlocksResult(funName, params);
 }
 
-LoopOp PluginServerAPI::GetBlockLoopFather(uint64_t blockID)
+LoopOp PluginServerAPI::GetBlockLoopFather(mlir::Block* b)
 {
     Json::Value root;
     string funName("GetBlockLoopFather");
-    root["blockId"] = std::to_string(blockID);
+    root["blockId"] = std::to_string(
+        PluginServer::GetInstance()->FindBasicBlock(b));
     string params = root.toStyledString();
     return PluginServer::GetInstance()->LoopOpResult(funName, params);
 }
@@ -601,18 +604,17 @@ bool PluginServerAPI::InsertValue(uint64_t id, mlir::Value v)
     return server->InsertValue(id, v);
 }
 
-bool PluginServerAPI::RedirectFallthroughTarget(FallThroughOp& fop,
-                                                uint64_t src, uint64_t dest)
+bool PluginServerAPI::RedirectFallthroughTarget(
+    FallThroughOp& fop, mlir::Block* src, mlir::Block* dest)
 {
     Json::Value root;
     string funName = __func__;
-    root["src"] = src;
-    root["dest"] = dest;
+    root["src"] = PluginServer::GetInstance()->FindBasicBlock(src);
+    root["dest"] = PluginServer::GetInstance()->FindBasicBlock(dest);
     string params = root.toStyledString();
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
     // update server
-    PluginServer *server = PluginServer::GetInstance();
-    fop->setSuccessor(server->FindBlock(dest), 0);
+    fop->setSuccessor(dest, 0);
     return true;
 }
 
