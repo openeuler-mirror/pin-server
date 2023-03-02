@@ -947,8 +947,8 @@ static void update_loop_dominator(uint64_t dir, FunctionOp* funcOp)
         }
         uint64_t i_bbAddr = cfAPI.GetImmediateDominator(dir, bbAddr);
         if (!i_bbAddr || &bb == originLoop.exitBB1) {
-            cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(&bb), \
-                cfAPI.RecomputeDominator(1, pluginAPI.FindBasicBlock(&bb)));
+            cfAPI.SetImmediateDominator(1, &bb, \
+                cfAPI.RecomputeDominator(1, &bb));
             continue;
         }
     }
@@ -962,7 +962,7 @@ static void remove_originLoop(LoopOp *loop, FunctionOp* funcOp)
     body = loop->GetLoopBody();
     unsigned n = loop->numBlockAttr().getInt();
     for (unsigned i = 0; i < n; i++) {
-        controlapi.DeleteBlock(body[i], funcOp->idAttr().getInt(), pluginAPI.FindBasicBlock(body[i]));
+        controlapi.DeleteBlock(body[i], funcOp);
     }
     loop->Delete();
 }
@@ -975,12 +975,11 @@ static void create_prolog_bb(Block *prolog_bb, Block *after_bb, Block *dominator
     ControlFlowAPI cfAPI;
     PluginServerAPI pluginAPI;
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(prolog_bb), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(prolog_bb, outer);
 
     FallThroughOp fp = llvm::dyn_cast<FallThroughOp>(entryEdge.src->back());
-    pluginAPI.RedirectFallthroughTarget(fp, pluginAPI.FindBasicBlock(entryEdge.src),
-        pluginAPI.FindBasicBlock(prolog_bb));
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(prolog_bb), pluginAPI.FindBasicBlock(dominator_bb));
+    pluginAPI.RedirectFallthroughTarget(fp, entryEdge.src, prolog_bb);
+    cfAPI.SetImmediateDominator(1, prolog_bb, dominator_bb);
 
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     lhs1 = baseSsa.Copy();
@@ -993,13 +992,13 @@ static void create_prolog_bb(Block *prolog_bb, Block *after_bb, Block *dominator
         mlir::Attribute attr = opBuilder->getI64IntegerAttr(originLoop.step);
         mlir::Value step = ConstOp::CreateConst(*opBuilder, attr, originLoop.base.getType());
         ops.push_back(step);
-        AssignOp opa = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus, prolog_bb);
+        AssignOp opa = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus);
     } else {
         ops.push_back(lhs1);
         ops.push_back(originLoop.base);
-        AssignOp op = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop, prolog_bb);
+        AssignOp op = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop);
     }
-    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), pluginAPI.FindBasicBlock(prolog_bb), ftBB);
+    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), prolog_bb, ftBB);
     baseSsa.SetCurrentDef(lhs1);
     defs_map.emplace(prolog_bb, lhs1);
 }
@@ -1010,10 +1009,10 @@ static void create_loop_pred_bb(
     ControlFlowAPI cfAPI;
     PluginServerAPI pluginAPI;
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(loop_pred_bb), outer->idAttr().getInt());
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(loop_pred_bb), pluginAPI.FindBasicBlock(dominator_bb));
+    pluginAPI.AddBlockToLoop(loop_pred_bb, outer);
+    cfAPI.SetImmediateDominator(1, loop_pred_bb, dominator_bb);
     opBuilder->setInsertionPointToStart(loop_pred_bb);
-    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), pluginAPI.FindBasicBlock(loop_pred_bb), ftBB);
+    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), loop_pred_bb, ftBB);
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     defs_map.emplace(loop_pred_bb, baseSsa.GetCurrentDef());
 }
@@ -1029,9 +1028,9 @@ static void create_align_loop_header(Block *align_loop_header, Block* after_bb,
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     Value entry_node = baseSsa.GetCurrentDef();
     
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(align_loop_header), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(align_loop_header, outer);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(align_loop_header), pluginAPI.FindBasicBlock(dominator_bb));
+    cfAPI.SetImmediateDominator(1, align_loop_header, dominator_bb);
     phi = PhiOp::CreatePhi(nullptr, align_loop_header);
     cfAPI.CreateNewDef(entry_node, phi.getOperation());
     res = phi.GetResult();
@@ -1043,25 +1042,25 @@ static void create_align_loop_header(Block *align_loop_header, Block* after_bb,
         PluginIR::PluginIntegerType::Unsigned);
     ops.push_back(SSAOp::MakeSSA(*opBuilder, baseType));
     ops.push_back(res);
-    AssignOp op1 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop, (align_loop_header));
+    AssignOp op1 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop);
     Value lhs1 = op1.GetLHS();
     ops.clear();
     ops.push_back(SSAOp::MakeSSA(*opBuilder, lhs1.getType()));
     ops.push_back(lhs1);
     ops.push_back(ConstOp::CreateConst(*opBuilder, opBuilder->getI64IntegerAttr(8), lhs1.getType()));
-    AssignOp op2 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus, (align_loop_header));
+    AssignOp op2 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus);
     Value lhs2 = op2.GetLHS();
     ops.clear();
     ops.push_back(SSAOp::MakeSSA(*opBuilder, baseType));
     ops.push_back(originLoop.limit);
-    AssignOp op3 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop, (align_loop_header));
+    AssignOp op3 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop);
     Value lhs3 = op3.GetLHS();
     ops.clear();
     ops.push_back(lhs2);
     ops.push_back(lhs3);
 
-    cond_stmt = opBuilder->create<CondOp>(opBuilder->getUnknownLoc(), IComparisonCode::le,
-        lhs2, lhs3, tb, fb, (align_loop_header));
+    cond_stmt = opBuilder->create<CondOp>(
+        opBuilder->getUnknownLoc(), IComparisonCode::le, lhs2, lhs3, tb, fb);
 
     baseSsa.SetCurrentDef(res);
     defs_map.emplace(align_loop_header, res);
@@ -1096,9 +1095,9 @@ static LoopOp *init_new_loop(LoopOp *outer_loop, Block* header, Block* latch, Fu
     LoopOp *new_loop;
     LoopOp new_loopt = funcOp->AllocateNewLoop();
     new_loop = &new_loopt;
-    pluginAPI.SetHeader(new_loop->idAttr().getInt(), pluginAPI.FindBasicBlock(header));
-    pluginAPI.SetLatch(new_loop->idAttr().getInt(), pluginAPI.FindBasicBlock(latch));
-    new_loop->AddLoop(outer_loop->idAttr().getInt(), funcOp->idAttr().getInt());
+    pluginAPI.SetHeader(new_loop, header);
+    pluginAPI.SetLatch(new_loop, latch);
+    new_loop->AddLoop(outer_loop, funcOp);
 
     return new_loop;
 }
@@ -1111,10 +1110,9 @@ static void create_align_loop_body_bb(Block *align_loop_body_bb, Block* after_bb
     ControlFlowAPI cfAPI;
     PluginServerAPI pluginAPI;
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(align_loop_body_bb), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(align_loop_body_bb, outer);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(align_loop_body_bb),
-        pluginAPI.FindBasicBlock(dominator_bb));
+    cfAPI.SetImmediateDominator(1, align_loop_body_bb, dominator_bb);
 
     opBuilder->setInsertionPointToStart(align_loop_body_bb);
     llvm::SmallVector<mlir::Value> ops;
@@ -1126,15 +1124,15 @@ static void create_align_loop_body_bb(Block *align_loop_body_bb, Block* after_bb
     ops.push_back(SSAOp::MakeSSA(*opBuilder, sizeType));
 
     ops.push_back(baseSsa.GetCurrentDef());
-    AssignOp op1 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::Nop, (align_loop_body_bb));
+    AssignOp op1 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::Nop);
     Value var = op1.GetLHS();
     ops.clear();
     ops.push_back(SSAOp::MakeSSA(*opBuilder, originLoop.arr2.getType()));
     ops.push_back(originLoop.arr2);
     ops.push_back(var);
-    AssignOp op2 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::PtrPlus, (align_loop_body_bb));
+    AssignOp op2 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::PtrPlus);
     lhs1 = op2.GetLHS();
     ops.clear();
     PluginIR::PluginTypeBase baseType = PluginIR::PluginIntegerType::get(context, 64,
@@ -1143,15 +1141,16 @@ static void create_align_loop_body_bb(Block *align_loop_body_bb, Block* after_bb
     ops.push_back(SSAOp::MakeSSA(*opBuilder, baseType));
     mlir::Attribute asdada = opBuilder->getI64IntegerAttr(0);
     ops.push_back(pluginAPI.BuildMemRef(baseType, lhs1, ConstOp::CreateConst(*opBuilder, asdada, pointerTy)));
-    AssignOp op3 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::UNDEF, (align_loop_body_bb));
+    AssignOp op3 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::UNDEF);
 
     lhs1 = op3.GetLHS();
     ops.clear();
     ops.push_back(SSAOp::MakeSSA(*opBuilder, originLoop.arr1.getType()));
     ops.push_back(originLoop.arr1);
     ops.push_back(var);
-    AssignOp op4 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::PtrPlus, (align_loop_body_bb));
+    AssignOp op4 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::PtrPlus);
     lhs2 = op4.GetLHS();
     ops.clear();
 
@@ -1159,12 +1158,14 @@ static void create_align_loop_body_bb(Block *align_loop_body_bb, Block* after_bb
     ops.push_back(pluginAPI.BuildMemRef(
         baseType, lhs2, ConstOp::CreateConst(*opBuilder, opBuilder->getI64IntegerAttr(0), pointerTy)));
 
-    AssignOp op5 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::UNDEF, (align_loop_body_bb));
+    AssignOp op5 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::UNDEF);
     lhs2 = op5.GetLHS();
 
-    cond_stmt = opBuilder->create<CondOp>(opBuilder->getUnknownLoc(),
-    llvm::dyn_cast<CondOp>(originLoop.condOp2).condCode(), lhs1, lhs2, tb, fb, (align_loop_body_bb));
+    cond_stmt = opBuilder->create<CondOp>(
+        opBuilder->getUnknownLoc(),
+        llvm::dyn_cast<CondOp>(originLoop.condOp2).condCode(),
+        lhs1, lhs2, tb, fb);
 }
 
 static void create_align_loop_latch(Block *align_loop_latch, Block* after_bb, Block* dominator_bb,
@@ -1177,10 +1178,9 @@ static void create_align_loop_latch(Block *align_loop_latch, Block* after_bb, Bl
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     Value entry_node = baseSsa.GetCurrentDef();
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(align_loop_latch), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(align_loop_latch, outer);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(align_loop_latch),
-        pluginAPI.FindBasicBlock(dominator_bb));
+    cfAPI.SetImmediateDominator(1, align_loop_latch, dominator_bb);
 
     res = baseSsa.Copy();
 
@@ -1189,8 +1189,8 @@ static void create_align_loop_latch(Block *align_loop_latch, Block* after_bb, Bl
     ops.push_back(res);
     ops.push_back(entry_node);
     ops.push_back(ConstOp::CreateConst(*opBuilder, opBuilder->getI64IntegerAttr(8), entry_node.getType()));
-    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus, (align_loop_latch));
-    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), pluginAPI.FindBasicBlock(align_loop_latch), ftBB);
+    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus);
+    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), align_loop_latch, ftBB);
     defs_map.emplace(align_loop_latch, res);
 }
 
@@ -1206,10 +1206,9 @@ static void create_align_loop_exit_bb(Block *align_loop_exit_bb, Block* after_bb
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     Value entry_node = baseSsa.GetCurrentDef();
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(align_loop_exit_bb), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(align_loop_exit_bb, outer);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(align_loop_exit_bb),
-        pluginAPI.FindBasicBlock(dominator_bb));
+    cfAPI.SetImmediateDominator(1, align_loop_exit_bb, dominator_bb);
 
     cond_stmt = llvm::dyn_cast<CondOp>(after_bb->back());
     cond_lhs = cond_stmt.GetLHS();
@@ -1220,12 +1219,12 @@ static void create_align_loop_exit_bb(Block *align_loop_exit_bb, Block* after_bb
     ops.push_back((SSAOp::MakeSSA(*opBuilder, cond_lhs.getType())));
     ops.push_back(cond_lhs);
     ops.push_back(cond_rhs);
-    AssignOp op1 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::BitXOR, (align_loop_exit_bb));
+    AssignOp op1 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::BitXOR);
     lhs1 = op1.GetLHS();
     ops.clear();
     ops.push_back(lhs1);
-    build_ctzll = opBuilder->create<CallOp>(opBuilder->getUnknownLoc(), ops, (align_loop_exit_bb));
+    build_ctzll = opBuilder->create<CallOp>(opBuilder->getUnknownLoc(), ops);
     PluginIR::PluginTypeBase intType =
         PluginIR::PluginIntegerType::get(context, 32, PluginIR::PluginIntegerType::Signed);
     lhs1 = SSAOp::MakeSSA(*opBuilder, intType);
@@ -1237,12 +1236,12 @@ static void create_align_loop_exit_bb(Block *align_loop_exit_bb, Block* after_bb
     ops.push_back(lhs2);
     ops.push_back(lhs1);
     ops.push_back(ConstOp::CreateConst(*opBuilder, opBuilder->getI64IntegerAttr(3), lhs1.getType()));
-    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Rshift, (align_loop_exit_bb));
+    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Rshift);
 
     ops.clear();
     ops.push_back(SSAOp::MakeSSA(*opBuilder, entry_node.getType()));
     ops.push_back(lhs2);
-    AssignOp op2 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop, (align_loop_exit_bb));
+    AssignOp op2 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Nop);
     lhs1 = op2.GetLHS();
     SSAOp entrySsa = dyn_cast<mlir::Plugin::SSAOp>(entry_node.getDefiningOp());
     lhs2 = entrySsa.Copy();
@@ -1250,9 +1249,9 @@ static void create_align_loop_exit_bb(Block *align_loop_exit_bb, Block* after_bb
     ops.push_back(lhs2);
     ops.push_back(lhs1);
     ops.push_back(entry_node);
-    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus, (align_loop_exit_bb));
+    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus);
 
-    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), pluginAPI.FindBasicBlock(align_loop_exit_bb), ftBB);
+    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), align_loop_exit_bb, ftBB);
 
     defs_map.emplace(align_loop_exit_bb, lhs2);
 }
@@ -1269,10 +1268,9 @@ static void create_epilogue_loop_header(Block *epilogue_loop_header, Block* afte
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     Value entry_node = baseSsa.GetCurrentDef();
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(epilogue_loop_header), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(epilogue_loop_header, outer);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(epilogue_loop_header),
-        pluginAPI.FindBasicBlock(dominator_bb));
+    cfAPI.SetImmediateDominator(1, epilogue_loop_header, dominator_bb);
 
     phi = PhiOp::CreatePhi(nullptr, epilogue_loop_header);
     cfAPI.CreateNewDef(entry_node, phi.getOperation());
@@ -1280,8 +1278,10 @@ static void create_epilogue_loop_header(Block *epilogue_loop_header, Block* afte
 
     opBuilder->setInsertionPointToStart(epilogue_loop_header);
 
-    cond_stmt = opBuilder->create<CondOp>(opBuilder->getUnknownLoc(),
-        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(), res, originLoop.limit, tb, fb, (epilogue_loop_header));
+    cond_stmt = opBuilder->create<CondOp>(
+        opBuilder->getUnknownLoc(),
+        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(),
+        res, originLoop.limit, tb, fb);
 
     baseSsa.SetCurrentDef(res);
     defs_map.emplace(epilogue_loop_header, res);
@@ -1299,10 +1299,9 @@ static void create_epilogue_loop_body_bb(Block *epilogue_loop_body_bb, Block* af
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     Value entry_node = baseSsa.GetCurrentDef();
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(epilogue_loop_body_bb), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(epilogue_loop_body_bb, outer);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(epilogue_loop_body_bb),
-        pluginAPI.FindBasicBlock(dominator_bb));
+    cfAPI.SetImmediateDominator(1, epilogue_loop_body_bb, dominator_bb);
 
     opBuilder->setInsertionPointToStart(epilogue_loop_body_bb);
     llvm::SmallVector<mlir::Value> ops;
@@ -1311,15 +1310,15 @@ static void create_epilogue_loop_body_bb(Block *epilogue_loop_body_bb, Block* af
         PluginIR::PluginIntegerType::Unsigned);
     ops.push_back(SSAOp::MakeSSA(*opBuilder, sizeType));
     ops.push_back(entry_node);
-    AssignOp op1 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::Nop, (epilogue_loop_body_bb));
+    AssignOp op1 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::Nop);
     lhs1 = op1.GetLHS();
     ops.clear();
     ops.push_back(SSAOp::MakeSSA(*opBuilder, originLoop.arr1.getType()));
     ops.push_back(originLoop.arr1);
     ops.push_back(lhs1);
-    AssignOp op2 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::PtrPlus, (epilogue_loop_body_bb));
+    AssignOp op2 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::PtrPlus);
     lhs2 = op2.GetLHS();
 
     ops.clear();
@@ -1328,7 +1327,7 @@ static void create_epilogue_loop_body_bb(Block *epilogue_loop_body_bb, Block* af
     ops.push_back(SSAOp::MakeSSA(*opBuilder, charType));
     ops.push_back(pluginAPI.BuildMemRef(charType, lhs2,
         ConstOp::CreateConst(*opBuilder, opBuilder->getI64IntegerAttr(0), lhs2.getType())));
-    g = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::UNDEF, (epilogue_loop_body_bb));
+    g = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::UNDEF);
 
     lhs2 = g.GetLHS();
 
@@ -1336,8 +1335,8 @@ static void create_epilogue_loop_body_bb(Block *epilogue_loop_body_bb, Block* af
     ops.push_back(SSAOp::MakeSSA(*opBuilder, originLoop.arr2.getType()));
     ops.push_back(originLoop.arr2);
     ops.push_back(lhs1);
-    AssignOp op3 = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops,
-        IExprCode::PtrPlus, (epilogue_loop_body_bb));
+    AssignOp op3 = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::PtrPlus);
     lhs3 = op3.GetLHS();
 
     ops.clear();
@@ -1345,11 +1344,14 @@ static void create_epilogue_loop_body_bb(Block *epilogue_loop_body_bb, Block* af
     ops.push_back(SSAOp::MakeSSA(*opBuilder, charType));
     ops.push_back(pluginAPI.BuildMemRef(charType, lhs3, ConstOp::CreateConst(*opBuilder,
         opBuilder->getI64IntegerAttr(0), lhs3.getType())));
-    g = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::UNDEF, (epilogue_loop_body_bb));
+    g = opBuilder->create<AssignOp>(
+        opBuilder->getUnknownLoc(), ops, IExprCode::UNDEF);
 
     Value res = g.GetLHS();
-    cond_stmt = opBuilder->create<CondOp>(opBuilder->getUnknownLoc(),
-        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(), lhs2, res, tb, fb, (epilogue_loop_body_bb));
+    cond_stmt = opBuilder->create<CondOp>(
+        opBuilder->getUnknownLoc(),
+        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(),
+        lhs2, res, tb, fb);
 
     defs_map.emplace(epilogue_loop_body_bb, baseSsa.GetCurrentDef());
 }
@@ -1363,10 +1365,9 @@ static void create_epilogue_loop_latch(Block *epilogue_loop_latch,
     SSAOp baseSsa = dyn_cast<mlir::Plugin::SSAOp>(originLoop.base.getDefiningOp());
     Value entry_node = baseSsa.GetCurrentDef();
 
-    pluginAPI.AddBlockToLoop(pluginAPI.FindBasicBlock(epilogue_loop_latch), outer->idAttr().getInt());
+    pluginAPI.AddBlockToLoop(epilogue_loop_latch, outer);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(epilogue_loop_latch),
-        pluginAPI.FindBasicBlock(dominator_bb));
+    cfAPI.SetImmediateDominator(1, epilogue_loop_latch, dominator_bb);
 
     SSAOp entrySsa = dyn_cast<mlir::Plugin::SSAOp>(entry_node.getDefiningOp());
     res = entrySsa.Copy();
@@ -1377,9 +1378,10 @@ static void create_epilogue_loop_latch(Block *epilogue_loop_latch,
     ops.push_back(entry_node);
     ops.push_back(ConstOp::CreateConst(*opBuilder,
         opBuilder->getI64IntegerAttr(originLoop.step), entry_node.getType()));
-    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), ops, IExprCode::Plus, (epilogue_loop_latch));
+    opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(), 
+                                ops, IExprCode::Plus);
 
-    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), pluginAPI.FindBasicBlock(epilogue_loop_latch), ftBB);
+    opBuilder->create<FallThroughOp>(opBuilder->getUnknownLoc(), epilogue_loop_latch, ftBB);
 
     defs_map.emplace(epilogue_loop_latch, res);
 }
@@ -1395,47 +1397,27 @@ static void create_new_loops(edge entryEdge, FunctionOp *funcOp)
     LoopOp *epilogue_loop;
     PluginServerAPI pluginAPI;
     ControlFlowAPI cfAPI;
-    LoopOp outer = pluginAPI.GetBlockLoopFather(pluginAPI.FindBasicBlock(entryEdge.src));
+    LoopOp outer = pluginAPI.GetBlockLoopFather(entryEdge.src);
 
-    uint64_t bbAddr = cfAPI.CreateBlock(entryEdge.src, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(entryEdge.src));
-    prolog_bb = pluginAPI.FindBlock(bbAddr);
+    prolog_bb = cfAPI.CreateBlock(entryEdge.src, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(prolog_bb, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(prolog_bb));
-    align_pred_bb = pluginAPI.FindBlock(bbAddr);
+    align_pred_bb = cfAPI.CreateBlock(prolog_bb, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(align_pred_bb, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(align_pred_bb));
-    align_loop_header = pluginAPI.FindBlock(bbAddr);
+    align_loop_header = cfAPI.CreateBlock(align_pred_bb, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(align_loop_header, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(align_loop_header));
-    align_loop_body_bb = pluginAPI.FindBlock(bbAddr);
+    align_loop_body_bb = cfAPI.CreateBlock(align_loop_header, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(align_loop_body_bb, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(align_loop_body_bb));
-    align_loop_latch = pluginAPI.FindBlock(bbAddr);
+    align_loop_latch = cfAPI.CreateBlock(align_loop_body_bb, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(align_loop_body_bb, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(align_loop_body_bb));
-    align_loop_exit_bb = pluginAPI.FindBlock(bbAddr);
+    align_loop_exit_bb = cfAPI.CreateBlock(align_loop_body_bb, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(align_loop_header, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(align_loop_header));
-    epilogue_loop_pred_bb = pluginAPI.FindBlock(bbAddr);
+    epilogue_loop_pred_bb = cfAPI.CreateBlock(align_loop_header, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(epilogue_loop_pred_bb, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(epilogue_loop_pred_bb));
-    epilogue_loop_header = pluginAPI.FindBlock(bbAddr);
+    epilogue_loop_header = cfAPI.CreateBlock(epilogue_loop_pred_bb, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(epilogue_loop_header, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(epilogue_loop_header));
-    epilogue_loop_body_bb = pluginAPI.FindBlock(bbAddr);
+    epilogue_loop_body_bb = cfAPI.CreateBlock(epilogue_loop_header, funcOp);
 
-    bbAddr = cfAPI.CreateBlock(epilogue_loop_body_bb, funcOp->idAttr().getInt(),
-        pluginAPI.FindBasicBlock(epilogue_loop_body_bb));
-    epilogue_loop_latch = pluginAPI.FindBlock(bbAddr);
+    epilogue_loop_latch = cfAPI.CreateBlock(epilogue_loop_body_bb, funcOp);
 
     create_prolog_bb(prolog_bb, entryEdge.src, entryEdge.src, &outer, entryEdge, funcOp, align_pred_bb);
     
@@ -1473,18 +1455,14 @@ static void create_new_loops(edge entryEdge, FunctionOp *funcOp)
 
     epilogue_loop = init_new_loop(&outer, epilogue_loop_header, epilogue_loop_latch, funcOp);
 
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(originLoop.exitBB1),
-        pluginAPI.FindBasicBlock(entryEdge.src));
-    cfAPI.SetImmediateDominator(1, pluginAPI.FindBasicBlock(originLoop.exitBB2),
-        pluginAPI.FindBasicBlock(entryEdge.src));
+    cfAPI.SetImmediateDominator(1, originLoop.exitBB1, entryEdge.src);
+    cfAPI.SetImmediateDominator(1, originLoop.exitBB2, entryEdge.src);
 
     rewrite_add_phi_arg(originLoop.exitBB1);
     rewrite_add_phi_arg(originLoop.exitBB2);
 
-    cfAPI.RemoveEdge(pluginAPI.FindBasicBlock(originLoop.exitE1.src),
-        pluginAPI.FindBasicBlock(originLoop.exitE1.dest));
-    cfAPI.RemoveEdge(pluginAPI.FindBasicBlock(originLoop.exitE2.src),
-        pluginAPI.FindBasicBlock(originLoop.exitE2.dest));
+    cfAPI.RemoveEdge(originLoop.exitE1.src, originLoop.exitE1.dest);
+    cfAPI.RemoveEdge(originLoop.exitE2.src, originLoop.exitE2.dest);
 }
 
 static void convertToNewLoop(LoopOp* loop, FunctionOp* funcOp)

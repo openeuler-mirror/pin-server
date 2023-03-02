@@ -95,7 +95,7 @@ def LoopOp : Plugin_Op<"loop", [NoSideEffect]> {
     bool IsLoopFather(mlir::Block*);
     std::vector<std::pair<mlir::Block*, mlir::Block*> > GetExitEdges();
     std::vector<mlir::Block*> GetLoopBody(); 
-    void AddLoop(uint64_t, uint64_t);
+    void AddLoop(LoopOp *, FunctionOp *);
     void AddBlock(mlir::Block*);
   }];
 }
@@ -118,9 +118,8 @@ def CallOp : Plugin_Op<"call", [
     OpBuilderDAG<(ins "int64_t":$id,
                       "ArrayRef<Value>":$arguments)>,
     // Only for server.
-    OpBuilderDAG<(ins "Value":$func,
-                      "ArrayRef<Value>":$arguments, "Block *":$block)>,
-    OpBuilderDAG<(ins "ArrayRef<Value>":$arguments, "Block *":$block)>
+    OpBuilderDAG<(ins "Value":$func, "ArrayRef<Value>":$arguments)>,
+    OpBuilderDAG<(ins "ArrayRef<Value>":$arguments)>
   ];
   let extraClassDeclaration = [{
     bool SetLHS(Value lhs);
@@ -160,7 +159,7 @@ def AssignOp : Plugin_Op<"assign", [NoSideEffect]> {
                       "uint64_t":$id, "IExprCode":$exprCode)>,
     // Only for server.
     OpBuilderDAG<(ins "ArrayRef<Value>":$operands,
-                      "IExprCode":$exprCode, "Block *":$block)>
+                      "IExprCode":$exprCode)>
   ];
   let extraClassDeclaration = [{
     Value GetLHS() { return getOperand(0); }
@@ -625,7 +624,7 @@ def FallThroughOp : Plugin_TerminatorOp<"fallthrough", [NoSideEffect]> {
   let builders = [
     OpBuilderDAG<(ins "uint64_t":$address, "Block*":$dest, "uint64_t":$destaddr)>,
     // Only for server.
-    OpBuilderDAG<(ins "uint64_t":$address, "Block*":$dest)>
+    OpBuilderDAG<(ins "Block*":$src, "Block*":$dest)>
   ];
 }
 
@@ -646,8 +645,8 @@ def CondOp : Plugin_TerminatorOp<"condition", [NoSideEffect]> {
                       "uint64_t":$tbaddr, "uint64_t":$fbaddr, "Value":$trueLabel,
                       "Value":$falseLabel)>,
     // Only for server.
-    OpBuilderDAG<(ins "IComparisonCode":$condCode, "Value":$lhs, "Value":$rhs, 
-                      "Block*":$tb, "Block*":$fb, "Block *":$block)>
+    OpBuilderDAG<(ins "IComparisonCode":$condCode, "Value":$lhs,
+                      "Value":$rhs, "Block*":$tb, "Block*":$fb)>
   ];
   let extraClassDeclaration = [{
     Value GetLHS() { return getOperand(0); }

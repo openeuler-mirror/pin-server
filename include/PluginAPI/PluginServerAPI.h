@@ -48,15 +48,15 @@ public:
     bool IsBlockInLoop(uint64_t loopID, uint64_t blockID);
     void DeleteLoop(uint64_t loopID);
     void AddLoop(uint64_t loopID, uint64_t outerID, uint64_t funcID);
-    void AddBlockToLoop(uint64_t blockID, uint64_t loopID);
+    void AddBlockToLoop(mlir::Block*, LoopOp *);
     pair<mlir::Block*, mlir::Block*> LoopSingleExit(uint64_t loopID);
     vector<pair<mlir::Block*, mlir::Block*> > GetLoopExitEdges(uint64_t loopID);
     mlir::Block* GetHeader(uint64_t loopID);
     mlir::Block* GetLatch(uint64_t loopID);
-    void SetHeader(uint64_t loopID, uint64_t blockID);
-    void SetLatch(uint64_t loopID, uint64_t blockID);
+    void SetHeader(LoopOp*, mlir::Block*);
+    void SetLatch(LoopOp*, mlir::Block*);
     vector<mlir::Block*> GetLoopBody(uint64_t loopID);
-    LoopOp GetBlockLoopFather(uint64_t blockID);
+    LoopOp GetBlockLoopFather(mlir::Block*);
     mlir::Block* FindBlock(uint64_t);
     uint64_t FindBasicBlock(mlir::Block*);
     bool InsertValue(uint64_t, mlir::Value);
@@ -84,7 +84,7 @@ public:
     mlir::Value CreateSSAOp(mlir::Type) override;
     mlir::Value ConfirmValue(mlir::Value);
     mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value);
-    bool RedirectFallthroughTarget(FallThroughOp&, uint64_t, uint64_t) override;
+    bool RedirectFallthroughTarget(FallThroughOp&, mlir::Block*, mlir::Block*) override;
     mlir::Operation* GetSSADefOperation(uint64_t) override;
     void InsertCreatedBlock(uint64_t id, mlir::Block* block);
 

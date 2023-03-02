@@ -110,24 +110,30 @@ vector<PhiOp> ControlFlowAPI::GetAllPhiOpInsideBlock(mlir::Block *b)
     return GetPhiOperationResult(funName, params);
 }
 
-uint64_t ControlFlowAPI::CreateBlock(mlir::Block* b, uint64_t funcAddr, uint64_t bbAddr)
+mlir::Block* ControlFlowAPI::CreateBlock(mlir::Block* b, FunctionOp *funcOp)
 {
     Json::Value root;
     string funName = __func__;
+    uint64_t funcAddr = funcOp->idAttr().getInt();
     assert(funcAddr);
+    PluginServer *server = PluginServer::GetInstance();
+    uint64_t bbAddr = server->FindBasicBlock(b);
     assert(bbAddr);
     root["funcaddr"] = std::to_string(funcAddr);
     root["bbaddr"] = std::to_string(bbAddr);
     string params = root.toStyledString();
-    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
-    return PluginServer::GetInstance()->GetBlockResult(b);
+    server->RemoteCallClientWithAPI(funName, params);
+    uint64_t retId = server->GetBlockResult(b);
+    return server->FindBlock(retId);
 }
 
-void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr, uint64_t bbAddr)
+void ControlFlowAPI::DeleteBlock(mlir::Block* b, FunctionOp* funcOp)
 {
     Json::Value root;
     string funName = __func__;
+    uint64_t funcAddr = funcOp->idAttr().getInt();
     assert(funcAddr);
+    uint64_t bbAddr = PluginServer::GetInstance()->FindBasicBlock(b);
     assert(bbAddr);
     root["funcaddr"] = std::to_string(funcAddr);
     root["bbaddr"] = std::to_string(bbAddr);
@@ -137,10 +143,29 @@ void ControlFlowAPI::DeleteBlock(mlir::Block* b, uint64_t funcAddr, uint64_t bbA
 }
 
 /* dir: 1 or 2 */
-void ControlFlowAPI::SetImmediateDominator(uint64_t dir, uint64_t bbAddr, uint64_t domiAddr)
+void ControlFlowAPI::SetImmediateDominator(uint64_t dir, mlir::Block* bb, uint64_t domiAddr)
 {
     Json::Value root;
     string funName = __func__;
+    PluginServer *server = PluginServer::GetInstance();
+    uint64_t bbAddr = server->FindBasicBlock(bb);
+    if (!bbAddr || !domiAddr) return;
+    assert(dir && bbAddr && domiAddr);
+    root["dir"] = std::to_string(dir);
+    root["bbaddr"] = std::to_string(bbAddr);
+    root["domiaddr"] = std::to_string(domiAddr);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void ControlFlowAPI::SetImmediateDominator(uint64_t dir, mlir::Block* bb,
+                                           mlir::Block* domi)
+{
+    Json::Value root;
+    string funName = __func__;
+    PluginServer *server = PluginServer::GetInstance();
+    uint64_t bbAddr = server->FindBasicBlock(bb);
+    uint64_t domiAddr = server->FindBasicBlock(domi);
     if (!bbAddr || !domiAddr) return;
     assert(dir && bbAddr && domiAddr);
     root["dir"] = std::to_string(dir);
@@ -163,10 +188,11 @@ uint64_t ControlFlowAPI::GetImmediateDominator(uint64_t dir, uint64_t bbAddr)
 }
 
 /* dir: 1 or 2 */
-uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, uint64_t bbAddr)
+uint64_t ControlFlowAPI::RecomputeDominator(uint64_t dir, mlir::Block* bb)
 {
     Json::Value root;
     string funName = __func__;
+    uint64_t bbAddr = PluginServer::GetInstance()->FindBasicBlock(bb);
     assert(dir && bbAddr);
     root["dir"] = std::to_string(dir);
     root["bbaddr"] = std::to_string(bbAddr);
@@ -201,10 +227,12 @@ void ControlFlowAPI::CreateFallthroughOp(
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
-void ControlFlowAPI::RemoveEdge(uint64_t src, uint64_t dest)
+void ControlFlowAPI::RemoveEdge(mlir::Block* srcBB, mlir::Block* destBB)
 {
     Json::Value root;
     string funName = __func__;
+    uint64_t src = PluginServer::GetInstance()->FindBasicBlock(srcBB);
+    uint64_t dest = PluginServer::GetInstance()->FindBasicBlock(destBB);
     root["src"] = std::to_string(src);
     root["dest"] = std::to_string(dest);
     string params = root.toStyledString();

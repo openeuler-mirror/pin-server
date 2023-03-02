@@ -163,17 +163,13 @@ Block* LoopOp::GetLatch()
 void LoopOp::SetHeader(mlir::Block* b)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
-    uint64_t blockId = pluginAPI.FindBasicBlock(b);
-    pluginAPI.SetHeader(loopId, blockId);
+    pluginAPI.SetHeader(this, b);
 }
 
 void LoopOp::SetLatch(mlir::Block* b)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
-    uint64_t blockId = pluginAPI.FindBasicBlock(b);
-    pluginAPI.SetLatch(loopId, blockId);
+    pluginAPI.SetLatch(this, b);
 }
 
 vector<mlir::Block*> LoopOp::GetLoopBody()
@@ -223,8 +219,7 @@ bool LoopOp::IsLoopFather(mlir::Block* b)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
-    uint64_t blockId = pluginAPI.FindBasicBlock(b);
-    LoopOp loopFather = pluginAPI.GetBlockLoopFather(blockId);
+    LoopOp loopFather = pluginAPI.GetBlockLoopFather(b);
     uint64_t id = loopFather.idAttr().getInt();
     return id == loopId;
 }
@@ -236,19 +231,18 @@ vector<pair<mlir::Block*, mlir::Block*> > LoopOp::GetExitEdges()
     return pluginAPI.GetLoopExitEdges(loopId);
 }
 
-void LoopOp::AddLoop(uint64_t outerId, uint64_t funcId)
+void LoopOp::AddLoop(LoopOp* outerLoop, FunctionOp* funcOp)
 {
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t loopId = idAttr().getInt();
-    return pluginAPI.AddLoop(loopId, outerId, funcId);
+    return pluginAPI.AddLoop(loopId, outerLoop->idAttr().getInt(),
+                             funcOp->idAttr().getInt());
 }
 
 void LoopOp::AddBlock(mlir::Block* block)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t blockId = pluginAPI.FindBasicBlock(block);
-    uint64_t loopId = idAttr().getInt();
-    pluginAPI.AddBlockToLoop(blockId, loopId);
+    pluginAPI.AddBlockToLoop(block, this);
 }
 
 // ===----------------------------------------------------------------------===//
@@ -595,9 +589,12 @@ bool CallOp::SetLHS(Value lhs)
 }
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
-                   Value func, ArrayRef<Value> arguments, Block * block)
+                   Value func, ArrayRef<Value> arguments)
 {
+    Block *insertionBlock = builder.getInsertionBlock();
+    assert(insertionBlock && "No InsertPoint is set for the OpBuilder.");
     PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t blockId = pluginAPI.FindBasicBlock(insertionBlock);
     PlaceholderOp funcOp = func.getDefiningOp<PlaceholderOp>();
     uint64_t funcId = funcOp.idAttr().getInt();
     vector<uint64_t> argIds;
@@ -605,7 +602,6 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
         uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
-    uint64_t blockId = pluginAPI.FindBasicBlock(block);
     uint64_t id = pluginAPI.CreateCallOp(blockId, funcId, argIds);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands(arguments);
@@ -614,15 +610,17 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
 }
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
-                   ArrayRef<Value> arguments, Block * block)
+                   ArrayRef<Value> arguments)
 {
+    Block *insertionBlock = builder.getInsertionBlock();
+    assert(insertionBlock && "No InsertPoint is set for the OpBuilder.");
     PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t blockId = pluginAPI.FindBasicBlock(insertionBlock);
     vector<uint64_t> argIds;
     for (auto v : arguments) {
         uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
-    uint64_t blockId = pluginAPI.FindBasicBlock(block);
     uint64_t funcId = 0;
     uint64_t id = pluginAPI.CreateCallOp(blockId, funcId, argIds);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
@@ -653,12 +651,14 @@ void CondOp::build(OpBuilder &builder, OperationState &state,
 
 void CondOp::build(OpBuilder &builder, OperationState &state,
                    IComparisonCode condCode, Value lhs, Value rhs, Block* tb,
-                   Block* fb, Block * block)
+                   Block* fb)
 {
+    Block *insertionBlock = builder.getInsertionBlock();
+    assert(insertionBlock && "No InsertPoint is set for the OpBuilder.");
     PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t blockId = pluginAPI.FindBasicBlock(insertionBlock);
     uint64_t lhsId = GetValueId(lhs);
     uint64_t rhsId = GetValueId(rhs);
-    uint64_t blockId = pluginAPI.FindBasicBlock(block);
     uint64_t tbaddr = pluginAPI.FindBasicBlock(tb);
     uint64_t fbaddr = pluginAPI.FindBasicBlock(fb);
     uint64_t id = pluginAPI.CreateCondOp(blockId, condCode, lhsId, rhsId,
@@ -737,16 +737,17 @@ void AssignOp::build(OpBuilder &builder, OperationState &state,
 }
 
 void AssignOp::build(OpBuilder &builder, OperationState &state,
-                     ArrayRef<Value> operands, IExprCode exprCode,
-                     Block * block)
+                     ArrayRef<Value> operands, IExprCode exprCode)
 {
+    Block *insertionBlock = builder.getInsertionBlock();
+    assert(insertionBlock && "No InsertPoint is set for the OpBuilder.");
     PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t blockId = pluginAPI.FindBasicBlock(insertionBlock);
     vector<uint64_t> argIds;
     for (auto v : operands) {
         uint64_t argId = GetValueId(v);
         argIds.push_back(argId);
     }
-    uint64_t blockId = pluginAPI.FindBasicBlock(block);
     uint64_t id = pluginAPI.CreateAssignOp(blockId, exprCode, argIds);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("exprCode",
@@ -821,7 +822,7 @@ void SwitchOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("address", builder.getI64IntegerAttr(address));
     state.addAttribute("defaultaddr", builder.getI64IntegerAttr(defaultaddr));
     llvm::SmallVector<mlir::Attribute, 4> attributes;
-    for (int i = 0; i < caseaddr.size(); ++i) {
+    for (size_t i = 0; i < caseaddr.size(); ++i) {
         attributes.push_back(builder.getI64IntegerAttr(caseaddr[i]));
     }
     state.addAttribute("caseaddrs", builder.getArrayAttr(attributes));
@@ -842,9 +843,10 @@ void FallThroughOp::build(OpBuilder &builder, OperationState &state,
 }
 
 void FallThroughOp::build(OpBuilder &builder, OperationState &state,
-                          uint64_t address, Block* dest)
+                          Block* src, Block* dest)
 {
     PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t address = pluginAPI.FindBasicBlock(src);
     uint64_t destaddr = pluginAPI.FindBasicBlock(dest);
 
     PluginAPI::ControlFlowAPI cfgAPI;
@@ -892,7 +894,7 @@ void TransactionOp::build(OpBuilder &builder, OperationState &state, uint64_t id
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("address", builder.getI64IntegerAttr(address));
     llvm::SmallVector<mlir::Attribute, 4> attributes;
-    for (int i = 0; i < stmtaddr.size(); ++i) {
+    for (size_t i = 0; i < stmtaddr.size(); ++i) {
         attributes.push_back(builder.getI64IntegerAttr(stmtaddr[i]));
     }
     state.addAttribute("stmtaddr", builder.getArrayAttr(attributes));
@@ -932,7 +934,7 @@ void EHDispatchOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
     state.addAttribute("region", builder.getI64IntegerAttr(region));
     state.addSuccessors(ehHandlers);
     llvm::SmallVector<mlir::Attribute, 4> attributes;
-    for (int i = 0; i < ehHandlersaddrs.size(); ++i) {
+    for (size_t i = 0; i < ehHandlersaddrs.size(); ++i) {
         attributes.push_back(builder.getI64IntegerAttr(ehHandlersaddrs[i]));
     }
     state.addAttribute("ehHandlersaddrs", builder.getArrayAttr(attributes));
@@ -946,7 +948,7 @@ void BindOp::build(OpBuilder &builder, OperationState &state, uint64_t id, Value
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands({vars, block});
     llvm::SmallVector<mlir::Attribute, 4> attributes;
-    for (int i = 0; i < body.size(); ++i) {
+    for (size_t i = 0; i < body.size(); ++i) {
         attributes.push_back(builder.getI64IntegerAttr(body[i]));
     }
     state.addAttribute("body", builder.getArrayAttr(attributes));
@@ -960,12 +962,12 @@ void TryOp::build(OpBuilder &builder, OperationState &state, uint64_t id, ArrayR
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     llvm::SmallVector<mlir::Attribute, 4> attributes;
-    for (int i = 0; i < eval.size(); ++i) {
+    for (size_t i = 0; i < eval.size(); ++i) {
         attributes.push_back(builder.getI64IntegerAttr(eval[i]));
     }
     state.addAttribute("eval", builder.getArrayAttr(attributes));
     attributes.clear();
-    for (int i = 0; i < cleanup.size(); ++i) {
+    for (size_t i = 0; i < cleanup.size(); ++i) {
         attributes.push_back(builder.getI64IntegerAttr(cleanup[i]));
     }
     state.addAttribute("cleanup", builder.getArrayAttr(attributes));
@@ -980,7 +982,7 @@ void CatchOp::build(OpBuilder &builder, OperationState &state, uint64_t id, Valu
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands(types);
     llvm::SmallVector<mlir::Attribute, 4> attributes;
-    for (int i = 0; i < handler.size(); ++i) {
+    for (size_t i = 0; i < handler.size(); ++i) {
         attributes.push_back(builder.getI64IntegerAttr(handler[i]));
     }
     state.addAttribute("handler", builder.getArrayAttr(attributes));
