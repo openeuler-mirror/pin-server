@@ -59,6 +59,12 @@ vector<mlir::Plugin::LocalDeclOp> PluginCom::GetLocalDeclResult(void)
     return retOps;
 }
 
+mlir::Plugin::CGnodeOp PluginCom::GetCGnodeOpResult(void)
+{
+    mlir::Plugin::CGnodeOp retop = cgnode;
+    return retop;
+}
+
 vector<mlir::Plugin::LoopOp> PluginCom::LoopOpsResult(void)
 {
     vector<mlir::Plugin::LoopOp> retLoops = loops;
@@ -125,6 +131,8 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
 {
     if (key == "FuncOpResult") {
         json.FuncOpJsonDeSerialize(data, this->funcOpData);
+    } else if (key == "CGnodeOpResult") {
+        this->cgnode = json.CGnodeOpJsonDeSerialize(data);
     } else if (key == "LocalDeclOpResult") {
         json.LocalDeclOpJsonDeSerialize(data, this->decls);
     } else if (key == "LoopOpResult") {

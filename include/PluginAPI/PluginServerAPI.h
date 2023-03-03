@@ -36,6 +36,12 @@ public:
     PluginServerAPI () = default;
     ~PluginServerAPI () = default;
 
+    // CGnodeOp
+    vector<CGnodeOp> GetAllCGnode() override;
+    CGnodeOp GetCGnodeOpById(uint64_t) override;
+    // mlir::Value GetDeclFromCGnode(uint64_t);
+    bool IsRealSymbolOfCGnode(uint64_t);
+
     vector<FunctionOp> GetAllFunc() override;
     FunctionOp GetFunctionOpById(uint64_t);
     vector<LocalDeclOp> GetDecls(uint64_t) override;

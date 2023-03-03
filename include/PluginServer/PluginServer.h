@@ -163,6 +163,11 @@ public:
         RemoteCallClientWithAPI(funName, params);
         return pluginCom.GetLocalDeclResult();
     }
+    mlir::Plugin::CGnodeOp GetCGnodeOpResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetCGnodeOpResult();
+    }
     mlir::Plugin::LoopOp LoopOpResult(const string& funName, const string& params)
     {
         RemoteCallClientWithAPI(funName, params);

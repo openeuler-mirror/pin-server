@@ -47,8 +47,33 @@ std::map<uint64_t, std::string> opNameMap;
 
 static void ProcessStructReorder(uint64_t *fun)
 {
-    std::cout << "Running first pass, structreoder\n";
+    fprintf(stderr, "Running first pass, structreoder\n");
 
+    PluginServerAPI pluginAPI;
+    vector<CGnodeOp> allnodes = pluginAPI.GetAllCGnode();
+    fprintf(stderr, "allnodes size is %d\n", allnodes.size());
+    for (auto &nodeOp : allnodes) {
+        context = nodeOp.getOperation()->getContext();
+        mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
+        opBuilder = &opBuilder_temp;
+        string name = nodeOp.symbolNameAttr().getValue().str();
+        fprintf(stderr, "Now process symbol : %s \n", name.c_str());
+        uint32_t order = nodeOp.orderAttr().getInt();
+        fprintf(stderr, "Now process order : %d \n", order);
+        if (nodeOp.IsRealSymbol())
+            fprintf(stderr, "Now process IsRealSymbol  \n");
+    }
+
+    vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
+    fprintf(stderr, "allfun size is %d\n", allFunction.size());
+    for (auto &funcOp : allFunction) {
+        context = funcOp.getOperation()->getContext();
+        mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
+        opBuilder = &opBuilder_temp;
+        string name = funcOp.funcNameAttr().getValue().str();
+        fprintf(stderr, "Now process func : %s \n", name.c_str());
+    }
+    
 }
 
 int StructReorderPass::DoOptimize(uint64_t *fun)

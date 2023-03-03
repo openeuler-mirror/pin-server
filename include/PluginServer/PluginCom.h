@@ -57,6 +57,7 @@ public:
     string GetStringDataResult(void);
     vector<mlir::Plugin::FunctionOp> GetFunctionOpResult(void);
     vector<mlir::Plugin::LocalDeclOp> GetLocalDeclResult(void);
+    mlir::Plugin::CGnodeOp GetCGnodeOpResult(void);
     mlir::Plugin::LoopOp LoopOpResult(void);
     vector<mlir::Plugin::LoopOp> LoopOpsResult(void);
     vector<std::pair<mlir::Block*, mlir::Block*> > EdgesResult(void);
@@ -73,6 +74,7 @@ private:
     PluginJson json;
     int64_t integerResult;
     string stringResult;
+    mlir::Plugin::CGnodeOp cgnode;
     vector<mlir::Plugin::FunctionOp> funcOpData;
     vector<mlir::Plugin::LocalDeclOp> decls;
     vector<mlir::Plugin::LoopOp> loops;

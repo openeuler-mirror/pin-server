@@ -87,6 +87,36 @@ static uint64_t getBlockAddress(mlir::Block* b)
     }
 }
 
+// ===----------------------------------------------------------------------===//
+// CGnodeOp
+
+void CGnodeOp::build(OpBuilder &builder, OperationState &state,
+                     uint64_t id, StringRef symbolName, bool definition,
+                     uint32_t order)
+{
+    state.addRegion();
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("symbolName", builder.getStringAttr(symbolName));
+    state.addAttribute("definition", builder.getBoolAttr(definition));
+    state.addAttribute("order", builder.getI32IntegerAttr(order));
+}
+
+// Value CGnodeOp::GetDecl()
+// {
+//     PluginAPI::PluginServerAPI pluginAPI;
+//     uint64_t nodeId = idAttr().getInt();
+//     return pluginAPI.GetDeclFromCGnode(nodeId);
+// }
+
+bool CGnodeOp::IsRealSymbol()
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t nodeId = idAttr().getInt();
+    return pluginAPI.IsRealSymbolOfCGnode(nodeId);
+}
+
+// ===----------------------------------------------------------------------===//
+
 void FunctionOp::build(OpBuilder &builder, OperationState &state,
                        uint64_t id, StringRef funcName, bool declaredInline, Type type)
 {

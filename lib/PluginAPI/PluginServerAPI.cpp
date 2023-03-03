@@ -171,6 +171,42 @@ mlir::Value PluginServerAPI::CreateSSAOp(mlir::Type t)
     return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
+// CGnodeOp ===============
+
+vector<CGnodeOp> PluginServerAPI::GetAllCGnode()
+{
+    Json::Value root;
+    string funName = "GetCGnodeIDs";
+    string params = root.toStyledString();
+    vector<CGnodeOp> res;
+    vector<uint64_t> ids = PluginServer::GetInstance()->GetIdsResult(funName, params);
+    for (auto id : ids) {
+        res.push_back(GetCGnodeOpById(id));
+    }
+    return res;
+}
+
+CGnodeOp PluginServerAPI::GetCGnodeOpById(uint64_t id)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();
+    CGnodeOp cgnodeop = PluginServer::GetInstance()->GetCGnodeOpResult(funName, params);
+    return cgnodeop;
+}
+
+bool PluginServerAPI::IsRealSymbolOfCGnode(uint64_t id)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();  
+    return   PluginServer::GetInstance()->GetBoolResult(funName, params);
+}
+
+// ========================
+
 vector<FunctionOp> PluginServerAPI::GetAllFunc()
 {
     Json::Value root;

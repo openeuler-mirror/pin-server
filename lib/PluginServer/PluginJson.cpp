@@ -328,6 +328,25 @@ void PluginJson::StringDeSerialize(const string& data, string& result)
     result = root["stringData"].asString();
 }
 
+CGnodeOp PluginJson::CGnodeOpJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+    fprintf(stderr, "dgy server cgnode json %s\n", root.toStyledString().c_str());
+
+    mlir::OpBuilder builder(PluginServer::GetInstance()->GetContext());
+    uint64_t id = GetID(root["id"]);
+    Json::Value attributes = root["attributes"];
+    uint32_t order = GetID(attributes["order"]);
+    map<string, string> nodeAttributes;
+    JsonGetAttributes(attributes, nodeAttributes);
+    bool definition = false;
+    if (nodeAttributes["definition"] == "1") definition = true;
+    auto location = builder.getUnknownLoc();
+    return builder.create<CGnodeOp>(location, id, nodeAttributes["symbolName"], definition, order);
+}
+
 void PluginJson::FuncOpJsonDeSerialize(
     const string& data, vector<mlir::Plugin::FunctionOp>& funcOpData)
 {

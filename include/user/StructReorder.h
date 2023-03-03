@@ -23,6 +23,7 @@
 
 #include "PluginServer/PluginOptBase.h"
 
+
 namespace PluginOpt {
 class StructReorderPass : public PluginOptBase {
 public:
