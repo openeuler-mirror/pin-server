@@ -81,4 +81,18 @@ int StructReorderPass::DoOptimize(uint64_t *fun)
     ProcessStructReorder(fun);
     return 0;
 }
+
+bool StructReorderPass::Gate()
+{
+    PluginServerAPI pluginAPI;
+    if (pluginAPI.IsLtoOptimize()) {
+        fprintf(stderr, "\n The LTO flag is open \n");
+        return true;
+    }
+    if (pluginAPI.IsWholeProgram()) {
+        fprintf(stderr, "\n The whole program flag is open \n");
+        return true;
+    }
+    return false;
+}
 }

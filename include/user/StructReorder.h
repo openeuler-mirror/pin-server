@@ -30,10 +30,8 @@ public:
     StructReorderPass() : PluginOptBase(HANDLE_MANAGER_SETUP)
     {
     }
-    bool Gate()
-    {
-        return true;
-    }
+    bool Gate();
+
     int DoOptimize()
     {
         uint64_t *fun = (uint64_t *)GetFuncAddr();
