@@ -183,6 +183,12 @@ public:
         return pluginCom.GetBuildDeclResult();
     }
 
+    PluginIR::PluginTypeBase GetDeclTypeResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetDeclTypeResult();
+    }
+
     vector<mlir::Plugin::LocalDeclOp> GetLocalDeclResult(const string& funName, const string& params)
     {
         RemoteCallClientWithAPI(funName, params);

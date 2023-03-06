@@ -613,6 +613,15 @@ void PluginServerAPI::LayoutType(uint64_t declId)
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
+PluginIR::PluginTypeBase PluginServerAPI::GetDeclType(uint64_t declId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["declId"] = std::to_string(declId);
+    string params = root.toStyledString();
+    return PluginServer::GetInstance()->GetDeclTypeResult(funName, params);
+}
+
 void PluginServerAPI::LayoutDecl(uint64_t declId)
 {
     Json::Value root;

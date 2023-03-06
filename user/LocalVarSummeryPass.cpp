@@ -51,10 +51,6 @@ static void LocalVarSummery(void)
                 std::string tyName = stTy.getName();
                 printf("    struct name is : %s\n", tyName.c_str());
                 
-                llvm::ArrayRef<mlir::Type> paramsType = stTy.getBody();
-                for (auto tty :paramsType) {
-                    printf("\n    struct arg id : %d\n", tty.dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
-                }
                 llvm::ArrayRef<std::string> paramsNames = stTy.getElementNames();
                 for (auto name :paramsNames) {
                     std::string pName = name;

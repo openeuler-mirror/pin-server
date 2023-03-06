@@ -65,6 +65,7 @@ public:
     void SetTypeFields(uint64_t declId, uint64_t fieldId) override;
     void LayoutType(uint64_t declId) override;
     void LayoutDecl(uint64_t declId) override;
+    PluginIR::PluginTypeBase GetDeclType(uint64_t declId) override;
 
     vector<LocalDeclOp> GetDecls(uint64_t) override;
     PhiOp GetPhiOp(uint64_t) override;

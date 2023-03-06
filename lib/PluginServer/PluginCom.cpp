@@ -91,6 +91,12 @@ mlir::Plugin::DeclBaseOp PluginCom::GetBuildDeclResult(void)
     return retOp;
 }
 
+PluginIR::PluginTypeBase PluginCom::GetDeclTypeResult(void)
+{
+    PluginIR::PluginTypeBase retType = pTypeResult;
+    return retType;
+}
+
 vector<mlir::Plugin::LoopOp> PluginCom::LoopOpsResult(void)
 {
     vector<mlir::Plugin::LoopOp> retLoops = loops;
@@ -161,6 +167,14 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
         this->cgnode = json.CGnodeOpJsonDeSerialize(data);
     } else if (key == "LocalDeclOpResult") {
         json.LocalDeclOpJsonDeSerialize(data, this->decls);
+    } else if (key == "FuncDeclsOpResult") {
+        json.FuncDeclsOpJsonDeSerialize(data, this->declOps);
+    } else if (key == "MakeNodeResult") {
+        Json::Value node;
+        Json::Reader reader;
+        reader.parse(data, node);
+        mlir::Value v = json.ValueJsonDeSerialize(node);
+        this->fielddeclOp = llvm::dyn_cast<mlir::Plugin::FieldDeclOp>(v.getDefiningOp());
     } else if (key == "LoopOpResult") {
         this->loop = json.LoopOpJsonDeSerialize (data);
     } else if (key == "LoopOpsResult") {
@@ -180,9 +194,6 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
     } else if (key == "DeclOpResult") {
         mlir::Value decl = json.DeclBaseOpJsonDeSerialize(data);
         this->declOp = llvm::dyn_cast<mlir::Plugin::DeclBaseOp>(decl.getDefiningOp());
-        printf("server 164 declop ----------------\n");
-        printf("server 164 declop code %d\n", this->declOp.defCodeAttr().getInt());
-        printf("server 165 declop ----------------\n");
     } else if (key == "GetFieldsOpResult") {
         json.FieldOpsJsonDeSerialize(data, this->fieldsOps);
     } else if (key == "OpsResult") {
@@ -192,6 +203,8 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
         Json::Reader reader;
         reader.parse(data, node);
         this->valueResult = json.ValueJsonDeSerialize(node);
+    } else if (key == "PluginTypeResult") {
+        this->pTypeResult = json.TypeJsonDeSerialize(data);
     } else if (key == "GetPhiOps") {
         json.GetPhiOpsJsonDeSerialize(data, this->opData);
     } else if (key == "IntegerResult") {

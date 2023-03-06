@@ -333,7 +333,6 @@ CGnodeOp PluginJson::CGnodeOpJsonDeSerialize(const string& data)
     Json::Value root;
     Json::Reader reader;
     reader.parse(data, root);
-    fprintf(stderr, "dgy server cgnode json %s\n", root.toStyledString().c_str());
 
     mlir::OpBuilder builder(PluginServer::GetInstance()->GetContext());
     uint64_t id = GetID(root["id"]);

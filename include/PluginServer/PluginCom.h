@@ -60,6 +60,7 @@ public:
     vector<mlir::Plugin::DeclBaseOp> GetFuncDeclsResult(void);
     llvm::SmallVector<mlir::Plugin::FieldDeclOp> GetFieldsResult(void);
     mlir::Plugin::DeclBaseOp GetBuildDeclResult(void);
+    PluginIR::PluginTypeBase GetDeclTypeResult(void);
 
     mlir::Plugin::FieldDeclOp GetMakeNodeResult(void);
 
@@ -93,6 +94,7 @@ private:
     uint64_t idResult;
     vector<uint64_t> idsResult;
     mlir::Value valueResult;
+    PluginIR::PluginTypeBase pTypeResult;
     mlir::Plugin::DeclBaseOp declOp;
     mlir::Plugin::FieldDeclOp fielddeclOp;
     llvm::SmallVector<mlir::Plugin::FieldDeclOp> fieldsOps;

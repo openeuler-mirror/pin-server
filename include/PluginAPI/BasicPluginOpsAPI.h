@@ -72,6 +72,7 @@ public:
     virtual void SetTypeFields(uint64_t declId, uint64_t fieldId) = 0;
     virtual void LayoutType(uint64_t declId) = 0;
     virtual void LayoutDecl(uint64_t declId) = 0;
+    virtual PluginIR::PluginTypeBase GetDeclType(uint64_t declId) = 0;
 
     virtual vector<LocalDeclOp> GetDecls(uint64_t) = 0;
     virtual LoopOp AllocateNewLoop(uint64_t) = 0;
