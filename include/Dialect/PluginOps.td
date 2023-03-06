@@ -375,6 +375,19 @@ def FieldDeclOp : FieldDecl<"field"> {
     Optional<uint64_t> GetChain() { return chain(); }
     Value GetFieldOffset() { return fieldOffset(); }
     Value GetFieldBitOffset() { return fieldBitOffset(); }
+
+    void SetName(FieldDeclOp);
+    void SetType(FieldDeclOp);
+    void SetDeclAlign(FieldDeclOp);
+    void SetSourceLocation(FieldDeclOp); 
+    void SetUserAlign(FieldDeclOp);
+    void SetAddressable(FieldDeclOp);
+    void SetNonAddressablep(FieldDeclOp);
+    void SetVolatile(FieldDeclOp);
+    void SetDeclContext(uint64_t);
+    void SetDeclChain(FieldDeclOp);
+
+    unsigned GetTypeSize();
   }];
 }
 

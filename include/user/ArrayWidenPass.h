@@ -35,10 +35,10 @@ public:
     }
     int DoOptimize()
     {
-        uint64_t *fun = (uint64_t *)GetFuncAddr();
+        uint64_t fun = (uint64_t)GetFuncAddr();
         return DoOptimize(fun);
     }
-    int DoOptimize(uint64_t *fun);
+    int DoOptimize(uint64_t fun);
 };
 }
 

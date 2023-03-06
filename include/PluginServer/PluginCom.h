@@ -57,6 +57,12 @@ public:
     string GetStringDataResult(void);
     vector<mlir::Plugin::FunctionOp> GetFunctionOpResult(void);
     vector<mlir::Plugin::LocalDeclOp> GetLocalDeclResult(void);
+    vector<mlir::Plugin::DeclBaseOp> GetFuncDeclsResult(void);
+    llvm::SmallVector<mlir::Plugin::FieldDeclOp> GetFieldsResult(void);
+    mlir::Plugin::DeclBaseOp GetBuildDeclResult(void);
+
+    mlir::Plugin::FieldDeclOp GetMakeNodeResult(void);
+
     mlir::Plugin::CGnodeOp GetCGnodeOpResult(void);
     mlir::Plugin::LoopOp LoopOpResult(void);
     vector<mlir::Plugin::LoopOp> LoopOpsResult(void);
@@ -77,6 +83,7 @@ private:
     mlir::Plugin::CGnodeOp cgnode;
     vector<mlir::Plugin::FunctionOp> funcOpData;
     vector<mlir::Plugin::LocalDeclOp> decls;
+    vector<mlir::Plugin::DeclBaseOp> declOps;
     vector<mlir::Plugin::LoopOp> loops;
     mlir::Plugin::LoopOp loop;
     vector<std::pair<mlir::Block*, mlir::Block*> > edges;
@@ -86,6 +93,9 @@ private:
     uint64_t idResult;
     vector<uint64_t> idsResult;
     mlir::Value valueResult;
+    mlir::Plugin::DeclBaseOp declOp;
+    mlir::Plugin::FieldDeclOp fielddeclOp;
+    llvm::SmallVector<mlir::Plugin::FieldDeclOp> fieldsOps;
 };
 } // namespace PinCom
 
