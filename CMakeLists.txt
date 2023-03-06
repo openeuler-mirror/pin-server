@@ -91,6 +91,7 @@ add_library(pin_user SHARED
 target_link_libraries(pin_user
   MLIRServerAPI
 )
+add_custom_command(TARGET pin_user COMMAND strip libpin_user.so)
 add_custom_command(TARGET pin_user COMMAND sha256sum libpin_user.so > libpin_user.sha256)
 
 # pin_server
