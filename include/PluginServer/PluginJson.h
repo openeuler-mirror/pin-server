@@ -33,9 +33,15 @@ using std::vector;
 namespace PinJson {
 class PluginJson {
 public:
+    // CGnodeOp
+    mlir::Plugin::CGnodeOp CGnodeOpJsonDeSerialize(const string& data);
+
     void FuncOpJsonDeSerialize(const string&, vector<mlir::Plugin::FunctionOp>&);
     void LocalDeclOpJsonDeSerialize(const string&,
                                     vector<mlir::Plugin::LocalDeclOp>&);
+    void FuncDeclsOpJsonDeSerialize(const string&,
+                                    vector<mlir::Plugin::DeclBaseOp>&);
+    void FieldOpsJsonDeSerialize(const string&, llvm::SmallVector<mlir::Plugin::FieldDeclOp>&);
     void LoopOpsJsonDeSerialize(const string&, vector<mlir::Plugin::LoopOp>&);
     void EdgesJsonDeSerialize(const string&,
                               vector<std::pair<mlir::Block*, mlir::Block*>>&);

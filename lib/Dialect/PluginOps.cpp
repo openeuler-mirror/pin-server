@@ -87,6 +87,36 @@ static uint64_t getBlockAddress(mlir::Block* b)
     }
 }
 
+// ===----------------------------------------------------------------------===//
+// CGnodeOp
+
+void CGnodeOp::build(OpBuilder &builder, OperationState &state,
+                     uint64_t id, StringRef symbolName, bool definition,
+                     uint32_t order)
+{
+    state.addRegion();
+    state.addAttribute("id", builder.getI64IntegerAttr(id));
+    state.addAttribute("symbolName", builder.getStringAttr(symbolName));
+    state.addAttribute("definition", builder.getBoolAttr(definition));
+    state.addAttribute("order", builder.getI32IntegerAttr(order));
+}
+
+// Value CGnodeOp::GetDecl()
+// {
+//     PluginAPI::PluginServerAPI pluginAPI;
+//     uint64_t nodeId = idAttr().getInt();
+//     return pluginAPI.GetDeclFromCGnode(nodeId);
+// }
+
+bool CGnodeOp::IsRealSymbol()
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t nodeId = idAttr().getInt();
+    return pluginAPI.IsRealSymbolOfCGnode(nodeId);
+}
+
+// ===----------------------------------------------------------------------===//
+
 void FunctionOp::build(OpBuilder &builder, OperationState &state,
                        uint64_t id, StringRef funcName, bool declaredInline, Type type)
 {
@@ -396,6 +426,82 @@ void FieldDeclOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
     state.addTypes(retType);
 }
 
+void FieldDeclOp::SetName(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    unsigned idx = 1;
+    this->setOperand(idx ,field.GetName());
+    return pluginAPI.SetDeclName(this->idAttr().getInt(), fieldId);
+}
+
+void FieldDeclOp::SetType(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetDeclType(this->idAttr().getInt(), fieldId);
+}
+
+void FieldDeclOp::SetDeclAlign(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetDeclAlign(this->idAttr().getInt(), fieldId);
+}
+
+void FieldDeclOp::SetUserAlign(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetUserAlign(this->idAttr().getInt(), fieldId);
+}
+
+unsigned FieldDeclOp::GetTypeSize()
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    return pluginAPI.GetDeclTypeSize(this->idAttr().getInt());
+}
+
+void FieldDeclOp::SetSourceLocation(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetSourceLocation(this->idAttr().getInt(), fieldId);
+}
+
+void FieldDeclOp::SetAddressable(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetAddressable(this->idAttr().getInt(), fieldId);
+}
+
+void FieldDeclOp::SetNonAddressablep(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetNonAddressablep(this->idAttr().getInt(), fieldId);
+}
+
+void FieldDeclOp::SetVolatile(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetVolatile(this->idAttr().getInt(), fieldId);
+}
+
+void FieldDeclOp::SetDeclContext(uint64_t declId)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    return pluginAPI.SetDeclContext(this->idAttr().getInt(), declId);
+}
+
+void FieldDeclOp::SetDeclChain(FieldDeclOp field)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    uint64_t fieldId = field.idAttr().getInt();
+    return pluginAPI.SetDeclChain(this->idAttr().getInt(), fieldId);
+}
 //===----------------------------------------------------------------------===//
 // AddressOp
 

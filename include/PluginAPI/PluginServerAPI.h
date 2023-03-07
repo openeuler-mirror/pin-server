@@ -36,8 +36,37 @@ public:
     PluginServerAPI () = default;
     ~PluginServerAPI () = default;
 
+    // CGnodeOp
+    vector<CGnodeOp> GetAllCGnode() override;
+    CGnodeOp GetCGnodeOpById(uint64_t) override;
+    // mlir::Value GetDeclFromCGnode(uint64_t);
+    bool IsRealSymbolOfCGnode(uint64_t);
+
     vector<FunctionOp> GetAllFunc() override;
     FunctionOp GetFunctionOpById(uint64_t);
+    vector<mlir::Plugin::DeclBaseOp> GetFuncDecls(uint64_t) override;
+    llvm::SmallVector<mlir::Plugin::FieldDeclOp> GetFields(uint64_t) override;
+    mlir::Plugin::DeclBaseOp BuildDecl(IDefineCode, llvm::StringRef, PluginIR::PluginTypeBase) override;
+
+    mlir::Plugin::FieldDeclOp MakeNode(IDefineCode) override;
+    void SetDeclName(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetDeclType(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetDeclAlign(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetUserAlign(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetSourceLocation(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetAddressable(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetNonAddressablep(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetVolatile(uint64_t newfieldId, uint64_t fieldId) override;
+    void SetDeclContext(uint64_t newfieldId, uint64_t declId) override;
+    void SetDeclChain(uint64_t newfieldId, uint64_t fieldId) override;
+
+    unsigned GetDeclTypeSize(uint64_t declId) override;
+
+    void SetTypeFields(uint64_t declId, uint64_t fieldId) override;
+    void LayoutType(uint64_t declId) override;
+    void LayoutDecl(uint64_t declId) override;
+    PluginIR::PluginTypeBase GetDeclType(uint64_t declId) override;
+
     vector<LocalDeclOp> GetDecls(uint64_t) override;
     PhiOp GetPhiOp(uint64_t) override;
     CallOp GetCallOp(uint64_t) override;

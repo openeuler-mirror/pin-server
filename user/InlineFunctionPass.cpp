@@ -33,7 +33,7 @@ static void UserOptimizeFunc(void)
         if (allFunction[i].declaredInlineAttr().getValue())
             count++;
     }
-    printf("declaredInline have %d functions were declared.\n", count);
+    fprintf(stderr, "declaredInline have %d functions were declared.\n", count);
 }
 
 int InlineFunctionPass::DoOptimize()

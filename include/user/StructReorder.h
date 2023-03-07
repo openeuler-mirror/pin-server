@@ -15,30 +15,29 @@
    Author: Mingchuan Wu and Yancheng Li
    Create: 2022-08-18
    Description:
-    This file contains the declaration of the ArrayWidenPass class.
+    This file contains the declaration of the StructReorderPass class.
 */
 
-#ifndef ARRAYWIDEN_PASS_H
-#define ARRAYWIDEN_PASS_H
+#ifndef STRUCTREORDER_PASS_H
+#define STRUCTREORDER_PASS_H
 
 #include "PluginServer/PluginOptBase.h"
 
+
 namespace PluginOpt {
-class ArrayWidenPass : public PluginOptBase {
+class StructReorderPass : public PluginOptBase {
 public:
-    ArrayWidenPass() : PluginOptBase(HANDLE_MANAGER_SETUP)
+    StructReorderPass() : PluginOptBase(HANDLE_MANAGER_SETUP)
     {
     }
-    bool Gate()
-    {
-        return true;
-    }
+    bool Gate();
+
     int DoOptimize()
     {
-        uint64_t fun = (uint64_t)GetFuncAddr();
+        uint64_t *fun = (uint64_t *)GetFuncAddr();
         return DoOptimize(fun);
     }
-    int DoOptimize(uint64_t fun);
+    int DoOptimize(uint64_t *fun);
 };
 }
 

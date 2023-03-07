@@ -22,6 +22,34 @@ include "PluginDialect.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/CallInterfaces.td"
 
+def CGnodeOp : Plugin_Op<"callgraphnode", [NoSideEffect]> {
+  let summary = "callgraph node operation";
+  let description = [{
+    TODO.
+  }];
+
+  let arguments = (ins UI64Attr:$id,
+                       StrAttr:$symbolName,
+                       OptionalAttr<BoolAttr>:$definition,
+                       UI32Attr:$order);
+  let regions = (region AnyRegion:$bodyRegion);
+
+  // Add custom build methods for the operation. These method populates
+  // the `state` that MLIR uses to create operations, i.e. these are used when
+  // using `builder.create<Op>(...)`.
+  let builders = [
+    OpBuilderDAG<(ins "uint64_t":$id,
+                      "StringRef":$symbolName,
+                      "bool":$definition,
+                      "uint32_t":$order)>
+  ];
+
+  let extraClassDeclaration = [{
+    // Value GetDecl();
+    bool IsRealSymbol();
+  }];
+}
+
 def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
   let summary = "function with a region";
   let description = [{
@@ -346,6 +374,19 @@ def FieldDeclOp : FieldDecl<"field"> {
     Optional<uint64_t> GetChain() { return chain(); }
     Value GetFieldOffset() { return fieldOffset(); }
     Value GetFieldBitOffset() { return fieldBitOffset(); }
+
+    void SetName(FieldDeclOp);
+    void SetType(FieldDeclOp);
+    void SetDeclAlign(FieldDeclOp);
+    void SetSourceLocation(FieldDeclOp); 
+    void SetUserAlign(FieldDeclOp);
+    void SetAddressable(FieldDeclOp);
+    void SetNonAddressablep(FieldDeclOp);
+    void SetVolatile(FieldDeclOp);
+    void SetDeclContext(uint64_t);
+    void SetDeclChain(FieldDeclOp);
+
+    unsigned GetTypeSize();
   }];
 }
 

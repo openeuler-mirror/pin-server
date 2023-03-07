@@ -158,10 +158,46 @@ public:
         RemoteCallClientWithAPI(funName, params);
         return pluginCom.GetFunctionOpResult();
     }
+
+    vector<mlir::Plugin::DeclBaseOp> GetFuncDeclsResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetFuncDeclsResult();
+    }
+
+    mlir::Plugin::FieldDeclOp GetMakeNodeResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetMakeNodeResult();
+    }
+
+    llvm::SmallVector<mlir::Plugin::FieldDeclOp> GetFieldsResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetFieldsResult();
+    }
+
+    mlir::Plugin::DeclBaseOp GetBuildDeclResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetBuildDeclResult();
+    }
+
+    PluginIR::PluginTypeBase GetDeclTypeResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetDeclTypeResult();
+    }
+
     vector<mlir::Plugin::LocalDeclOp> GetLocalDeclResult(const string& funName, const string& params)
     {
         RemoteCallClientWithAPI(funName, params);
         return pluginCom.GetLocalDeclResult();
+    }
+    mlir::Plugin::CGnodeOp GetCGnodeOpResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetCGnodeOpResult();
     }
     mlir::Plugin::LoopOp LoopOpResult(const string& funName, const string& params)
     {

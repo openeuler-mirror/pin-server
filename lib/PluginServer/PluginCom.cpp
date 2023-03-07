@@ -59,6 +59,44 @@ vector<mlir::Plugin::LocalDeclOp> PluginCom::GetLocalDeclResult(void)
     return retOps;
 }
 
+mlir::Plugin::CGnodeOp PluginCom::GetCGnodeOpResult(void)
+{
+    mlir::Plugin::CGnodeOp retop = cgnode;
+    return retop;
+}
+
+vector<mlir::Plugin::DeclBaseOp> PluginCom::GetFuncDeclsResult(void)
+{
+    vector<mlir::Plugin::DeclBaseOp> retOps = declOps;
+    declOps.clear();
+    return retOps;
+}
+
+mlir::Plugin::FieldDeclOp PluginCom::GetMakeNodeResult(void)
+{
+    mlir::Plugin::FieldDeclOp retOp = fielddeclOp;
+    return retOp;
+}
+
+llvm::SmallVector<mlir::Plugin::FieldDeclOp> PluginCom::GetFieldsResult(void)
+{
+    llvm::SmallVector<mlir::Plugin::FieldDeclOp> retOps = fieldsOps;
+    fieldsOps.clear();
+    return retOps;
+}
+
+mlir::Plugin::DeclBaseOp PluginCom::GetBuildDeclResult(void)
+{
+    mlir::Plugin::DeclBaseOp retOp = declOp;
+    return retOp;
+}
+
+PluginIR::PluginTypeBase PluginCom::GetDeclTypeResult(void)
+{
+    PluginIR::PluginTypeBase retType = pTypeResult;
+    return retType;
+}
+
 vector<mlir::Plugin::LoopOp> PluginCom::LoopOpsResult(void)
 {
     vector<mlir::Plugin::LoopOp> retLoops = loops;
@@ -125,8 +163,18 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
 {
     if (key == "FuncOpResult") {
         json.FuncOpJsonDeSerialize(data, this->funcOpData);
+    } else if (key == "CGnodeOpResult") {
+        this->cgnode = json.CGnodeOpJsonDeSerialize(data);
     } else if (key == "LocalDeclOpResult") {
         json.LocalDeclOpJsonDeSerialize(data, this->decls);
+    } else if (key == "FuncDeclsOpResult") {
+        json.FuncDeclsOpJsonDeSerialize(data, this->declOps);
+    } else if (key == "MakeNodeResult") {
+        Json::Value node;
+        Json::Reader reader;
+        reader.parse(data, node);
+        mlir::Value v = json.ValueJsonDeSerialize(node);
+        this->fielddeclOp = llvm::dyn_cast<mlir::Plugin::FieldDeclOp>(v.getDefiningOp());
     } else if (key == "LoopOpResult") {
         this->loop = json.LoopOpJsonDeSerialize (data);
     } else if (key == "LoopOpsResult") {
@@ -143,6 +191,11 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
         json.IdsJsonDeSerialize(data, this->idsResult);
     } else if (key == "IdResult") {
         this->idResult = atol(data.c_str());
+    } else if (key == "DeclOpResult") {
+        mlir::Value decl = json.DeclBaseOpJsonDeSerialize(data);
+        this->declOp = llvm::dyn_cast<mlir::Plugin::DeclBaseOp>(decl.getDefiningOp());
+    } else if (key == "GetFieldsOpResult") {
+        json.FieldOpsJsonDeSerialize(data, this->fieldsOps);
     } else if (key == "OpsResult") {
         json.OpJsonDeSerialize(data.c_str(), this->opData);
     } else if (key == "ValueResult") {
@@ -150,6 +203,8 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
         Json::Reader reader;
         reader.parse(data, node);
         this->valueResult = json.ValueJsonDeSerialize(node);
+    } else if (key == "PluginTypeResult") {
+        this->pTypeResult = json.TypeJsonDeSerialize(data);
     } else if (key == "GetPhiOps") {
         json.GetPhiOpsJsonDeSerialize(data, this->opData);
     } else if (key == "IntegerResult") {

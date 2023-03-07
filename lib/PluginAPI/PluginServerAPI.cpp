@@ -171,6 +171,42 @@ mlir::Value PluginServerAPI::CreateSSAOp(mlir::Type t)
     return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
+// CGnodeOp ===============
+
+vector<CGnodeOp> PluginServerAPI::GetAllCGnode()
+{
+    Json::Value root;
+    string funName = "GetCGnodeIDs";
+    string params = root.toStyledString();
+    vector<CGnodeOp> res;
+    vector<uint64_t> ids = PluginServer::GetInstance()->GetIdsResult(funName, params);
+    for (auto id : ids) {
+        res.push_back(GetCGnodeOpById(id));
+    }
+    return res;
+}
+
+CGnodeOp PluginServerAPI::GetCGnodeOpById(uint64_t id)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();
+    CGnodeOp cgnodeop = PluginServer::GetInstance()->GetCGnodeOpResult(funName, params);
+    return cgnodeop;
+}
+
+bool PluginServerAPI::IsRealSymbolOfCGnode(uint64_t id)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();  
+    return   PluginServer::GetInstance()->GetBoolResult(funName, params);
+}
+
+// ========================
+
 vector<FunctionOp> PluginServerAPI::GetAllFunc()
 {
     Json::Value root;
@@ -404,6 +440,195 @@ vector<LocalDeclOp> PluginServerAPI::GetDecls(uint64_t funcID)
     string params = root.toStyledString();
 
     return PluginServer::GetInstance()->GetLocalDeclResult(funName, params);
+}
+
+vector<mlir::Plugin::DeclBaseOp> PluginServerAPI::GetFuncDecls(uint64_t funcID)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["funcId"] = std::to_string(funcID);
+    string params = root.toStyledString();
+
+    return PluginServer::GetInstance()->GetFuncDeclsResult(funName, params);
+}
+
+mlir::Plugin::FieldDeclOp PluginServerAPI::MakeNode(IDefineCode code)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["defCode"] = std::to_string(static_cast<int32_t>(code));
+    string params = root.toStyledString();
+
+    return PluginServer::GetInstance()->GetMakeNodeResult(funName, params);
+}
+
+llvm::SmallVector<mlir::Plugin::FieldDeclOp> PluginServerAPI::GetFields(uint64_t declID)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["declId"] = std::to_string(declID);
+    string params = root.toStyledString();
+
+    return PluginServer::GetInstance()->GetFieldsResult(funName, params);
+}
+
+void PluginServerAPI::SetDeclName(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetDeclType(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetDeclAlign(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetUserAlign(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+unsigned PluginServerAPI::GetDeclTypeSize(uint64_t declId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["declId"] = std::to_string(declId);
+    string params = root.toStyledString();
+    return PluginServer::GetInstance()->GetIntegerDataResult(funName, params);
+}
+
+void PluginServerAPI::SetSourceLocation(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetAddressable(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetNonAddressablep(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetVolatile(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetDeclContext(uint64_t newfieldId, uint64_t declId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["declId"] = std::to_string(declId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::SetDeclChain(uint64_t newfieldId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["newfieldId"] = std::to_string(newfieldId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+mlir::Plugin::DeclBaseOp PluginServerAPI::BuildDecl(IDefineCode code, llvm::StringRef name, PluginIR::PluginTypeBase type)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["defCode"] = std::to_string(static_cast<int32_t>(code));
+    root["name"] = name.str();
+    PinJson::PluginJson json;
+    root["type"] = json.TypeJsonSerialize(type);
+    string params = root.toStyledString();
+
+    return PluginServer::GetInstance()->GetBuildDeclResult(funName, params);
+}
+
+void PluginServerAPI::SetTypeFields(uint64_t declId, uint64_t fieldId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["declId"] = std::to_string(declId);
+    root["fieldId"] = std::to_string(fieldId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::LayoutType(uint64_t declId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["declId"] = std::to_string(declId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+PluginIR::PluginTypeBase PluginServerAPI::GetDeclType(uint64_t declId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["declId"] = std::to_string(declId);
+    string params = root.toStyledString();
+    return PluginServer::GetInstance()->GetDeclTypeResult(funName, params);
+}
+
+void PluginServerAPI::LayoutDecl(uint64_t declId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["declId"] = std::to_string(declId);
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
 }
 
 mlir::Block* PluginServerAPI::BlockResult(const string& funName, const string& params)

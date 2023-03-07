@@ -45,8 +45,35 @@ public:
     virtual int GetDeclSourceLine(int64_t) = 0;
     virtual int GetDeclSourceColumn(int64_t) = 0;
 
+    // CGnodeOp
+    virtual vector<CGnodeOp> GetAllCGnode() = 0;
+    virtual CGnodeOp GetCGnodeOpById(uint64_t) = 0;
+
     virtual vector<FunctionOp> GetAllFunc() = 0;
     virtual FunctionOp GetFunctionOpById(uint64_t) = 0;
+    virtual vector<mlir::Plugin::DeclBaseOp> GetFuncDecls(uint64_t) = 0;
+    virtual llvm::SmallVector<mlir::Plugin::FieldDeclOp> GetFields(uint64_t) = 0;
+    virtual mlir::Plugin::DeclBaseOp BuildDecl(IDefineCode, llvm::StringRef, PluginIR::PluginTypeBase) = 0;
+
+    virtual mlir::Plugin::FieldDeclOp MakeNode(IDefineCode) = 0;
+    virtual void SetDeclName(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetDeclType(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetDeclAlign(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetUserAlign(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetSourceLocation(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetAddressable(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetNonAddressablep(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetVolatile(uint64_t newfieldId, uint64_t fieldId) = 0;
+    virtual void SetDeclContext(uint64_t newfieldId, uint64_t declId) = 0;
+    virtual void SetDeclChain(uint64_t newfieldId, uint64_t fieldId) = 0;
+
+    virtual unsigned GetDeclTypeSize(uint64_t declId) = 0;
+
+    virtual void SetTypeFields(uint64_t declId, uint64_t fieldId) = 0;
+    virtual void LayoutType(uint64_t declId) = 0;
+    virtual void LayoutDecl(uint64_t declId) = 0;
+    virtual PluginIR::PluginTypeBase GetDeclType(uint64_t declId) = 0;
+
     virtual vector<LocalDeclOp> GetDecls(uint64_t) = 0;
     virtual LoopOp AllocateNewLoop(uint64_t) = 0;
     virtual vector<LoopOp> GetLoopsFromFunc(uint64_t) = 0;

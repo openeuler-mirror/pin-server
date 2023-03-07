@@ -328,6 +328,24 @@ void PluginJson::StringDeSerialize(const string& data, string& result)
     result = root["stringData"].asString();
 }
 
+CGnodeOp PluginJson::CGnodeOpJsonDeSerialize(const string& data)
+{
+    Json::Value root;
+    Json::Reader reader;
+    reader.parse(data, root);
+
+    mlir::OpBuilder builder(PluginServer::GetInstance()->GetContext());
+    uint64_t id = GetID(root["id"]);
+    Json::Value attributes = root["attributes"];
+    uint32_t order = GetID(attributes["order"]);
+    map<string, string> nodeAttributes;
+    JsonGetAttributes(attributes, nodeAttributes);
+    bool definition = false;
+    if (nodeAttributes["definition"] == "1") definition = true;
+    auto location = builder.getUnknownLoc();
+    return builder.create<CGnodeOp>(location, id, nodeAttributes["symbolName"], definition, order);
+}
+
 void PluginJson::FuncOpJsonDeSerialize(
     const string& data, vector<mlir::Plugin::FunctionOp>& funcOpData)
 {
@@ -356,7 +374,7 @@ void PluginJson::FuncOpJsonDeSerialize(
         mlir::Region &bodyRegion = fOp.bodyRegion();
         Json::Value regionJson = node["region"];
         Json::Value::Members bbMember = regionJson.getMemberNames();
-        // We must create Blocks before process ops
+        // We must create Blocks before process opsG
         for (size_t bbIdx = 0; bbIdx < bbMember.size(); bbIdx++) {
             string blockKey = "block" + std::to_string(bbIdx);
             Json::Value blockJson = regionJson[blockKey];
@@ -480,6 +498,42 @@ void PluginJson::LocalDeclOpJsonDeSerialize(
         LocalDeclOp op = opBuilder.create<LocalDeclOp>(
                 location, id, symName, typeID, typeWidth);
         decls.push_back(op);
+    }
+}
+
+void PluginJson::FuncDeclsOpJsonDeSerialize(const string& data,
+                                    vector<mlir::Plugin::DeclBaseOp>& declOps)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+    Json::Value::Members operation = root.getMemberNames();
+    mlir::OpBuilder opBuilder(PluginServer::GetInstance()->GetContext());
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = std::to_string(iter);
+        node = root[operationKey];
+        mlir::Value opValue = DeclBaseOpJsonDeSerialize(node.toStyledString()); //ValueJsonDeSerialize(node);
+        DeclBaseOp d = llvm::dyn_cast<DeclBaseOp>(opValue.getDefiningOp());
+        declOps.push_back(d);
+    }
+}
+
+void PluginJson::FieldOpsJsonDeSerialize(const string& data,
+                                    llvm::SmallVector<mlir::Plugin::FieldDeclOp>& fieldOps)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+    Json::Value::Members operation = root.getMemberNames();
+    mlir::OpBuilder opBuilder(PluginServer::GetInstance()->GetContext());
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = std::to_string(iter);
+        node = root[operationKey];
+        mlir::Value opValue = FieldDeclOpJsonDeSerialize(node.toStyledString()); //ValueJsonDeSerialize(node);
+        FieldDeclOp d = llvm::dyn_cast<FieldDeclOp>(opValue.getDefiningOp());
+        fieldOps.push_back(d);
     }
 }
 
@@ -748,7 +802,7 @@ mlir::Value PluginJson::ListOpDeSerialize(const string& data)
         mlir::Value opValue = ValueJsonDeSerialize(operandJson[std::to_string(opIter).c_str()]);
         ops.push_back(opValue);
     }
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value trrelist = opBuilder->create<ListOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::LIST, readOnly, hasPurpose, ops, retType);
@@ -763,7 +817,7 @@ mlir::Value PluginJson::StrOpJsonDeSerialize(const string& data)
     uint64_t id = GetID(root["id"]);
     mlir::StringRef str(root["str"].asString());
     bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value strop = opBuilder->create<StrOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::StrCST, readOnly, str, retType);
@@ -778,7 +832,7 @@ mlir::Value PluginJson::ArrayOpJsonDeSerialize(const string& data)
     bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
     mlir::Value base = ValueJsonDeSerialize(root["base"]);
     mlir::Value offset = ValueJsonDeSerialize(root["offset"]);
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value arrayref = opBuilder->create<ArrayOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::ArrayRef, readOnly, base, offset, retType);
@@ -801,7 +855,8 @@ mlir::Value PluginJson::DeclBaseOpJsonDeSerialize(const string& data)
     if (root["chain"]) {
         chain = GetID(root["chain"]);
     }
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
+    PluginIR::PluginTypeBase pluginType = retType.dyn_cast<PluginIR::PluginTypeBase>();
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value declOp = opBuilder->create<DeclBaseOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::Decl, readOnly, addressable, used, uid, initial, name, chain, retType);
@@ -823,7 +878,7 @@ mlir::Value PluginJson::FieldDeclOpJsonDeSerialize(const string& data)
     uint64_t chain = GetID(root["chain"]);
     mlir::Value fieldOffset = ValueJsonDeSerialize(root["fieldOffset"]);
     mlir::Value fieldBitOffset = ValueJsonDeSerialize(root["fieldBitOffset"]);
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value fieldOp = opBuilder->create<FieldDeclOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::FieldDecl, readOnly, addressable, used, uid, initial, name, chain,
@@ -839,7 +894,7 @@ mlir::Value PluginJson::AddressOpJsonDeSerialize(const string& data)
     uint64_t id = GetID(root["id"]);
     bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
     mlir::Value operand = ValueJsonDeSerialize(root["operand"]);
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value addrOp = opBuilder->create<AddressOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::AddrExp, readOnly, operand, retType);
@@ -867,7 +922,7 @@ mlir::Value PluginJson::ConstructorOpJsonDeSerialize(const string& data)
         mlir::Value opValue = ValueJsonDeSerialize(valJson[std::to_string(iter).c_str()]);
         val.push_back(opValue);
     }
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value constructorOp = opBuilder->create<ConstructorOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::Constructor, readOnly, len, idx, val, retType);
@@ -889,7 +944,7 @@ mlir::Value PluginJson::VecOpJsonDeSerialize(const string& data)
         mlir::Value opValue = ValueJsonDeSerialize(elementsJson[std::to_string(iter).c_str()]);
         elements.push_back(opValue);
     }
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value vecOp = opBuilder->create<VecOp>(opBuilder->getUnknownLoc(), id,
                             IDefineCode::Vec, readOnly, len, elements, retType);
@@ -918,7 +973,7 @@ mlir::Value PluginJson::BlockOpJsonDeSerialize(const string& data)
     if (root["abstract_origin"]) {
         abstract_origin = ValueJsonDeSerialize(root["abstract_origin"]);
     }
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value blockOp = opBuilder->create<BlockOp>(
                 opBuilder->getUnknownLoc(), id, IDefineCode::BLOCK, readOnly, vars, supercontext, subblocks,
@@ -935,7 +990,7 @@ mlir::Value PluginJson::ComponentOpJsonDeSerialize(const string& data)
     bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
     mlir::Value component = ValueJsonDeSerialize(root["component"]);
     mlir::Value field = ValueJsonDeSerialize(root["field"]);
-    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString().c_str());
+    mlir::Type retType = TypeJsonDeSerialize(root["retType"].toStyledString());
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     mlir::Value componentOp = opBuilder->create<ComponentOp>(
                 opBuilder->getUnknownLoc(), id, IDefineCode::COMPONENT, readOnly, component, field, retType);
