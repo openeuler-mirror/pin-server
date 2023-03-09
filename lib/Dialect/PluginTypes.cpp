@@ -415,7 +415,7 @@ unsigned PluginArrayType::getNumElements()
 
 PluginTypeID PluginVectorType::getPluginTypeID()
 {
-    return PluginTypeID::ArrayTyID;
+    return PluginTypeID::VectorTyID;
 }
 
 bool PluginVectorType::isValidElementType(Type type)
