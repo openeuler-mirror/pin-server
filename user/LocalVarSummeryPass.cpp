@@ -44,6 +44,7 @@ static void LocalVarSummery(void)
         }
         mlir::Plugin::FunctionOp funcOp = allFunction[i];
         printf("func name is :%s\n", funcOp.funcNameAttr().getValue().str().c_str());
+        if (funcOp.validTypeAttr().getValue()) {
         mlir::Type dgyty = funcOp.type();
         if (auto ty = dgyty.dyn_cast<PluginIR::PluginFunctionType>()) {
             if(auto stTy = ty.getReturnType().dyn_cast<PluginIR::PluginStructType>()) {
@@ -68,6 +69,7 @@ static void LocalVarSummery(void)
                 printf("\n    Param index : %ld\n", paramIndex++);
                 printf("\n    Param type id : %d\n", ty.dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
             }
+        }
         }
         for (size_t j = 0; j < decls.size(); j++) {
             auto decl = decls[j];

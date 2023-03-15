@@ -1475,13 +1475,13 @@ static void convertToNewLoop(LoopOp* loop, FunctionOp* funcOp)
     return;
 }
 
-static void ProcessArrayWiden(uint64_t *fun)
+static void ProcessArrayWiden(uint64_t fun)
 {
     std::cout << "Running first pass, awiden\n";
 
     PluginServerAPI pluginAPI;
     
-    FunctionOp funcOp = pluginAPI.GetFunctionOpById((uint64_t)fun);
+    FunctionOp funcOp = pluginAPI.GetFunctionOpById(fun);
     if (funcOp == nullptr) return;
 
     context = funcOp.getOperation()->getContext();
@@ -1498,7 +1498,7 @@ static void ProcessArrayWiden(uint64_t *fun)
     }
 }
 
-int ArrayWidenPass::DoOptimize(uint64_t *fun)
+int ArrayWidenPass::DoOptimize(uint64_t fun)
 {
     ProcessArrayWiden(fun);
     return 0;

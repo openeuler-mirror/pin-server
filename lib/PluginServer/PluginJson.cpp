@@ -58,12 +58,6 @@ Json::Value PluginJson::TypeJsonSerialize (PluginIR::PluginTypeBase type)
         std::string tyName = Ty.getName();
         item["structtype"] = tyName;
         size_t paramIndex = 0;
-        ArrayRef<Type> paramsType = Ty.getBody();
-        for (auto ty :paramsType) {
-            std::string paramStr = "elemType" + std::to_string(paramIndex++);
-            item["structelemType"][paramStr] = TypeJsonSerialize(ty.dyn_cast<PluginIR::PluginTypeBase>());
-        }
-        paramIndex = 0;
         ArrayRef<std::string> paramsNames = Ty.getElementNames();
         for (auto name :paramsNames) {
             std::string paramStr = "elemName" + std::to_string(paramIndex++);
@@ -281,7 +275,6 @@ bool PluginJson::ProcessBlock(mlir::Block* block, mlir::Region& rg, const Json::
         } else if (opCode == AsmOp::getOperationName().str()) {
             AsmOpJsonDeserialize(opJson.toStyledString());
         } else if (opCode == SwitchOp::getOperationName().str()) {
-            printf("switch op deserialize\n");
             SwitchOpJsonDeserialize(opJson.toStyledString());
         } else if (opCode == GotoOp::getOperationName().str()) {
             GotoOpJsonDeSerialize(opJson.toStyledString());
@@ -368,9 +361,17 @@ void PluginJson::FuncOpJsonDeSerialize(
         bool declaredInline = false;
         if (funcAttributes["declaredInline"] == "1") declaredInline = true;
         auto location = opBuilder.getUnknownLoc();
-        PluginIR::PluginTypeBase retType = TypeJsonDeSerialize(node["retType"].toStyledString());          
-        FunctionOp fOp = opBuilder.create<FunctionOp>(
-                location, id, funcAttributes["funcName"], declaredInline, retType);
+        bool validType = false;
+        FunctionOp fOp;
+        if (funcAttributes["validType"] == "1") {
+            validType = true;
+            PluginIR::PluginTypeBase retType = TypeJsonDeSerialize(node["retType"].toStyledString());
+            fOp = opBuilder.create<FunctionOp>(
+                location, id, funcAttributes["funcName"], declaredInline, retType, validType);
+        } else {
+            fOp = opBuilder.create<FunctionOp>(location, id, funcAttributes["funcName"], declaredInline, validType);
+        }
+
         mlir::Region &bodyRegion = fOp.bodyRegion();
         Json::Value regionJson = node["region"];
         Json::Value::Members bbMember = regionJson.getMemberNames();
@@ -445,21 +446,14 @@ PluginIR::PluginTypeBase PluginJson::TypeJsonDeSerialize(const string& data)
         baseType = PluginIR::PluginFunctionType::get(PluginServer::GetInstance()->GetContext(), returnTy, typelist);
     } else if (id == static_cast<uint64_t>(PluginIR::StructTyID)) {
         std::string tyName = type["structtype"].asString();
-        llvm::SmallVector<Type> typelist;
-        Json::Value::Members elemTypeNum = type["structelemType"].getMemberNames();
-        for (size_t paramIndex = 0; paramIndex < elemTypeNum.size(); paramIndex++) {
-            string Key = "elemType" + std::to_string(paramIndex);
-            mlir::Type paramTy = TypeJsonDeSerialize(type["structelemType"][Key].toStyledString());
-            typelist.push_back(paramTy);
-        }
         llvm::SmallVector<std::string> names;
         Json::Value::Members elemNameNum = type["structelemName"].getMemberNames();
-        for (size_t paramIndex = 0; paramIndex < elemTypeNum.size(); paramIndex++) {
+        for (size_t paramIndex = 0; paramIndex < elemNameNum.size(); paramIndex++) {
             std::string Key = "elemName" + std::to_string(paramIndex);
             std::string elemName = type["structelemName"][Key].asString();
             names.push_back(elemName);
         }
-        baseType = PluginIR::PluginStructType::get(PluginServer::GetInstance()->GetContext(), tyName, typelist, names);
+        baseType = PluginIR::PluginStructType::get(PluginServer::GetInstance()->GetContext(), tyName, names);
     }
     else {
         if (PluginTypeId == PluginIR::VoidTyID) {

@@ -59,7 +59,8 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
   let arguments = (ins UI64Attr:$id,
                        StrAttr:$funcName,
                        OptionalAttr<BoolAttr>:$declaredInline,
-                       TypeAttr:$type);
+                       TypeAttr:$type,
+                       OptionalAttr<BoolAttr>:$validType);
   let regions = (region AnyRegion:$bodyRegion);
 
   // Add custom build methods for the operation. These method populates
@@ -69,7 +70,8 @@ def FunctionOp : Plugin_Op<"function", [NoSideEffect]> {
     OpBuilderDAG<(ins "uint64_t":$id,
                       "StringRef":$funcName,
                       "bool":$declaredInline,
-                      "Type":$type)>
+                      "Type":$type, "bool":$validType)>,
+    OpBuilderDAG<(ins "uint64_t":$id, "StringRef":$funcName, "bool":$declaredInline, "bool":$validType)>
   ];
 
   let extraClassDeclaration = [{
