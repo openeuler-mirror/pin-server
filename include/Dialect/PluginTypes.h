@@ -190,11 +190,9 @@ public:
 
     static bool isValidElementType(Type type);
 
-    static PluginStructType get(MLIRContext *context, std::string name, ArrayRef<Type> elements, ArrayRef<std::string> elemNames);
+    static PluginStructType get(MLIRContext *context, std::string name, ArrayRef<std::string> elemNames);
 
     std::string getName();
-
-    ArrayRef<Type> getBody();
 
     ArrayRef<std::string> getElementNames();
 

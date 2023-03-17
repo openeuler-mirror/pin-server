@@ -177,10 +177,10 @@ static bool handle_type(PluginIR::PluginTypeBase type)
     return false;
 }
 
-static void ProcessStructReorder(uint64_t *fun)
+static void ProcessStructReorder(uint64_t fun)
 {
     fprintf(stderr, "Running first pass, structreoder\n");
-
+ 
     PluginServerAPI pluginAPI;
     vector<CGnodeOp> allnodes = pluginAPI.GetAllCGnode();
     fprintf(stderr, "allnodes size is %d\n", allnodes.size());
@@ -222,7 +222,7 @@ static void ProcessStructReorder(uint64_t *fun)
     
 }
 
-int StructReorderPass::DoOptimize(uint64_t *fun)
+int StructReorderPass::DoOptimize(uint64_t fun)
 {
     ProcessStructReorder(fun);
     return 0;
