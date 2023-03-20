@@ -46,7 +46,7 @@ std::map<uint64_t, std::string> opNameMap;
 
 static void PassManagerSetupFunc(void)
 {
-    printf("PassManagerSetupFunc in\n");
+    fprintf(stderr, "PassManagerSetupFunc in\n");
 }
 
 enum EDGE_FLAG {
@@ -878,27 +878,27 @@ static bool checkOriginLoopInfo(LoopOp loop)
 static bool checkRecordLoopForm(LoopOp loop)
 {
     if (!recordOriginLoopExitInfo (loop)) {
-        printf ("\nFailed to record loop exit information.\n");
+        fprintf(stderr, "\nFailed to record loop exit information.\n");
         return false;
     }
 
     if (!recordOriginLoopHeader (loop)) {
-        printf ("\nFailed to record loop header information.\n");
+        fprintf(stderr, "\nFailed to record loop header information.\n");
         return false;
     }
 
     if (!recordOriginLoopLatch (loop)) {
-        printf ("\nFailed to record loop latch information.\n");
+        fprintf(stderr, "\nFailed to record loop latch information.\n");
         return false;
     }
 
     if (!recordOriginLoopBody (loop)) {
-        printf ("\nFailed to record loop body information.\n");
+        fprintf(stderr, "\nFailed to record loop body information.\n");
         return false;
     }
 
     if (!checkOriginLoopInfo (loop)) {
-        printf ("\nFailed to check origin loop information.\n");
+        fprintf(stderr, "\nFailed to check origin loop information.\n");
         return false;
     }
 
@@ -908,22 +908,22 @@ static bool checkRecordLoopForm(LoopOp loop)
 static bool determineLoopForm(LoopOp loop)
 {
     if (loop.innerLoopIdAttr().getInt() != 0 && loop.numBlockAttr().getInt() != 3) {
-        printf ("\nWrong loop form, there is inner loop or redundant bb.\n");
+        fprintf(stderr, "\nWrong loop form, there is inner loop or redundant bb.\n");
         return false;
     }
 
     if (loop.GetSingleExit().first || !loop.GetLatch()) {
-        printf ("\nWrong loop form, only one exit or loop_latch does not exist.\n");
+        fprintf(stderr, "\nWrong loop form, only one exit or loop_latch does not exist.\n");
         return false;
     }
 
     if (!isLoopSingleBackedge(loop)) {
-        printf ("\nWrong loop form, loop back edges are not unique.\n");
+        fprintf(stderr, "\nWrong loop form, loop back edges are not unique.\n");
         return false;
     }
 
     if (!isLoopSinglePreheaderBB(loop)) {
-        printf ("\nWrong loop form, loop preheader bb are not unique.\n");
+        fprintf(stderr, "\nWrong loop form, loop preheader bb are not unique.\n");
         return false;
     }
 
@@ -1488,11 +1488,11 @@ static void ProcessArrayWiden(uint64_t fun)
     mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
     opBuilder = &opBuilder_temp;
     string name = funcOp.funcNameAttr().getValue().str();
-    printf("Now process func : %s \n", name.c_str());
+    fprintf(stderr, "Now process func : %s \n", name.c_str());
     vector<LoopOp> allLoop = funcOp.GetAllLoops();
     for (auto &loop : allLoop) {
         if (determineLoopForm(loop)) {
-            printf("The loop form is success matched, and the loop can be optimized.\n");
+            fprintf(stderr, "The loop form is success matched, and the loop can be optimized.\n");
             convertToNewLoop(&loop, &funcOp);
         }
     }
