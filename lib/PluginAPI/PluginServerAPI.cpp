@@ -27,7 +27,7 @@ using namespace mlir::Plugin;
 static bool CheckAttribute(string &attribute)
 {
     if (attribute == "NULL") {
-        printf("param attribute is NULL,check fail!\n");
+        fprintf(stderr, "param attribute is NULL,check fail!\n");
         return false;
     }
     return true;

@@ -36,38 +36,38 @@ static void LocalVarSummery(void)
     map<string, string> args = PluginServer::GetInstance()->GetArgs();
     for (size_t i = 0; i < allFunction.size(); i++) {
         uint64_t funcID = allFunction[i].idAttr().getValue().getZExtValue();
-        printf("In the %ldth function:\n", i);
+        fprintf(stderr, "In the %ldth function:\n", i);
         vector<mlir::Plugin::LocalDeclOp> decls = pluginAPI.GetDecls(funcID);
         int64_t typeFilter = -1u;
         if (args.find("type_code") != args.end()) {
             typeFilter = (int64_t)pluginAPI.GetTypeCodeFromString(args["type_code"]);
         }
         mlir::Plugin::FunctionOp funcOp = allFunction[i];
-        printf("func name is :%s\n", funcOp.funcNameAttr().getValue().str().c_str());
+        fprintf(stderr, "func name is :%s\n", funcOp.funcNameAttr().getValue().str().c_str());
         if (funcOp.validTypeAttr().getValue()) {
         mlir::Type dgyty = funcOp.type();
         if (auto ty = dgyty.dyn_cast<PluginIR::PluginFunctionType>()) {
             if(auto stTy = ty.getReturnType().dyn_cast<PluginIR::PluginStructType>()) {
-                printf("func return type is PluginStructType\n");
+                fprintf(stderr, "func return type is PluginStructType\n");
                 std::string tyName = stTy.getName();
-                printf("    struct name is : %s\n", tyName.c_str());
+                fprintf(stderr, "    struct name is : %s\n", tyName.c_str());
                 
                 llvm::ArrayRef<std::string> paramsNames = stTy.getElementNames();
                 for (auto name :paramsNames) {
                     std::string pName = name;
-                    printf("\n    struct argname is : %s\n", pName.c_str());
+                    fprintf(stderr, "\n    struct argname is : %s\n", pName.c_str());
                 }
             }
             if(auto stTy = ty.getReturnType().dyn_cast<PluginIR::PluginVectorType>()) {
-                printf("func return type is PluginVectorType\n");
-                printf("    vector elem num : %d\n", stTy.getNumElements());
-                printf("    vector elem type id : %d\n", stTy.getElementType().dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
+                fprintf(stderr, "func return type is PluginVectorType\n");
+                fprintf(stderr, "    vector elem num : %d\n", stTy.getNumElements());
+                fprintf(stderr, "    vector elem type id : %d\n", stTy.getElementType().dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
             }
             size_t paramIndex = 0;
             llvm::ArrayRef<mlir::Type> paramsType = ty.getParams();
             for (auto ty : ty.getParams()) {
-                printf("\n    Param index : %ld\n", paramIndex++);
-                printf("\n    Param type id : %d\n", ty.dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
+                fprintf(stderr, "\n    Param index : %ld\n", paramIndex++);
+                fprintf(stderr, "\n    Param type id : %d\n", ty.dyn_cast<PluginIR::PluginTypeBase>().getPluginTypeID());
             }
         }
         }
@@ -76,7 +76,7 @@ static void LocalVarSummery(void)
             string name = decl.symNameAttr().getValue().str();
             int64_t declTypeID = decl.typeIDAttr().getValue().getZExtValue();
             if (declTypeID == typeFilter) {
-                printf("\tFind %ldth target type %s\n", j, name.c_str());
+                fprintf(stderr, "\tFind %ldth target type %s\n", j, name.c_str());
             }
         }
     }
