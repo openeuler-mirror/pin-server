@@ -35,6 +35,7 @@ static void LocalVarSummery(void)
     vector<mlir::Plugin::FunctionOp> allFunction = pluginAPI.GetAllFunc();
     map<string, string> args = PluginServer::GetInstance()->GetArgs();
     for (size_t i = 0; i < allFunction.size(); i++) {
+        if (allFunction[i] == nullptr) continue;
         uint64_t funcID = allFunction[i].idAttr().getValue().getZExtValue();
         fprintf(stderr, "In the %ldth function:\n", i);
         vector<mlir::Plugin::LocalDeclOp> decls = pluginAPI.GetDecls(funcID);
@@ -73,6 +74,7 @@ static void LocalVarSummery(void)
         }
         for (size_t j = 0; j < decls.size(); j++) {
             auto decl = decls[j];
+            if (decl == nullptr) continue;
             string name = decl.symNameAttr().getValue().str();
             int64_t declTypeID = decl.typeIDAttr().getValue().getZExtValue();
             if (declTypeID == typeFilter) {
