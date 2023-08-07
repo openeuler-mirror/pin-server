@@ -24,6 +24,7 @@
 #define PLUGIN_DIALECT_TD
 
 include "mlir/IR/OpBase.td"
+include "mlir/IR/EnumAttr.td"
 
 //===----------------------------------------------------------------------===//
 // Plugin Dialect Definition.
@@ -36,6 +37,10 @@ def Plugin_Dialect : Dialect {
   let summary = "The Plugin Dialect.";
   let description = [{}];
   let cppNamespace = "::mlir::Plugin";
+
+  let extraClassDeclaration = [{
+    void registerTypes();
+  }];
 }
 
 // Base class for Plugin dialect operations. This operation inherits from the base
@@ -43,7 +48,7 @@ def Plugin_Dialect : Dialect {
 //   * The parent dialect of the operation.
 //   * The mnemonic for the operation, or the name without the dialect prefix.
 //   * A list of traits for the operation.
-class Plugin_Op<string mnemonic, list<OpTrait> traits = []> :
+class Plugin_Op<string mnemonic, list<Trait> traits = []> :
     Op<Plugin_Dialect, mnemonic, traits>;
 
 //===----------------------------------------------------------------------===//
@@ -58,7 +63,7 @@ def IComparisonLTGT  : I32EnumAttrCase<"ltgt", 4>;
 def IComparisonEQ    : I32EnumAttrCase<"eq", 5>;
 def IComparisonNE    : I32EnumAttrCase<"ne", 6>;
 def IComparisonUNDEF : I32EnumAttrCase<"UNDEF", 7>;
-def IComparisonAttr  : I32EnumAttr<
+def IComparisonCode  : I32EnumAttr<
    "IComparisonCode", "plugin comparison code",
    [IComparisonLT, IComparisonLE, IComparisonGT, IComparisonGE, 
     IComparisonLTGT, IComparisonEQ, IComparisonNE, IComparisonUNDEF]>{
@@ -80,7 +85,7 @@ def IDefineCodeBLOCK  : I32EnumAttrCase<"BLOCK", 11>;
 def IDefineCodeCOMPONENT  : I32EnumAttrCase<"COMPONENT", 12>;
 def IDefineCodeTYPEDECL   : I32EnumAttrCase<"TYPEDECL", 13>;
 def IDefineCodeUNDEF     : I32EnumAttrCase<"UNDEF", 14>;
-def IDefineCodeAttr  : I32EnumAttr<
+def IDefineCode  : I32EnumAttr<
    "IDefineCode", "plugin define code",
    [IDefineCodeMemRef, IDefineCodeIntCST, IDefineCodeSSA, IDefineCodeLIST,
    IDefineCodeStrCST, IDefineCodeArrayRef, IDefineCodeDecl, IDefineCodeFieldDecl, IDefineCodeAddrExp,
@@ -102,7 +107,7 @@ def IExprCodeLshift  : I32EnumAttrCase<"Lshift", 9>;
 def IExprCodeRshift  : I32EnumAttrCase<"Rshift", 10>;
 def IExprCodeNop     : I32EnumAttrCase<"Nop", 11>;
 def IExprCodeUNDEF   : I32EnumAttrCase<"UNDEF", 12>;
-def IExprCodeAttr  : I32EnumAttr<
+def IExprCode  : I32EnumAttr<
    "IExprCode", "plugin expr code",
    [IExprCodePlus, IExprCodeMinus, IExprCodeMult,
     IExprCodePtrPlus, IExprCodeMin, IExprCodeMax,

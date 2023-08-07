@@ -24,6 +24,20 @@
 
 using namespace mlir;
 using namespace PluginIR;
+using namespace mlir::Plugin;
+
+void PluginDialect::registerTypes() {
+    addTypes<PluginIntegerType,
+             PluginFloatType,
+             PluginPointerType,
+             PluginArrayType,
+             PluginVectorType,
+             PluginFunctionType,
+             PluginStructType,
+             PluginBooleanType,
+             PluginVoidType, 
+             PluginUndefType>();
+}
 
 namespace PluginIR {
 namespace detail {

@@ -673,7 +673,9 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands(arguments);
-    state.addAttribute("callee", builder.getSymbolRefAttr(callee));
+    //state.addAttribute("callee", builder.getSymbolRefAttr(callee));
+    state.addAttribute("callee",
+                     mlir::SymbolRefAttr::get(builder.getContext(), callee));
 }
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
@@ -723,7 +725,9 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands(arguments);
     // FIXME: DEF_BUILTIN.
-    state.addAttribute("callee", builder.getSymbolRefAttr("ctzll"));
+    //state.addAttribute("callee", builder.getSymbolRefAttr("ctzll"));
+    // state.addAttribute("callee",
+    //                  mlir::SymbolRefAttr::get(builder.getContext(), ctzll));
 }
 
 void CallOp::build(OpBuilder &builder, OperationState &state,
@@ -742,7 +746,9 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
     uint64_t id = pluginAPI.CreateCallOp(blockId, funcId, argIds);
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addOperands(arguments);
-    state.addAttribute("callee", builder.getSymbolRefAttr("ctzll"));
+    //state.addAttribute("callee", builder.getSymbolRefAttr("ctzll"));
+    // state.addAttribute("ctzll",
+    //                  mlir::SymbolRefAttr::get(builder.getContext(), callee));
 }
 
 // ===----------------------------------------------------------------------===//
@@ -922,7 +928,9 @@ void AsmOp::build(OpBuilder &builder, OperationState &state,
                    uint32_t nClobbers, ArrayRef<Value> operands)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
-    state.addAttribute("statement", builder.getSymbolRefAttr(statement));
+    //state.addAttribute("statement", builder.getSymbolRefAttr(statement));
+    state.addAttribute("callee",
+                     mlir::SymbolRefAttr::get(builder.getContext(), statement));
     state.addAttribute("nInputs", builder.getI32IntegerAttr(nInputs));
     state.addAttribute("nOutputs", builder.getI32IntegerAttr(nOutputs));
     state.addAttribute("nClobbers", builder.getI32IntegerAttr(nClobbers));
