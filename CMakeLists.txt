@@ -17,7 +17,7 @@ include(cmake/common.cmake)
 #-------------------------------------------------------------------------------
 set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR ON)
 
-set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard to conform to")
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 
 find_package(MLIR REQUIRED CONFIG)
 message(STATUS "Using MLIRConfig.cmake in: ${MLIR_DIR}")
@@ -46,7 +46,7 @@ add_definitions(${LLVM_DEFINITIONS})
 
 include_directories(include)
 
-add_compile_options(-std=c++14 -Wall -fPIC)
+add_compile_options(-std=c++17 -Wall -fPIC)
 # Proto file
 get_filename_component(plg_proto "protos/plugin.proto" ABSOLUTE)
 get_filename_component(plg_proto_path "${plg_proto}" PATH)
