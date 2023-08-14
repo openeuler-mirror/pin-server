@@ -76,6 +76,8 @@ add_library(plg_grpc_proto STATIC
   ${plg_proto_srcs}
   ${plg_proto_hdrs})
 target_link_libraries(plg_grpc_proto
+  ${GRPC_LIBRARY}
+  ${GPR_LIBRARY}
   ${GRPC_PP_REFLECTION_LIBRARY}
   ${GRPC_PP_LIBRARY}
   ${PROTOBUF_LIBRARY})
@@ -109,6 +111,8 @@ target_link_libraries(pin_server
   pin_user
   ${JSONCPP_LIBRARY}
   plg_grpc_proto
+  ${GRPC_LIBRARY}
+  ${GPR_LIBRARY}
   ${GRPC_PP_REFLECTION_LIBRARY}
   ${GRPC_PP_LIBRARY}
   ${PROTOBUF_LIBRARY}

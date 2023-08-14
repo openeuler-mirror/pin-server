@@ -35,6 +35,8 @@ find_library(GRPC_PP_LIBRARY grpc++)
 _CHECK(GRPC_PP_LIBRARY "GRPC_PP_LIBRARY-NOTFOUND" "libgrpc++.so")
 find_library(GRPC_LIBRARY grpc)
 _CHECK(GRPC_LIBRARY "GRPC_LIBRARY-NOTFOUND" "libgrpc.so")
+find_library(GPR_LIBRARY gpr)
+_CHECK(GPR_LIBRARY "GPR_LIBRARY-NOTFOUND" "libgpr.so")
     
 # check abseil_synchronization
 find_library(ABSEIL_SYNC_LIBRARY absl_synchronization)
