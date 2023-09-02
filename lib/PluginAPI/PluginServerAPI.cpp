@@ -472,6 +472,11 @@ llvm::SmallVector<mlir::Plugin::FieldDeclOp> PluginServerAPI::GetFields(uint64_t
     return PluginServer::GetInstance()->GetFieldsResult(funName, params);
 }
 
+void PluginServerAPI::ShutdownCompile() {
+    string funName = __func__;
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, "");
+}
+
 void PluginServerAPI::SetDeclName(uint64_t newfieldId, uint64_t fieldId)
 {
     Json::Value root;
