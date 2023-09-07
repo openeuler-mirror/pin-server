@@ -25,6 +25,7 @@
 #include <fstream>
 #include <mutex>
 #include <csignal>
+#include <unistd.h>
 #include "PluginServer/PluginLog.h"
 
 namespace PinLog {
