@@ -74,9 +74,9 @@ public:
     }
 
 private:
-    mlir::MLIRContext context;
     InjectPoint inject;
     uint64_t func; // 保存managerSetup fun参数指针
+    mlir::MLIRContext context;
 };
 } // namespace PluginOpt
 #endif

@@ -24,7 +24,7 @@ using namespace PinServer;
 
 int main(int argc, char** argv)
 {
-    const int argcNum = 2; // 参数只有2个，argv[0]：port argv[1]：log级别
+    const int argcNum = 7;
     if (argc != argcNum) {
         printf("param num:%d, should be:%d\n", argc, argcNum);
         return -1;
@@ -32,6 +32,7 @@ int main(int argc, char** argv)
     std::string port = argv[0];
     LogPriority priority = (LogPriority)atoi(argv[1]);
     PluginServer server(priority, port);
+    server.SetServerCommand(argv[2], argv[3], argv[4], argv[5], argv[6]);
     server.RunServer();
     return 0;
 }

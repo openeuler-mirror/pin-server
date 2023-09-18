@@ -44,6 +44,7 @@ public:
     virtual string GetIncludeFile() = 0;
     virtual int GetDeclSourceLine(int64_t) = 0;
     virtual int GetDeclSourceColumn(int64_t) = 0;
+    virtual void ShutdownCompile() = 0;
 
     // CGnodeOp
     virtual vector<CGnodeOp> GetAllCGnode() = 0;

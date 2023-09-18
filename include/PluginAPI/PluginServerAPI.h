@@ -124,6 +124,7 @@ public:
     string GetIncludeFile() override;
     int GetDeclSourceLine(int64_t) override;
     int GetDeclSourceColumn(int64_t) override;
+    void ShutdownCompile() override;
 private:
     mlir::Block* BlockResult(const string& funName, const string& params);
     vector<mlir::Block*> BlocksResult(const string& funName, const string& params);
