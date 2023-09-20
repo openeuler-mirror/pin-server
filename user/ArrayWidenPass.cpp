@@ -702,6 +702,8 @@ static bool checkBodyMemRef(Value memRef)
 static bool checkBodyPointerPlus(Operation *op, Value &tmpIndex)
 {
     auto assignOp = dyn_cast<AssignOp>(op);
+    if(!assignOp)
+        return false;
     Value rhs1 = assignOp.GetRHS1();
     Value rhs2 = assignOp.GetRHS2();
 
