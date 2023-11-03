@@ -23,6 +23,7 @@
 #include <thread>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <mutex>
 
 #include "PluginAPI/PluginServerAPI.h"
 #include "user/user.h"
@@ -34,6 +35,8 @@ using namespace PluginOpt;
 using std::cout;
 using std::endl;
 using std::pair;
+
+static std::mutex register_mutex; // 线程锁
 PluginServer *PluginServer::pluginServerPtr = nullptr;
 PluginServer *PluginServer::GetInstance()
 {
@@ -273,6 +276,7 @@ void PluginServer::ParseArgv(const string& data)
 
 void PluginServer::SendRegisteredUserOpts()
 {
+    register_mutex.lock();
     for (auto it = userOpts.begin(); it != userOpts.end(); it++) {
         string key = "injectPoint";
         for (auto& userOpt : it->second) {
@@ -286,6 +290,7 @@ void PluginServer::SendRegisteredUserOpts()
         }
     }
     pluginCom.ServerSend("injectPoint", "finished");
+    register_mutex.unlock();
 }
 
 void PluginServer::ServerSemPost(const string& port)
@@ -307,8 +312,9 @@ void PluginServer::RunServer()
     }
     log->LOGI("Server ppid:%d listening on port:%s\n", getppid(), port.c_str());
     ServerSemPost(port);
-
+    register_mutex.lock();
     RegisterCallbacks();
+    register_mutex.unlock();
     log->LOGI("RunServer: RegisterCallbacks Done.\n");
     pluginCom.Run();
 }
