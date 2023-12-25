@@ -244,6 +244,11 @@ public:
         RemoteCallClientWithAPI(funName, params);
         return pluginCom.GetValueResult();
     }
+    vector<mlir::Value> GetValuesResult(const string& funName, const string& params)
+    {
+        RemoteCallClientWithAPI(funName, params);
+        return pluginCom.GetValuesResult();
+    }
     vector<mlir::Plugin::PhiOp> GetPhiOpsResult(const string& funName, const string& params)
     {
         RemoteCallClientWithAPI(funName, params);
@@ -264,15 +269,15 @@ public:
         valueMaps.clear();
         blockMaps.clear();
         basicblockMaps.clear();
-        defOpMaps.clear();
+        opMaps.clear();
     }
 
     uint64_t FindBasicBlock(mlir::Block*);
     bool InsertValue(uint64_t, mlir::Value);
     bool HaveValue(uint64_t);
     mlir::Value GetValue(uint64_t);
-    mlir::Operation* FindDefOperation(uint64_t);
-    bool InsertDefOperation(uint64_t, mlir::Operation*);
+    mlir::Operation* FindOperation(uint64_t);
+    bool InsertOperation(uint64_t, mlir::Operation*);
     void RemoteCallClientWithAPI(const string& api, const string& params);
 
 private:
@@ -296,7 +301,8 @@ private:
     // process Block.
     std::map<uint64_t, mlir::Block*> blockMaps;
     std::map<mlir::Block*, uint64_t> basicblockMaps;
-    std::map<uint64_t, mlir::Operation*> defOpMaps;
+    // std::map<uint64_t, mlir::Operation*> defOpMaps;
+    std::map<uint64_t, mlir::Operation*> opMaps; // 保存所有的<gimpleid, op>键值对
 
     /* 解析客户端发送过来的-fplugin-arg参数，并保存在私有变量args中 */
     void ParseArgv(const string& data);

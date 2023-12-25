@@ -23,6 +23,7 @@
 #include <thread>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <mutex>
 
 #include "PluginAPI/PluginServerAPI.h"
 #include "user/user.h"
@@ -34,6 +35,8 @@ using namespace PluginOpt;
 using std::cout;
 using std::endl;
 using std::pair;
+
+static std::mutex register_mutex; // 线程锁
 PluginServer *PluginServer::pluginServerPtr = nullptr;
 PluginServer *PluginServer::GetInstance()
 {
@@ -92,17 +95,21 @@ mlir::Block* PluginServer::FindBlock(uint64_t id)
     return iter->second;
 }
 
-mlir::Operation* PluginServer::FindDefOperation(uint64_t id)
+mlir::Operation* PluginServer::FindOperation(uint64_t id)
 {
-    auto iter = this->defOpMaps.find(id);
-    assert(iter != this->defOpMaps.end());
-    return iter->second;
+    mlir::Operation* op;
+    auto iter = this->opMaps.find(id);
+    // assert(iter != this->opMaps.end());
+    if (iter != this->opMaps.end()) {
+        return iter->second;
+    } 
+    return NULL;
 }
 
-bool PluginServer::InsertDefOperation(uint64_t id, mlir::Operation* op)
+bool PluginServer::InsertOperation(uint64_t id, mlir::Operation* op)
 {
-    auto iter = this->defOpMaps.find(id);
-    this->defOpMaps.insert({id, op});
+    auto iter = this->opMaps.find(id);
+    this->opMaps.insert({id, op});
     return true;
 }
 
@@ -273,6 +280,7 @@ void PluginServer::ParseArgv(const string& data)
 
 void PluginServer::SendRegisteredUserOpts()
 {
+    register_mutex.lock();
     for (auto it = userOpts.begin(); it != userOpts.end(); it++) {
         string key = "injectPoint";
         for (auto& userOpt : it->second) {
@@ -286,6 +294,7 @@ void PluginServer::SendRegisteredUserOpts()
         }
     }
     pluginCom.ServerSend("injectPoint", "finished");
+    register_mutex.unlock();
 }
 
 void PluginServer::ServerSemPost(const string& port)
@@ -308,7 +317,9 @@ void PluginServer::RunServer()
     log->LOGI("Server ppid:%d listening on port:%s\n", getppid(), port.c_str());
     ServerSemPost(port);
 
+    register_mutex.lock();
     RegisterCallbacks();
+    register_mutex.unlock();
     log->LOGI("RunServer: RegisterCallbacks Done.\n");
     pluginCom.Run();
 }

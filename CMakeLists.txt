@@ -85,10 +85,11 @@ target_link_libraries(plg_grpc_proto
 add_subdirectory(include)
 add_subdirectory(lib)
 add_library(pin_user SHARED
-  # "user/ArrayWidenPass.cpp"
-  "user/StructReorder.cpp"
+  "user/ArrayWidenPass.cpp"
+  #"user/StructReorder.cpp"
   "user/InlineFunctionPass.cpp"
   "user/LocalVarSummeryPass.cpp"
+  "user/SimpleLICMPass.cpp"
   "user/user.cpp")
 
 target_link_libraries(pin_user
@@ -101,6 +102,7 @@ add_custom_command(TARGET pin_user COMMAND sha256sum libpin_user.so > libpin_use
 add_executable(pin_server 
   "lib/PluginServer/PluginServer.cpp"
   "lib/PluginAPI/ControlFlowAPI.cpp"
+  "lib/PluginAPI/DataFlowAPI.cpp"
   "lib/PluginServer/PluginGrpc.cpp"
   "lib/PluginServer/PluginJson.cpp"
   "lib/PluginServer/PluginCom.cpp"

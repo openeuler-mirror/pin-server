@@ -372,6 +372,15 @@ mlir::Value PluginServerAPI::ConfirmValue(mlir::Value v)
     return PluginServer::GetInstance()->GetValueResult(funName, params);
 }
 
+bool PluginServerAPI::IsVirtualOperand(uint64_t id)
+{
+    Json::Value root;
+    string funName = "IsVirtualOperand";
+    root["id"] = std::to_string(id);
+    string params = root.toStyledString();
+    return PluginServer::GetInstance()->GetBoolResult(funName, params);
+}
+
 mlir::Value PluginServerAPI::BuildMemRef(PluginIR::PluginTypeBase type,
                                          mlir::Value base, mlir::Value offset)
 {
@@ -811,6 +820,16 @@ LoopOp PluginServerAPI::GetBlockLoopFather(mlir::Block* b)
     return PluginServer::GetInstance()->LoopOpResult(funName, params);
 }
 
+LoopOp PluginServerAPI::FindCommonLoop(LoopOp* loop_1, LoopOp* loop_2)
+{
+    Json::Value root;
+    string funName("FindCommonLoop");
+    root["loopId_1"] = loop_1->idAttr().getInt();
+    root["loopId_2"] = loop_2->idAttr().getInt();
+    string params = root.toStyledString();
+    return PluginServer::GetInstance()->LoopOpResult(funName, params);
+}
+
 mlir::Block* PluginServerAPI::FindBlock(uint64_t b)
 {
     PluginServer *server = PluginServer::GetInstance();
@@ -845,7 +864,7 @@ bool PluginServerAPI::RedirectFallthroughTarget(
 
 mlir::Operation* PluginServerAPI::GetSSADefOperation(uint64_t addr)
 {
-    return PluginServer::GetInstance()->FindDefOperation(addr);
+    return PluginServer::GetInstance()->FindOperation(addr);
 }
 
 void PluginServerAPI::InsertCreatedBlock(uint64_t id, mlir::Block* block)
@@ -860,6 +879,25 @@ void PluginServerAPI::DebugValue(uint64_t valId)
     root["valId"] = valId;
     string params = root.toStyledString();
     PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::DebugOperation(uint64_t opId)
+{
+    Json::Value root;
+    string funName = __func__;
+    root["opId"] = opId;
+    string params = root.toStyledString();
+    PluginServer::GetInstance()->RemoteCallClientWithAPI(funName, params);
+}
+
+void PluginServerAPI::DebugBlock(mlir::Block* b)
+{
+    PluginServer *server = PluginServer::GetInstance();
+    Json::Value root;
+    string funName = __func__;
+    root["bbAddr"] = std::to_string(server->FindBasicBlock(b));
+    string params = root.toStyledString();
+    server->RemoteCallClientWithAPI(funName, params);
 }
 
 bool PluginServerAPI::IsLtoOptimize()
