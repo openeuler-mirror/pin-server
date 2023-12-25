@@ -189,6 +189,20 @@ mlir::Value PluginJson::ValueJsonDeSerialize(Json::Value valueJson)
     return opValue;
 }
 
+void PluginJson::ValuesJsonDeSerialize(const string& data, vector<mlir::Value>& valuesData)
+{
+    Json::Value root;
+    Json::Reader reader;
+    Json::Value node;
+    reader.parse(data, root);
+    Json::Value::Members operation = root.getMemberNames();
+    for (size_t iter = 0; iter < operation.size(); iter++) {
+        string operationKey = "Value" + std::to_string(iter);
+        node = root[operationKey];
+        valuesData.push_back(ValueJsonDeSerialize(node));
+    }
+}
+
 mlir::Value PluginJson::MemRefDeSerialize(const string& data)
 {
     Json::Value root;
@@ -666,6 +680,7 @@ mlir::Operation *PluginJson::CallOpJsonDeSerialize(const string& data)
         op = opBuilder->create<CallOp>(opBuilder->getUnknownLoc(),
                                        id, callName, ops);
     }
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -690,6 +705,7 @@ mlir::Operation *PluginJson::CondOpJsonDeSerialize(const string& data)
     CondOp op = opBuilder->create<CondOp>(
         opBuilder->getUnknownLoc(), id, address, iCode, LHS,
         RHS, tb, fb, tbaddr, fbaddr, trueLabel, falseLabel);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -736,7 +752,7 @@ mlir::Operation *PluginJson::AssignOpJsonDeSerialize(const string& data)
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     AssignOp op = opBuilder->create<AssignOp>(opBuilder->getUnknownLoc(),
                                              ops, id, iCode);
-    PluginServer::GetInstance()->InsertDefOperation(id, op.getOperation());
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -760,7 +776,7 @@ mlir::Operation *PluginJson::PhiOpJsonDeSerialize(const string& data)
     PhiOp op = opBuilder->create<PhiOp>(opBuilder->getUnknownLoc(),
                                        ops, id, capacity, nArgs);
     
-    PluginServer::GetInstance()->InsertDefOperation(id, op.getOperation());
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1003,6 +1019,7 @@ mlir::Operation *PluginJson::GotoOpJsonDeSerialize(const string& data)
     mlir::Block* success = PluginServer::GetInstance()->FindBlock(successaddr);
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     GotoOp op = opBuilder->create<GotoOp>(opBuilder->getUnknownLoc(), id, address, dest, success, successaddr);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1030,6 +1047,7 @@ mlir::Operation *PluginJson::TransactionOpJsonDeSerialize(const string& data)
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     TransactionOp op = opBuilder->create<TransactionOp>(opBuilder->getUnknownLoc(), id, address, stmtaddr, labelNorm,
                                         labelUninst, labelOver, fallthrough, fallthroughaddr, abort, abortaddr);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1044,6 +1062,7 @@ mlir::Operation *PluginJson::ResxOpJsonDeSerialize(const string& data)
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     ResxOp op = opBuilder->create<ResxOp>(opBuilder->getUnknownLoc(),
                                          id, address, region);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1056,6 +1075,7 @@ mlir::Operation *PluginJson::EHMntOpJsonDeSerialize(const string& data)
     mlir::Value decl = ValueJsonDeSerialize(node["decl"]);
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     EHMntOp op = opBuilder->create<EHMntOp>(opBuilder->getUnknownLoc(), id, decl);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1082,6 +1102,7 @@ mlir::Operation *PluginJson::EHDispatchOpJsonDeSerialize(const string& data)
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     EHDispatchOp op = opBuilder->create<EHDispatchOp>(opBuilder->getUnknownLoc(),
                                          id, address, region, ehHandlers, ehHandlersaddrs);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1094,6 +1115,7 @@ mlir::Operation *PluginJson::LabelOpJsonDeSerialize(const string& data)
     mlir::Value label = ValueJsonDeSerialize(node["label"]);
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     LabelOp op = opBuilder->create<LabelOp>(opBuilder->getUnknownLoc(), id, label);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1116,6 +1138,7 @@ mlir::Operation *PluginJson::BindOpJsonDeSerialize(const string& data)
     }
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     BindOp op = opBuilder->create<BindOp>(opBuilder->getUnknownLoc(), id, vars, bodyaddrs, block);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1144,6 +1167,7 @@ mlir::Operation *PluginJson::TryOpJsonDeSerialize(const string& data)
     int64_t kind = GetID(node["kind"]);
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     TryOp op = opBuilder->create<TryOp>(opBuilder->getUnknownLoc(), id, evaladdrs, cleanupaddrs, kind);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1165,6 +1189,7 @@ mlir::Operation *PluginJson::CatchOpJsonDeSerialize(const string& data)
     }
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     CatchOp op = opBuilder->create<CatchOp>(opBuilder->getUnknownLoc(), id, types, handleraddrs);
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1176,7 +1201,7 @@ mlir::Operation *PluginJson::NopOpJsonDeSerialize(const string& data)
     uint64_t id = GetID(node["id"]);
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     NopOp op = opBuilder->create<NopOp>(opBuilder->getUnknownLoc(), id);
-    PluginServer::GetInstance()->InsertDefOperation(id, op.getOperation());
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1208,7 +1233,7 @@ mlir::Operation *PluginJson::EHElseOpJsonDeSerialize(const string& data)
     }
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     EHElseOp op = opBuilder->create<EHElseOp>(opBuilder->getUnknownLoc(), id, nbody, ebody);
-    PluginServer::GetInstance()->InsertDefOperation(id, op.getOperation());
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1233,7 +1258,7 @@ mlir::Operation *PluginJson::AsmOpJsonDeserialize(const string& data)
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     AsmOp op = opBuilder->create<AsmOp>(opBuilder->getUnknownLoc(), id, statement, nInputs, nOutputs,
                                              nClobbers, ops);
-    PluginServer::GetInstance()->InsertDefOperation(id, op.getOperation());
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 
@@ -1278,7 +1303,7 @@ mlir::Operation *PluginJson::SwitchOpJsonDeserialize(const string& data)
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
     SwitchOp op = opBuilder->create<SwitchOp>(opBuilder->getUnknownLoc(), id, index, address, defaultLabel, ops, defaultDest,
                                             defaultDestAddr, caseDest, caseaddr);
-    PluginServer::GetInstance()->InsertDefOperation(id, op.getOperation());
+    PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }
 

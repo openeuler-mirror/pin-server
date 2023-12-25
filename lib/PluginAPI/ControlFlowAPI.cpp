@@ -106,8 +106,23 @@ vector<PhiOp> ControlFlowAPI::GetAllPhiOpInsideBlock(mlir::Block *b)
     string funName = __func__;
     root["bbAddr"] = std::to_string(server->FindBasicBlock(b));
     string params = root.toStyledString();
-
     return GetPhiOperationResult(funName, params);
+}
+
+vector<mlir::Operation*> ControlFlowAPI::GetAllOpsInsideBlock(mlir::Block *b)
+{
+    PluginServer *server = PluginServer::GetInstance();
+    Json::Value root;
+    string funName = __func__;
+    root["bbAddr"] = std::to_string(server->FindBasicBlock(b));
+    string params = root.toStyledString();
+    vector<uint64_t> ids = server->GetIdsResult(funName, params);
+    vector<mlir::Operation*> ops;
+    for (auto id: ids) {
+        mlir::Operation* op = server->FindOperation(id);
+        ops.push_back(op);
+    }
+    return ops;
 }
 
 mlir::Block* ControlFlowAPI::CreateBlock(mlir::Block* b, FunctionOp *funcOp)

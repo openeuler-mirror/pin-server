@@ -74,6 +74,7 @@ public:
     uint64_t GetIdResult(void);
     vector<uint64_t> GetIdsResult(void);
     mlir::Value GetValueResult(void);
+    vector<mlir::Value> GetValuesResult(void);
     vector<mlir::Plugin::PhiOp> GetPhiOpsResult(void);
 
 private:
@@ -94,6 +95,7 @@ private:
     uint64_t idResult;
     vector<uint64_t> idsResult;
     mlir::Value valueResult;
+    vector<mlir::Value> valuesResult;
     PluginIR::PluginTypeBase pTypeResult;
     mlir::Plugin::DeclBaseOp declOp;
     mlir::Plugin::FieldDeclOp fielddeclOp;

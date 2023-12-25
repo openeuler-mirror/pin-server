@@ -148,6 +148,13 @@ mlir::Value PluginCom::GetValueResult()
     return this->valueResult;
 }
 
+vector<mlir::Value> PluginCom::GetValuesResult()
+{
+    vector<mlir::Value> retVals = valuesResult;
+    valuesResult.clear();
+    return retVals;
+}
+
 vector<mlir::Plugin::PhiOp> PluginCom::GetPhiOpsResult()
 {
     vector<mlir::Plugin::PhiOp> retOps;
@@ -196,9 +203,11 @@ void PluginCom::JsonDeSerialize(const string& key, const string& data)
         this->declOp = llvm::dyn_cast<mlir::Plugin::DeclBaseOp>(decl.getDefiningOp());
     } else if (key == "GetFieldsOpResult") {
         json.FieldOpsJsonDeSerialize(data, this->fieldsOps);
-    } else if (key == "OpsResult") {
+    } else if (key == "OpResult") {
         json.OpJsonDeSerialize(data.c_str(), this->opData);
-    } else if (key == "ValueResult") {
+    } else if (key == "ValuesResult") {
+        json.ValuesJsonDeSerialize(data, this->valuesResult);
+    }else if (key == "ValueResult") {
         Json::Value node;
         Json::Reader reader;
         reader.parse(data, node);

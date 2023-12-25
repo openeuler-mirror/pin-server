@@ -86,6 +86,7 @@ public:
     void SetLatch(LoopOp*, mlir::Block*);
     vector<mlir::Block*> GetLoopBody(uint64_t loopID);
     LoopOp GetBlockLoopFather(mlir::Block*);
+    LoopOp FindCommonLoop(LoopOp*, LoopOp*);
     mlir::Block* FindBlock(uint64_t);
     uint64_t FindBasicBlock(mlir::Block*);
     bool InsertValue(uint64_t, mlir::Value);
@@ -104,6 +105,8 @@ public:
     /* Plugin API for ConstOp. */
     mlir::Value CreateConstOp(mlir::Attribute, mlir::Type) override;
     void DebugValue(uint64_t) override;
+    void DebugOperation(uint64_t) override;
+    void DebugBlock(mlir::Block*) override;
     bool IsLtoOptimize() override;
     bool IsWholeProgram() override;
     
@@ -116,6 +119,8 @@ public:
     bool RedirectFallthroughTarget(FallThroughOp&, mlir::Block*, mlir::Block*) override;
     mlir::Operation* GetSSADefOperation(uint64_t) override;
     void InsertCreatedBlock(uint64_t id, mlir::Block* block);
+
+    bool IsVirtualOperand(uint64_t) override;
 
     int64_t GetInjectDataAddress() override; // 获取注入点返回数据的地址
     string GetDeclSourceFile(int64_t) override;

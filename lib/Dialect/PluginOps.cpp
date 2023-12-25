@@ -22,6 +22,7 @@
 
 #include "PluginAPI/PluginServerAPI.h"
 #include "PluginAPI/ControlFlowAPI.h"
+#include "PluginAPI/DataFlowAPI.h"
 #include "Dialect/PluginDialect.h"
 #include "Dialect/PluginOps.h"
 #include "Dialect/PluginTypes.h"
@@ -263,6 +264,13 @@ bool LoopOp::IsLoopFather(mlir::Block* b)
     LoopOp loopFather = pluginAPI.GetBlockLoopFather(b);
     uint64_t id = loopFather.idAttr().getInt();
     return id == loopId;
+}
+
+LoopOp LoopOp::FindCommonLoop(LoopOp* loop_1, LoopOp* loop_2)
+{
+    PluginAPI::PluginServerAPI pluginAPI;
+    LoopOp commonLoop = pluginAPI.FindCommonLoop(loop_1, loop_2);
+    return commonLoop;
 }
 
 vector<pair<mlir::Block*, mlir::Block*> > LoopOp::GetExitEdges()

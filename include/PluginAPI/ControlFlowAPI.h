@@ -40,6 +40,7 @@ public:
 
     bool UpdateSSA(void);
     vector<PhiOp> GetAllPhiOpInsideBlock(mlir::Block *b);
+    vector<mlir::Operation*> GetAllOpsInsideBlock(mlir::Block *b);
 
     mlir::Block* CreateBlock(mlir::Block*, FunctionOp*);
     void DeleteBlock(mlir::Block*, FunctionOp*);

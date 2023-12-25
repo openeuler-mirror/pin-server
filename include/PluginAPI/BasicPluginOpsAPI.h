@@ -86,6 +86,7 @@ public:
     virtual pair<mlir::Block*, mlir::Block*> LoopSingleExit(uint64_t) = 0;
     virtual vector<pair<mlir::Block*, mlir::Block*> > GetLoopExitEdges(uint64_t) = 0;
     virtual LoopOp GetBlockLoopFather(mlir::Block*) = 0;
+    virtual LoopOp FindCommonLoop(LoopOp*, LoopOp*) = 0;
     virtual PhiOp GetPhiOp(uint64_t) = 0;
     virtual CallOp GetCallOp(uint64_t) = 0;
     virtual bool SetLhsInCallOp(uint64_t, uint64_t) = 0;
@@ -98,6 +99,8 @@ public:
     virtual uint32_t AddArgInPhiOp(uint64_t, uint64_t, uint64_t, uint64_t) = 0;
     virtual PhiOp CreatePhiOp(uint64_t, uint64_t) = 0;
     virtual void DebugValue(uint64_t) = 0;
+    virtual void DebugOperation(uint64_t) = 0;
+    virtual void DebugBlock(mlir::Block*) = 0;
     virtual bool IsLtoOptimize() = 0;
     virtual bool IsWholeProgram() = 0;
 
@@ -109,6 +112,8 @@ public:
     virtual mlir::Value BuildMemRef(PluginIR::PluginTypeBase, mlir::Value, mlir::Value) = 0;
     virtual bool RedirectFallthroughTarget(FallThroughOp&, mlir::Block*, mlir::Block*) = 0;
     virtual mlir::Operation* GetSSADefOperation(uint64_t) = 0;
+
+    virtual bool IsVirtualOperand(uint64_t) = 0;
 }; // class BasicPluginOpsAPI
 } // namespace PluginAPI
 

@@ -88,6 +88,7 @@ public:
     /* 将json格式数据解析成map<string, string>格式 */
     void GetAttributes(Json::Value node, map<string, string>& attributes);
     mlir::Value ValueJsonDeSerialize(Json::Value valueJson);
+    void ValuesJsonDeSerialize(const string&, vector<mlir::Value>&);
     Json::Value TypeJsonSerialize(PluginIR::PluginTypeBase type);
     mlir::Value MemRefDeSerialize(const string& data);
     bool ProcessBlock(mlir::Block*, mlir::Region&, const Json::Value&);
