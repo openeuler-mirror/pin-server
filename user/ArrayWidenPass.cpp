@@ -158,14 +158,14 @@ static IDefineCode getValueDefCode(Value v)
 {
     IDefineCode rescode;
     if (auto ssaop = dyn_cast<SSAOp>(v.getDefiningOp())) {
-        rescode = ssaop.defCode().getValue();
+        rescode = ssaop.getDefCode().value();
     } else if (auto memop = dyn_cast<MemOp>(v.getDefiningOp())) {
-        rescode = memop.defCode().getValue();
+        rescode = memop.getDefCode().value();
     } else if (auto constop = dyn_cast<ConstOp>(v.getDefiningOp())) {
-        rescode = constop.defCode().getValue();
+        rescode = constop.getDefCode().value();
     } else {
         auto holderop = dyn_cast<PlaceholderOp>(v.getDefiningOp());
-        rescode = holderop.defCode().getValue();
+        rescode = holderop.getDefCode().value();
     }
     return rescode;
 }
@@ -174,14 +174,14 @@ static uint64_t getValueId(Value v)
 {
     uint64_t resid;
     if (auto ssaop = dyn_cast<SSAOp>(v.getDefiningOp())) {
-        resid = ssaop.id();
+        resid = ssaop.getId();
     } else if (auto memop = dyn_cast<MemOp>(v.getDefiningOp())) {
-        resid = memop.id();
+        resid = memop.getId();
     } else if (auto constop = dyn_cast<ConstOp>(v.getDefiningOp())) {
-        resid = constop.id();
+        resid = constop.getId();
     } else {
         auto holderop = dyn_cast<PlaceholderOp>(v.getDefiningOp());
-        resid = holderop.id();
+        resid = holderop.getId();
     }
     return resid;
 }
@@ -253,13 +253,13 @@ static IDefineCode getSingleRhsAssignOpCode(Operation *op)
 static IExprCode getBinaryRhsAssignOpCode(Operation *op)
 {
     auto assignOp = dyn_cast<AssignOp>(op);
-    return assignOp.exprCode();
+    return assignOp.getExprCode();
 }
 
 static int64_t getRealValueIntCST(Value v)
 {
     auto constOp = dyn_cast<ConstOp>(v.getDefiningOp());
-    return constOp.initAttr().cast<mlir::IntegerAttr>().getInt();
+    return constOp.getInitAttr().cast<mlir::IntegerAttr>().getInt();
 }
 
 static Operation *getSSADefStmtofValue(Value v)
@@ -387,7 +387,7 @@ static bool checkCondOp(Operation *op)
 
     auto cond = dyn_cast<CondOp>(op);
 
-    if (cond.condCode() != IComparisonCode::ne && cond.condCode() != IComparisonCode::eq) {
+    if (cond.getCondCode() != IComparisonCode::ne && cond.getCondCode() != IComparisonCode::eq) {
         return false;
     }
     
@@ -482,7 +482,7 @@ static bool isSSANameVar(Value v)
         return false;
     }
     auto ssaOp = dyn_cast<SSAOp>(v.getDefiningOp());
-    uint64_t varid = ssaOp.nameVarId();
+    uint64_t varid = ssaOp.getNameVarId();
     if (varid != 0) {
         return true;
     }
@@ -498,8 +498,8 @@ static bool isSameSSANameVar(Value v1, Value v2)
     }
     auto ssaOp1 = dyn_cast<SSAOp>(v1.getDefiningOp());
     auto ssaOp2 = dyn_cast<SSAOp>(v2.getDefiningOp());
-    uint64_t varid1 = ssaOp1.nameVarId();
-    uint64_t varid2 = ssaOp2.nameVarId();
+    uint64_t varid1 = ssaOp1.getNameVarId();
+    uint64_t varid2 = ssaOp2.getNameVarId();
     if (varid1 == varid2) {
         return true;
     }
@@ -538,14 +538,14 @@ static bool checkUpdateStmt(Operation *op)
         return false;
     }
     auto assignOp = dyn_cast<AssignOp>(op);
-    if (assignOp.exprCode() == IExprCode::Plus) {
+    if (assignOp.getExprCode() == IExprCode::Plus) {
         Value rhs1 = assignOp.GetRHS1();
         Value rhs2 = assignOp.GetRHS2();
         if (getValueDefCode(rhs1) == IDefineCode::SSA
             && getValueDefCode(rhs2) == IDefineCode::IntCST
             && isSameSSANameVar (rhs1, originLoop.base)) {
             auto constOp = dyn_cast<ConstOp>(rhs2.getDefiningOp());
-            originLoop.step = constOp.initAttr().cast<mlir::IntegerAttr>().getInt();
+            originLoop.step = constOp.getInitAttr().cast<mlir::IntegerAttr>().getInt();
             if (originLoop.step == 1) {
                 return true;
             }
@@ -818,7 +818,7 @@ static bool checkExitBB(LoopOp loop)
         if (!isSameSSANameVar(result, originLoop.base)) {
             continue;
         }
-        if (phi.nArgs() == 2) {
+        if (phi.getNArgs() == 2) {
             Value arg0 = phi.GetArgDef(0);
             Value arg1 = phi.GetArgDef(1);
             if (isEqualValue (arg0, arg1)) {
@@ -846,7 +846,7 @@ static bool checkOriginLoopInfo(LoopOp loop)
     }
 
     auto limitssaop = dyn_cast<SSAOp>(originLoop.limit.getDefiningOp());
-    if (!limitssaop.readOnly().getValue()) {
+    if (!limitssaop.getReadOnly().value()) {
         return false;
     }
 
@@ -909,7 +909,7 @@ static bool checkRecordLoopForm(LoopOp loop)
 
 static bool determineLoopForm(LoopOp loop)
 {
-    if (loop.innerLoopIdAttr().getInt() != 0 && loop.numBlockAttr().getInt() != 3) {
+    if (loop.getInnerLoopIdAttr().getInt() != 0 && loop.getNumBlockAttr().getInt() != 3) {
         fprintf(stderr, "\nWrong loop form, there is inner loop or redundant bb.\n");
         return false;
     }
@@ -939,7 +939,7 @@ static bool determineLoopForm(LoopOp loop)
 static void update_loop_dominator(uint64_t dir, FunctionOp* funcOp)
 {
     ControlFlowAPI cfAPI;
-    mlir::Region &region = funcOp->bodyRegion();
+    mlir::Region &region = funcOp->getBodyRegion();
     PluginServerAPI pluginAPI;
 
     for (auto &bb : region.getBlocks()) {
@@ -962,7 +962,7 @@ static void remove_originLoop(LoopOp *loop, FunctionOp* funcOp)
     ControlFlowAPI controlapi;
     PluginServerAPI pluginAPI;
     body = loop->GetLoopBody();
-    unsigned n = loop->numBlockAttr().getInt();
+    unsigned n = loop->getNumBlockAttr().getInt();
     for (unsigned i = 0; i < n; i++) {
         controlapi.DeleteBlock(body[i], funcOp);
     }
@@ -1166,7 +1166,7 @@ static void create_align_loop_body_bb(Block *align_loop_body_bb, Block* after_bb
 
     cond_stmt = opBuilder->create<CondOp>(
         opBuilder->getUnknownLoc(),
-        llvm::dyn_cast<CondOp>(originLoop.condOp2).condCode(),
+        llvm::dyn_cast<CondOp>(originLoop.condOp2).getCondCode(),
         lhs1, lhs2, tb, fb);
 }
 
@@ -1282,7 +1282,7 @@ static void create_epilogue_loop_header(Block *epilogue_loop_header, Block* afte
 
     cond_stmt = opBuilder->create<CondOp>(
         opBuilder->getUnknownLoc(),
-        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(),
+        llvm::dyn_cast<CondOp>(originLoop.condOp1).getCondCode(),
         res, originLoop.limit, tb, fb);
 
     baseSsa.SetCurrentDef(res);
@@ -1352,7 +1352,7 @@ static void create_epilogue_loop_body_bb(Block *epilogue_loop_body_bb, Block* af
     Value res = g.GetLHS();
     cond_stmt = opBuilder->create<CondOp>(
         opBuilder->getUnknownLoc(),
-        llvm::dyn_cast<CondOp>(originLoop.condOp1).condCode(),
+        llvm::dyn_cast<CondOp>(originLoop.condOp1).getCondCode(),
         lhs2, res, tb, fb);
 
     defs_map.emplace(epilogue_loop_body_bb, baseSsa.GetCurrentDef());
@@ -1489,7 +1489,7 @@ static void ProcessArrayWiden(uint64_t fun)
     context = funcOp.getOperation()->getContext();
     mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
     opBuilder = &opBuilder_temp;
-    string name = funcOp.funcNameAttr().getValue().str();
+    string name = funcOp.getFuncNameAttr().getValue().str();
     fprintf(stderr, "Now process func : %s \n", name.c_str());
     vector<LoopOp> allLoop = funcOp.GetAllLoops();
     for (auto &loop : allLoop) {

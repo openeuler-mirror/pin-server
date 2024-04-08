@@ -30,7 +30,7 @@ static void UserOptimizeFunc(void)
     vector<FunctionOp> allFunction = pluginAPI.GetAllFunc();
     int count = 0;
     for (size_t i = 0; i < allFunction.size(); i++) {
-        if (allFunction[i] && allFunction[i].declaredInlineAttr().getValue())
+        if (allFunction[i] && allFunction[i].getDeclaredInlineAttr().getValue())
             count++;
     }
     fprintf(stderr, "declaredInline have %d functions were declared.\n", count);

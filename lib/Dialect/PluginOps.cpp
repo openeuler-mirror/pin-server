@@ -40,33 +40,33 @@ static uint64_t GetValueId(Value v)
 {
     Operation *op = v.getDefiningOp();
     if (auto mOp = dyn_cast<MemOp>(op)) {
-        return mOp.id();
+        return mOp.getId();
     } else if (auto ssaOp = dyn_cast<SSAOp>(op)) {
-        return ssaOp.id();
+        return ssaOp.getId();
     } else if (auto cstOp = dyn_cast<ConstOp>(op)) {
-        return cstOp.id();
+        return cstOp.getId();
     } else if (auto treelistop = dyn_cast<ListOp>(op)) {
-        return treelistop.id();
+        return treelistop.getId();
     } else if (auto strop = dyn_cast<StrOp>(op)) {
-        return strop.id();
+        return strop.getId();
     } else if (auto arrayop = dyn_cast<ArrayOp>(op)) {
-        return arrayop.id();
+        return arrayop.getId();
     } else if (auto declop = dyn_cast<DeclBaseOp>(op)) {
-        return declop.id();
+        return declop.getId();
     } else if (auto fieldop = dyn_cast<FieldDeclOp>(op)) {
-        return fieldop.id();
+        return fieldop.getId();
     } else if (auto addressop = dyn_cast<AddressOp>(op)) {
-        return addressop.id();
+        return addressop.getId();
     } else if (auto constructorop = dyn_cast<ConstructorOp>(op)) {
-        return constructorop.id();
+        return constructorop.getId();
     } else if (auto vecop = dyn_cast<VecOp>(op)) {
-        return vecop.id();
+        return vecop.getId();
     } else if (auto blockop = dyn_cast<BlockOp>(op)) {
-        return blockop.id();
+        return blockop.getId();
     } else if (auto compOp = dyn_cast<ComponentOp>(op)) {
-        return compOp.id();
+        return compOp.getId();
     } else if (auto phOp = dyn_cast<PlaceholderOp>(op)) {
-        return phOp.id();
+        return phOp.getId();
     }
     return 0;
 }
@@ -74,15 +74,15 @@ static uint64_t GetValueId(Value v)
 static uint64_t getBlockAddress(mlir::Block* b)
 {
     if (mlir::Plugin::CondOp oops = dyn_cast<mlir::Plugin::CondOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::FallThroughOp oops = dyn_cast<mlir::Plugin::FallThroughOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::RetOp oops = dyn_cast<mlir::Plugin::RetOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::GotoOp oops = dyn_cast<mlir::Plugin::GotoOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::TransactionOp oops = dyn_cast<mlir::Plugin::TransactionOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else {
         assert(false);
     }
@@ -105,14 +105,14 @@ void CGnodeOp::build(OpBuilder &builder, OperationState &state,
 // Value CGnodeOp::GetDecl()
 // {
 //     PluginAPI::PluginServerAPI pluginAPI;
-//     uint64_t nodeId = idAttr().getInt();
+//     uint64_t nodeId = getIdAttr().getInt();
 //     return pluginAPI.GetDeclFromCGnode(nodeId);
 // }
 
 bool CGnodeOp::IsRealSymbol()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t nodeId = idAttr().getInt();
+    uint64_t nodeId = getIdAttr().getInt();
     return pluginAPI.IsRealSymbolOfCGnode(nodeId);
 }
 
@@ -141,21 +141,21 @@ void FunctionOp::build(OpBuilder &builder, OperationState &state,
 
 Type FunctionOp::getResultType()
 {
-    PluginIR::PluginFunctionType resultType = type().dyn_cast<PluginIR::PluginFunctionType>();
+    PluginIR::PluginFunctionType resultType = getType().dyn_cast<PluginIR::PluginFunctionType>();
     return resultType;
 }
 
 vector<LoopOp> FunctionOp::GetAllLoops()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t funcId = idAttr().getInt();
+    uint64_t funcId = getIdAttr().getInt();
     return pluginAPI.GetLoopsFromFunc(funcId);
 }
 
 LoopOp FunctionOp::AllocateNewLoop()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t funcId = idAttr().getInt();
+    uint64_t funcId = getIdAttr().getInt();
     return pluginAPI.AllocateNewLoop(funcId);
 }
 
@@ -191,14 +191,14 @@ void LoopOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
 Block* LoopOp::GetHeader()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     return pluginAPI.GetHeader(loopId);
 }
 
 Block* LoopOp::GetLatch()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     return pluginAPI.GetLatch(loopId);
 }
 
@@ -217,42 +217,42 @@ void LoopOp::SetLatch(mlir::Block* b)
 vector<mlir::Block*> LoopOp::GetLoopBody()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     return pluginAPI.GetLoopBody(loopId);
 }
 
 pair<mlir::Block*, mlir::Block*> LoopOp::GetSingleExit()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     return pluginAPI.LoopSingleExit(loopId);
 }
 
 void LoopOp::Delete()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     pluginAPI.DeleteLoop(loopId);
 }
 
 LoopOp LoopOp::GetInnerLoop()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = innerLoopIdAttr().getInt();
+    uint64_t loopId = getInnerLoopIdAttr().getInt();
     return pluginAPI.GetLoopById(loopId);
 }
 
 LoopOp LoopOp::GetOuterLoop()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = outerLoopIdAttr().getInt();
+    uint64_t loopId = getOuterLoopIdAttr().getInt();
     return pluginAPI.GetLoopById(loopId);
 }
 
 bool LoopOp::IsBlockInside(mlir::Block* b)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     uint64_t blockId = pluginAPI.FindBasicBlock(b);
     return pluginAPI.IsBlockInLoop(loopId, blockId);
 }
@@ -260,32 +260,25 @@ bool LoopOp::IsBlockInside(mlir::Block* b)
 bool LoopOp::IsLoopFather(mlir::Block* b)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     LoopOp loopFather = pluginAPI.GetBlockLoopFather(b);
-    uint64_t id = loopFather.idAttr().getInt();
+    uint64_t id = loopFather.getIdAttr().getInt();
     return id == loopId;
-}
-
-LoopOp LoopOp::FindCommonLoop(LoopOp* loop_1, LoopOp* loop_2)
-{
-    PluginAPI::PluginServerAPI pluginAPI;
-    LoopOp commonLoop = pluginAPI.FindCommonLoop(loop_1, loop_2);
-    return commonLoop;
 }
 
 vector<pair<mlir::Block*, mlir::Block*> > LoopOp::GetExitEdges()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
+    uint64_t loopId = getIdAttr().getInt();
     return pluginAPI.GetLoopExitEdges(loopId);
 }
 
 void LoopOp::AddLoop(LoopOp* outerLoop, FunctionOp* funcOp)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t loopId = idAttr().getInt();
-    return pluginAPI.AddLoop(loopId, outerLoop->idAttr().getInt(),
-                             funcOp->idAttr().getInt());
+    uint64_t loopId = getIdAttr().getInt();
+    return pluginAPI.AddLoop(loopId, outerLoop->getIdAttr().getInt(),
+                             funcOp->getIdAttr().getInt());
 }
 
 void LoopOp::AddBlock(mlir::Block* block)
@@ -328,7 +321,7 @@ void MemOp::build(OpBuilder &builder, OperationState &state,
 
 void DeclBaseOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
                       IDefineCode defCode, bool readOnly, bool addressable, bool used, int32_t uid, Value initial,
-                      Value name, Optional<uint64_t> chain, Type retType)
+                      Value name, std::optional<uint64_t> chain, Type retType)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("defCode",
@@ -339,7 +332,7 @@ void DeclBaseOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
     state.addAttribute("uid", builder.getI32IntegerAttr(uid));
     state.addOperands(initial);
     if(chain) {
-        state.addAttribute("chain", builder.getI64IntegerAttr(chain.getValue()));
+        state.addAttribute("chain", builder.getI64IntegerAttr(chain.value()));
     }
     state.addOperands(name);
     state.addTypes(retType);
@@ -349,27 +342,27 @@ void DeclBaseOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
 // BlockOp
 
 void BlockOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
-                      IDefineCode defCode, bool readOnly, Optional<Value> vars, Optional<uint64_t> supercontext,
-                      Optional<Value> subblocks, Optional<Value> abstract_origin, Optional<Value> chain, Type retType)
+                      IDefineCode defCode, bool readOnly, std::optional<Value> vars, std::optional<uint64_t> supercontext,
+                      std::optional<Value> subblocks, std::optional<Value> abstract_origin, std::optional<Value> chain, Type retType)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("defCode",
         builder.getI32IntegerAttr(static_cast<int32_t>(defCode)));
     state.addAttribute("readOnly", builder.getBoolAttr(readOnly));
     if(vars) {
-        state.addOperands(vars.getValue());
+        state.addOperands(vars.value());
     }
     if(supercontext) {
-        state.addAttribute("supercontext", builder.getI64IntegerAttr(supercontext.getValue()));
+        state.addAttribute("supercontext", builder.getI64IntegerAttr(supercontext.value()));
     }
     if(subblocks) {
-        state.addOperands(subblocks.getValue());
+        state.addOperands(subblocks.value());
     }
     if(abstract_origin) {
-        state.addOperands(abstract_origin.getValue());
+        state.addOperands(abstract_origin.value());
     }
     if(chain) {
-        state.addOperands(chain.getValue());
+        state.addOperands(chain.value());
     }
     state.addTypes(retType);
 }
@@ -448,78 +441,78 @@ void FieldDeclOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
 void FieldDeclOp::SetName(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
+    uint64_t fieldId = field.getIdAttr().getInt();
     unsigned idx = 1;
     this->setOperand(idx ,field.GetName());
-    return pluginAPI.SetDeclName(this->idAttr().getInt(), fieldId);
+    return pluginAPI.SetDeclName(this->getIdAttr().getInt(), fieldId);
 }
 
 void FieldDeclOp::SetType(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetDeclType(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetDeclType(this->getIdAttr().getInt(), fieldId);
 }
 
 void FieldDeclOp::SetDeclAlign(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetDeclAlign(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetDeclAlign(this->getIdAttr().getInt(), fieldId);
 }
 
 void FieldDeclOp::SetUserAlign(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetUserAlign(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetUserAlign(this->getIdAttr().getInt(), fieldId);
 }
 
 unsigned FieldDeclOp::GetTypeSize()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    return pluginAPI.GetDeclTypeSize(this->idAttr().getInt());
+    return pluginAPI.GetDeclTypeSize(this->getIdAttr().getInt());
 }
 
 void FieldDeclOp::SetSourceLocation(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetSourceLocation(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetSourceLocation(this->getIdAttr().getInt(), fieldId);
 }
 
 void FieldDeclOp::SetAddressable(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetAddressable(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetAddressable(this->getIdAttr().getInt(), fieldId);
 }
 
 void FieldDeclOp::SetNonAddressablep(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetNonAddressablep(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetNonAddressablep(this->getIdAttr().getInt(), fieldId);
 }
 
 void FieldDeclOp::SetVolatile(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetVolatile(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetVolatile(this->getIdAttr().getInt(), fieldId);
 }
 
 void FieldDeclOp::SetDeclContext(uint64_t declId)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    return pluginAPI.SetDeclContext(this->idAttr().getInt(), declId);
+    return pluginAPI.SetDeclContext(this->getIdAttr().getInt(), declId);
 }
 
 void FieldDeclOp::SetDeclChain(FieldDeclOp field)
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t fieldId = field.idAttr().getInt();
-    return pluginAPI.SetDeclChain(this->idAttr().getInt(), fieldId);
+    uint64_t fieldId = field.getIdAttr().getInt();
+    return pluginAPI.SetDeclChain(this->getIdAttr().getInt(), fieldId);
 }
 //===----------------------------------------------------------------------===//
 // AddressOp
@@ -566,7 +559,7 @@ Value SSAOp::Copy()
     PluginAPI::PluginServerAPI pluginAPI;
     static OpBuilder builder(this->getOperation());
     PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
-    return pluginAPI.CopySSAOp(this->idAttr().getInt());
+    return pluginAPI.CopySSAOp(this->getIdAttr().getInt());
 }
 
 Value SSAOp::GetCurrentDef()
@@ -574,14 +567,14 @@ Value SSAOp::GetCurrentDef()
     PluginAPI::PluginServerAPI pluginAPI;
     static OpBuilder builder(this->getOperation());
     PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
-    return pluginAPI.GetCurrentDefFromSSA(this->idAttr().getInt());
+    return pluginAPI.GetCurrentDefFromSSA(this->getIdAttr().getInt());
 }
 
 bool SSAOp::SetCurrentDef(Value def)
 {
     uint64_t defId = GetValueId(def);
     PluginAPI::PluginServerAPI pluginAPI;
-    if (pluginAPI.SetCurrentDefInSSA(this->idAttr().getInt(), defId)) {
+    if (pluginAPI.SetCurrentDefInSSA(this->getIdAttr().getInt(), defId)) {
         return true;
     }
     return false;
@@ -590,7 +583,7 @@ bool SSAOp::SetCurrentDef(Value def)
 Operation* SSAOp::GetSSADefOperation()
 {
     PluginAPI::PluginServerAPI pluginAPI;
-    uint64_t definingId = definingIdAttr().getInt();
+    uint64_t definingId = this->getDefiningIdAttr().getInt();
     return pluginAPI.GetSSADefOperation(definingId);
 }
 
@@ -700,15 +693,21 @@ CallInterfaceCallable CallOp::getCallableForCallee()
     return (*this)->getAttrOfType<SymbolRefAttr>("callee");
 }
 
+/// Set the callee for the generic call operation, this is required by the call
+/// interface.
+void CallOp::setCalleeFromCallable(CallInterfaceCallable callee) {
+    (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
+}
+
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
-Operation::operand_range CallOp::getArgOperands() { return inputs(); }
+Operation::operand_range CallOp::getArgOperands() { return getInputs(); }
 
 bool CallOp::SetLHS(Value lhs)
 {
     uint64_t lhsId = GetValueId(lhs);
     PluginAPI::PluginServerAPI pluginAPI;
-    if (pluginAPI.SetLhsInCallOp(this->idAttr().getInt(), lhsId)) {
+    if (pluginAPI.SetLhsInCallOp(this->getIdAttr().getInt(), lhsId)) {
         (*this)->setOperand(0, lhs);
         return true;
     }
@@ -723,7 +722,7 @@ void CallOp::build(OpBuilder &builder, OperationState &state,
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t blockId = pluginAPI.FindBasicBlock(insertionBlock);
     PlaceholderOp funcOp = func.getDefiningOp<PlaceholderOp>();
-    uint64_t funcId = funcOp.idAttr().getInt();
+    uint64_t funcId = funcOp.getIdAttr().getInt();
     vector<uint64_t> argIds;
     for (auto v : arguments) {
         uint64_t argId = GetValueId(v);
@@ -821,7 +820,7 @@ Value PhiOp::GetResult()
     PluginAPI::PluginServerAPI pluginAPI;
     static OpBuilder builder(this->getOperation());
     PinServer::PluginServer::GetInstance()->SetOpBuilder(&builder);
-    return pluginAPI.GetResultFromPhi(this->idAttr().getInt());
+    return pluginAPI.GetResultFromPhi(this->getIdAttr().getInt());
 }
 
 PhiOp PhiOp::CreatePhi(Value arg, Block *block)
@@ -841,7 +840,7 @@ bool PhiOp::AddArg(Value arg, Block *pred, Block *succ)
     PluginAPI::PluginServerAPI pluginAPI;
     uint64_t predId = pluginAPI.FindBasicBlock(pred);
     uint64_t succId = pluginAPI.FindBasicBlock(succ);
-    uint32_t nArg = pluginAPI.AddArgInPhiOp(this->idAttr().getInt(), argId, predId, succId);
+    uint32_t nArg = pluginAPI.AddArgInPhiOp(this->getIdAttr().getInt(), argId, predId, succId);
     OpBuilder builder(this->getOperation());
     (*this)->insertOperands((*this)->getNumOperands(), {arg});
     (*this)->setAttr("nArgs", builder.getI32IntegerAttr(nArg));
@@ -947,9 +946,11 @@ void AsmOp::build(OpBuilder &builder, OperationState &state,
 
 //===----------------------------------------------------------------------===//
 // SwitchOp
-void SwitchOp::build(OpBuilder &builder, OperationState &state,
-                   uint64_t id, Value index, uint64_t address, Value defaultLabel, ArrayRef<Value> operands,
-                   Block* defaultDest, uint64_t defaultaddr, ArrayRef<Block*> caseDest, ArrayRef<uint64_t> caseaddr)
+void SwitchOp::build(OpBuilder &builder, OperationState &state, uint64_t id,
+                     Value index, uint64_t address, Value defaultLabel,
+                     ArrayRef<Value> args, Block* defaultDest,
+                     uint64_t defaultaddr, ArrayRef<Block*> caseDest,
+                     ArrayRef<uint64_t> caseaddr)
 {
     state.addAttribute("id", builder.getI64IntegerAttr(id));
     state.addAttribute("address", builder.getI64IntegerAttr(address));
@@ -961,7 +962,7 @@ void SwitchOp::build(OpBuilder &builder, OperationState &state,
     state.addAttribute("caseaddrs", builder.getArrayAttr(attributes));
     state.addOperands(index);
     state.addOperands(defaultLabel);
-    state.addOperands(operands);
+    state.addOperands(args);
     state.addSuccessors(defaultDest);
     state.addSuccessors(caseDest);
 }

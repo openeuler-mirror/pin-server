@@ -23,33 +23,33 @@ static uint64_t GetValueId(mlir::Value v)
 {
     mlir::Operation*op = v.getDefiningOp();
     if (auto mOp = llvm::dyn_cast<MemOp>(op)) {
-        return mOp.id();
+        return mOp.getId();
     } else if (auto ssaOp = llvm::dyn_cast<SSAOp>(op)) {
-        return ssaOp.id();
+        return ssaOp.getId();
     } else if (auto cstOp = llvm::dyn_cast<ConstOp>(op)) {
-        return cstOp.id();
+        return cstOp.getId();
     } else if (auto treelistop = llvm::dyn_cast<ListOp>(op)) {
-        return treelistop.id();
+        return treelistop.getId();
     } else if (auto strop = llvm::dyn_cast<StrOp>(op)) {
-        return strop.id();
+        return strop.getId();
     } else if (auto arrayop = llvm::dyn_cast<ArrayOp>(op)) {
-        return arrayop.id();
+        return arrayop.getId();
     } else if (auto declop = llvm::dyn_cast<DeclBaseOp>(op)) {
-        return declop.id();
+        return declop.getId();
     } else if (auto fieldop = llvm::dyn_cast<FieldDeclOp>(op)) {
-        return fieldop.id();
+        return fieldop.getId();
     } else if (auto addressop = llvm::dyn_cast<AddressOp>(op)) {
-        return addressop.id();
+        return addressop.getId();
     } else if (auto constructorop = llvm::dyn_cast<ConstructorOp>(op)) {
-        return constructorop.id();
+        return constructorop.getId();
     } else if (auto vecop = llvm::dyn_cast<VecOp>(op)) {
-        return vecop.id();
+        return vecop.getId();
     } else if (auto blockop = llvm::dyn_cast<BlockOp>(op)) {
-        return blockop.id();
+        return blockop.getId();
     } else if (auto compop = llvm::dyn_cast<ComponentOp>(op)) {
-        return compop.id();
+        return compop.getId();
     } else if (auto phOp = llvm::dyn_cast<PlaceholderOp>(op)) {
-        return phOp.id();
+        return phOp.getId();
     }
     return 0;
 }

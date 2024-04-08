@@ -95,17 +95,17 @@ static uint64_t getValueId(Value v)
 {
     uint64_t resid = 0;
     if (auto ssaop = dyn_cast<SSAOp>(v.getDefiningOp())) {
-        resid = ssaop.id();
+        resid = ssaop.getId();
     } else if (auto memop = dyn_cast<MemOp>(v.getDefiningOp())) {
-        resid = memop.id();
+        resid = memop.getId();
     } else if (auto constop = dyn_cast<ConstOp>(v.getDefiningOp())) {
-        resid = constop.id();
+        resid = constop.getId();
     } else if (auto holderop = dyn_cast<PlaceholderOp>(v.getDefiningOp())){
-        resid = holderop.id();
+        resid = holderop.getId();
     } else if (auto componentop = dyn_cast<ComponentOp>(v.getDefiningOp())){
-        resid = componentop.id();
+        resid = componentop.getId();
     }  else if (auto declop = llvm::dyn_cast<DeclBaseOp>(v.getDefiningOp())) {
-        return declop.id();
+        return declop.getId();
     }
     return resid;
 }
@@ -114,14 +114,14 @@ static IDefineCode getValueDefCode(Value v)
 {
     IDefineCode rescode;
     if (auto ssaop = dyn_cast<SSAOp>(v.getDefiningOp())) {
-        rescode = ssaop.defCode().getValue();
+        rescode = ssaop.getDefCode().value();
     } else if (auto memop = dyn_cast<MemOp>(v.getDefiningOp())) {
-        rescode = memop.defCode().getValue();
+        rescode = memop.getDefCode().value();
     } else if (auto constop = dyn_cast<ConstOp>(v.getDefiningOp())) {
-        rescode = constop.defCode().getValue();
+        rescode = constop.getDefCode().value();
     } else {
         auto holderop = dyn_cast<PlaceholderOp>(v.getDefiningOp());
-        rescode = holderop.defCode().getValue();
+        rescode = holderop.getDefCode().value();
     }
     return rescode;
 }
@@ -141,7 +141,7 @@ static bool isSSANameVar(Value v)
         return false;
     }
     auto ssaOp = dyn_cast<SSAOp>(v.getDefiningOp());
-    uint64_t varid = ssaOp.nameVarId();
+    uint64_t varid = ssaOp.getNameVarId();
     if (varid != 0) {
         return true;
     }
@@ -154,7 +154,7 @@ static Operation *getSSADefStmtofValue(Value v)
         return NULL;
     }
     auto ssaOp = dyn_cast<SSAOp>(v.getDefiningOp());
-    // uint64_t id = ssaOp.id();
+    // uint64_t id = ssaOp.getId();
     // pluginAPI.DebugValue(id);
     Operation *op = ssaOp.GetSSADefOperation();
     if (!op || !isa<AssignOp, PhiOp>(op)) {
@@ -185,7 +185,7 @@ static edge getLoopPreheaderEdge(LoopOp loop)
 void compute_invariantness(Block* bb)
 {
     LoopOp loop_father = pluginAPI.GetBlockLoopFather(bb);
-    if (!loop_father.outerLoopId().getValue()){
+    if (!loop_father.getOuterLoopId().value()){
         return ;
     }
     // pluginAPI.DebugBlock(bb);
@@ -195,8 +195,8 @@ void compute_invariantness(Block* bb)
     for (auto phi : phis) {
         Value result = phi.GetResult();
         uint64_t varId = getValueId(result);
-        // pluginAPI.DebugOperation(phi.id());
-        int n_args = phi.nArgs();
+        // pluginAPI.DebugOperation(phi.getId());
+        int n_args = phi.getNArgs();
         if (n_args <= 2 && !pluginAPI.IsVirtualOperand(varId)) {
             for (int i = 0 ; i < n_args; i++) {
                 Value v = phi.GetArgDef(i);
@@ -205,7 +205,7 @@ void compute_invariantness(Block* bb)
                     if (!def) break;
                     Block *def_bb = def->getBlock();
                     if (def_bb == bb && visited.find(def) == visited.end()) {
-                        pluginAPI.DebugOperation(phi.id());
+                        pluginAPI.DebugOperation(phi.getId());
                         not_move[def] = true;
                         break;
                     }
@@ -231,7 +231,7 @@ void compute_invariantness(Block* bb)
             Value lhs = assign.GetLHS();
             Value rhs1 = assign.GetRHS1();
             
-            Value vdef = dfAPI.GetGimpleVdef(assign.id());
+            Value vdef = dfAPI.GetGimpleVdef(assign.getId());
             uint64_t vdef_id = getValueId(vdef);
             if(vdef_id) {
                 variants.push_back(lhs);
@@ -239,7 +239,7 @@ void compute_invariantness(Block* bb)
                 change = true;
                 continue;
             }
-            vector<mlir::Value> vals = dfAPI.GetSsaUseOperand(assign.id());
+            vector<mlir::Value> vals = dfAPI.GetSsaUseOperand(assign.getId());
             for (auto val : vals) {
                 Operation* def = getSSADefStmtofValue(val);
                 if(!def) continue;
@@ -282,7 +282,7 @@ void compute_invariantness(Block* bb)
         if (not_move.find(op) != not_move.end()) continue;
         if(!isa<AssignOp>(op)) continue;
         auto assign = dyn_cast<AssignOp>(op);
-        pluginAPI.DebugOperation(assign.id());
+        pluginAPI.DebugOperation(assign.getId());
         move_stmt.push_back(assign);
     }
     cout<<" "<<endl;
@@ -295,7 +295,7 @@ LoopOp get_outermost_loop(AssignOp assign)
     Block *bb = assign->getBlock();
     LoopOp loop = pluginAPI.GetBlockLoopFather(bb);
     LoopOp maxloop;
-    vector<mlir::Value> vals = dfAPI.GetSsaUseOperand(assign.id());
+    vector<mlir::Value> vals = dfAPI.GetSsaUseOperand(assign.getId());
     for (auto val: vals) 
     {
         uint64_t id = getValueId(val);
@@ -336,7 +336,7 @@ static void ProcessSimpleLICM(uint64_t fun)
     mlir::MLIRContext * context = funcOp.getOperation()->getContext();
     mlir::OpBuilder opBuilder_temp = mlir::OpBuilder(context);
     mlir::OpBuilder* opBuilder = &opBuilder_temp;
-    string name = funcOp.funcNameAttr().getValue().str();
+    string name = funcOp.getFuncNameAttr().getValue().str();
     fprintf(stderr, "Now process func : %s \n", name.c_str());
     vector<LoopOp> allLoop = funcOp.GetAllLoops();
     for (auto &loop : allLoop) {
