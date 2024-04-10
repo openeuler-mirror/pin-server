@@ -36,7 +36,7 @@ static void LocalVarSummery(void)
     map<string, string> args = PluginServer::GetInstance()->GetArgs();
     for (size_t i = 0; i < allFunction.size(); i++) {
         if (allFunction[i] == nullptr) continue;
-        uint64_t funcID = allFunction[i].idAttr().getValue().getZExtValue();
+        uint64_t funcID = allFunction[i].getIdAttr().getValue().getZExtValue();
         fprintf(stderr, "In the %ldth function:\n", i);
         vector<mlir::Plugin::LocalDeclOp> decls = pluginAPI.GetDecls(funcID);
         int64_t typeFilter = -1u;
@@ -44,9 +44,9 @@ static void LocalVarSummery(void)
             typeFilter = (int64_t)pluginAPI.GetTypeCodeFromString(args["type_code"]);
         }
         mlir::Plugin::FunctionOp funcOp = allFunction[i];
-        fprintf(stderr, "func name is :%s\n", funcOp.funcNameAttr().getValue().str().c_str());
-        if (funcOp.validTypeAttr().getValue()) {
-        mlir::Type dgyty = funcOp.type();
+        fprintf(stderr, "func name is :%s\n", funcOp.getFuncNameAttr().getValue().str().c_str());
+        if (funcOp.getValidTypeAttr().getValue()) {
+        mlir::Type dgyty = funcOp.getType();
         if (auto ty = dgyty.dyn_cast<PluginIR::PluginFunctionType>()) {
             if(auto stTy = ty.getReturnType().dyn_cast<PluginIR::PluginStructType>()) {
                 fprintf(stderr, "func return type is PluginStructType\n");
@@ -75,8 +75,8 @@ static void LocalVarSummery(void)
         for (size_t j = 0; j < decls.size(); j++) {
             auto decl = decls[j];
             if (decl == nullptr) continue;
-            string name = decl.symNameAttr().getValue().str();
-            int64_t declTypeID = decl.typeIDAttr().getValue().getZExtValue();
+            string name = decl.getSymNameAttr().getValue().str();
+            int64_t declTypeID = decl.getTypeIDAttr().getValue().getZExtValue();
             if (declTypeID == typeFilter) {
                 fprintf(stderr, "\tFind %ldth target type %s\n", j, name.c_str());
             }

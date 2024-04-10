@@ -386,7 +386,7 @@ void PluginJson::FuncOpJsonDeSerialize(
             fOp = opBuilder.create<FunctionOp>(location, id, funcAttributes["funcName"], declaredInline, validType);
         }
 
-        mlir::Region &bodyRegion = fOp.bodyRegion();
+        mlir::Region &bodyRegion = fOp.getBodyRegion();
         Json::Value regionJson = node["region"];
         Json::Value::Members bbMember = regionJson.getMemberNames();
         // We must create Blocks before process opsG
@@ -861,7 +861,7 @@ mlir::Value PluginJson::DeclBaseOpJsonDeSerialize(const string& data)
     int32_t uid = GetID(root["uid"]);
     mlir::Value initial = ValueJsonDeSerialize(root["initial"]);
     mlir::Value name = ValueJsonDeSerialize(root["name"]);
-    llvm::Optional<uint64_t> chain;
+    std::optional<uint64_t> chain;
     if (root["chain"]) {
         chain = GetID(root["chain"]);
     }
@@ -969,7 +969,7 @@ mlir::Value PluginJson::BlockOpJsonDeSerialize(const string& data)
     uint64_t id = GetID(root["id"]);
     bool readOnly = (bool)atoi(root["readOnly"].asString().c_str());
     uint64_t supercontext = GetID(root["supercontext"]);
-    llvm::Optional<mlir::Value> vars, subblocks, chain, abstract_origin;
+    std::optional<mlir::Value> vars, subblocks, chain, abstract_origin;
     if (root["vars"]) {
         vars = ValueJsonDeSerialize(root["vars"]);
     }
@@ -1301,8 +1301,9 @@ mlir::Operation *PluginJson::SwitchOpJsonDeserialize(const string& data)
         caseDest.push_back(casebb);
     }
     mlir::OpBuilder *opBuilder = PluginServer::GetInstance()->GetOpBuilder();
-    SwitchOp op = opBuilder->create<SwitchOp>(opBuilder->getUnknownLoc(), id, index, address, defaultLabel, ops, defaultDest,
-                                            defaultDestAddr, caseDest, caseaddr);
+    SwitchOp op = opBuilder->create<SwitchOp>(
+            opBuilder->getUnknownLoc(), id, index, address, defaultLabel,
+            ops, defaultDest, defaultDestAddr, caseDest, caseaddr);
     PluginServer::GetInstance()->InsertOperation(id, op.getOperation());
     return op.getOperation();
 }

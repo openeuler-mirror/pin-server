@@ -24,33 +24,33 @@ static uint64_t GetValueId(mlir::Value v)
 {
     mlir::Operation *op = v.getDefiningOp();
     if (auto mOp = llvm::dyn_cast<MemOp>(op)) {
-        return mOp.id();
+        return mOp.getId();
     } else if (auto ssaOp = llvm::dyn_cast<SSAOp>(op)) {
-        return ssaOp.id();
+        return ssaOp.getId();
     } else if (auto cstOp = llvm::dyn_cast<ConstOp>(op)) {
-        return cstOp.id();
+        return cstOp.getId();
     } else if (auto treelistop = llvm::dyn_cast<ListOp>(op)) {
-        return treelistop.id();
+        return treelistop.getId();
     } else if (auto strop = llvm::dyn_cast<StrOp>(op)) {
-        return strop.id();
+        return strop.getId();
     } else if (auto arrayop = llvm::dyn_cast<ArrayOp>(op)) {
-        return arrayop.id();
+        return arrayop.getId();
     } else if (auto declop = llvm::dyn_cast<DeclBaseOp>(op)) {
-        return declop.id();
+        return declop.getId();
     } else if (auto fieldop = llvm::dyn_cast<FieldDeclOp>(op)) {
-        return fieldop.id();
+        return fieldop.getId();
     } else if (auto addressop = llvm::dyn_cast<AddressOp>(op)) {
-        return addressop.id();
+        return addressop.getId();
     } else if (auto constructorop = llvm::dyn_cast<ConstructorOp>(op)) {
-        return constructorop.id();
+        return constructorop.getId();
     } else if (auto vecop = llvm::dyn_cast<VecOp>(op)) {
-        return vecop.id();
+        return vecop.getId();
     } else if (auto blockop = llvm::dyn_cast<BlockOp>(op)) {
-        return blockop.id();
+        return blockop.getId();
     } else if (auto compop = llvm::dyn_cast<ComponentOp>(op)) {
-        return compop.id();
+        return compop.getId();
     } else if (auto phOp = llvm::dyn_cast<PlaceholderOp>(op)) {
-        return phOp.id();
+        return phOp.getId();
     }
     return 0;
 }
@@ -58,15 +58,15 @@ static uint64_t GetValueId(mlir::Value v)
 static uint64_t getBlockAddress(mlir::Block* b)
 {
     if (mlir::Plugin::CondOp oops = llvm::dyn_cast<mlir::Plugin::CondOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::FallThroughOp oops = llvm::dyn_cast<mlir::Plugin::FallThroughOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::RetOp oops = llvm::dyn_cast<mlir::Plugin::RetOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::GotoOp oops = llvm::dyn_cast<mlir::Plugin::GotoOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else if (mlir::Plugin::TransactionOp oops = llvm::dyn_cast<mlir::Plugin::TransactionOp>(b->back())) {
-        return oops.addressAttr().getInt();
+        return oops.getAddressAttr().getInt();
     } else {
         abort();
     }
@@ -129,7 +129,7 @@ mlir::Block* ControlFlowAPI::CreateBlock(mlir::Block* b, FunctionOp *funcOp)
 {
     Json::Value root;
     string funName = __func__;
-    uint64_t funcAddr = funcOp->idAttr().getInt();
+    uint64_t funcAddr = funcOp->getIdAttr().getInt();
     assert(funcAddr);
     PluginServer *server = PluginServer::GetInstance();
     uint64_t bbAddr = server->FindBasicBlock(b);
@@ -146,7 +146,7 @@ void ControlFlowAPI::DeleteBlock(mlir::Block* b, FunctionOp* funcOp)
 {
     Json::Value root;
     string funName = __func__;
-    uint64_t funcAddr = funcOp->idAttr().getInt();
+    uint64_t funcAddr = funcOp->getIdAttr().getInt();
     assert(funcAddr);
     uint64_t bbAddr = PluginServer::GetInstance()->FindBasicBlock(b);
     assert(bbAddr);
@@ -221,7 +221,7 @@ mlir::Value ControlFlowAPI::CreateNewDef(mlir::Value oldValue,
     Json::Value root;
     string funName = __func__;
     // FIXME: use baseOp.
-    uint64_t opId = llvm::dyn_cast<PhiOp>(op).idAttr().getInt();
+    uint64_t opId = llvm::dyn_cast<PhiOp>(op).getIdAttr().getInt();
     root["opId"] = std::to_string(opId);
     uint64_t valueId = GetValueId(oldValue);
     root["valueId"] = std::to_string(valueId);

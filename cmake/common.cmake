@@ -41,6 +41,16 @@ _CHECK(GPR_LIBRARY "GPR_LIBRARY-NOTFOUND" "libgpr.so")
 # check abseil_synchronization
 find_library(ABSEIL_SYNC_LIBRARY absl_synchronization)
 _CHECK(ABSEIL_SYNC_LIBRARY "ABSEIL_SYNC_LIBRARY-NOTFOUND" "libabsl_synchronization.so")
+find_library(ABSEIL_CORD_LIBRARY absl_cord)
+_CHECK(ABSEIL_CORD_LIBRARY "ABSEIL_CORD_LIBRARY-NOTFOUND" "libabsl_cord.so")
+find_library(ABSEIL_CORDZ_INFO_LIBRARY absl_cordz_info)
+_CHECK(ABSEIL_CORDZ_INFO_LIBRARY "ABSEIL_CORDZ_INFO_LIBRARY-NOTFOUND" "libabsl_cordz_info.so")
+find_library(ABSEIL_CORDZ_FUNCTION_LIBRARY absl_cordz_functions)
+_CHECK(ABSEIL_CORDZ_FUNCTION_LIBRARY "ABSEIL_CORDZ_FUNCTION_LIBRARY-NOTFOUND" "libabsl_cordz_functions.so")
+find_library(ABSEIL_LOG_INTERNAL_CHECK_OP_LIBRARY absl_log_internal_check_op)
+_CHECK(ABSEIL_LOG_INTERNAL_CHECK_OP_LIBRARY "ABSEIL_LOG_INTERNAL_CHECK_OP_LIBRARY-NOTFOUND" "libabsl_log_internal_check_op.so")
+find_library(ABSEIL_LOG_INTERNAL_MESSAGE_LIBRARY absl_log_internal_message)
+_CHECK(ABSEIL_LOG_INTERNAL_MESSAGE_LIBRARY "ABSEIL_LOG_INTERNAL_MESSAGE_LIBRARY-NOTFOUND" "libabsl_log_internal_message.so")
 
 # check jsoncpp
 find_library(JSONCPP_LIBRARY jsoncpp)
