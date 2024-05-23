@@ -1,7 +1,7 @@
 # pin-server
 
 #### 介绍
-Pin (Plug-IN framework) server provides plugin APIs for compiler optimization developers to develop optimization pass.
+Pin（Plug-IN framework）服务端为编译器优化开发人员提供Plugin API，用于开发优化插件。
 当前仅支持统计类插件的Demo展示。本项目持续迭代中，欢迎广大开发者加入。
 
 #### 软件架构
