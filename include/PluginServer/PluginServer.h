@@ -98,8 +98,51 @@ private:
     std::shared_ptr<PluginOptBase> opt;
 };
 
+class ServerCommand {
+public:
+    ServerCommand() = default;
+    ~ServerCommand() = default;
+    ServerCommand(const string& input, const string& dir, const string& common,
+                  const string& extra, const string& output) {
+        this->input = input;
+        this->dir = dir;
+        this->common = common;
+        this->extra = extra;
+        this->output = output;
+    }
+    
+    void SetInput(const string& input) { this->input = input; }
+    void SetDir(const string& dir) { this->dir = dir; }
+    void SetCommon(const string& common) { this->common = common; }
+    void SetExtra(const string& extra) { this->extra = extra; }
+    void SetOutput(const string& output) { this->output = output; }
+
+    string GetInput() { return this->input; }
+    string GetDir() { return this->dir; }
+    string GetCommon() { return this->common; }
+    string GetExtra() { return this->extra; }
+    string GetOutput() { return this->output; }
+private:
+    string input;
+    string dir;
+    string common;
+    string extra;
+    string output;
+};
+
 class PluginServer {
 public:
+    void SetServerCommand(
+            const string& input, const string& dir, const string& common,
+            const string& extra, const string& output) {
+        this->serverCMD.SetInput(input);
+        this->serverCMD.SetDir(dir);
+        this->serverCMD.SetCommon(common);
+        this->serverCMD.SetExtra(extra);
+        this->serverCMD.SetOutput(output);
+    }
+    ServerCommand GetServerCommand() { return this->serverCMD; }
+
     PluginServer(LogPriority priority, const string& port)
     {
         userFunState = STATE_WAIT_BEGIN;
@@ -281,6 +324,7 @@ public:
     void RemoteCallClientWithAPI(const string& api, const string& params);
 
 private:
+    ServerCommand serverCMD;
     /* 用户函数执行状态，client返回结果后为STATE_RETURN,开始执行下一个函数 */
     volatile UserFunStateEnum userFunState;
     mlir::MLIRContext *context;
